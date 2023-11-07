@@ -210,7 +210,11 @@ function reqtime(){
 
 # ssh choose local or remote raspberry
 function raspberry() {
-  current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
+  if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+    current_network_name=$(nmcli -t -f active,ssid dev wifi show | grep SSID | awk '{print $2}' | tr -d '\n') # 当前所在网络名称
+  elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+    current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
+  fi
   local_network_name="swu" # 局域网网络名称
   success_command="ssh localraspberry" # 要执行的命令，如果Ping成功
   failure_command="ssh remoteraspberry" # 要执行的命令，如果Ping失败

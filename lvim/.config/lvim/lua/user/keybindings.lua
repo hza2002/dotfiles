@@ -68,15 +68,13 @@ lvim.builtin.terminal.execs                          = {
 
 -- Alpha
 lvim.builtin.alpha.dashboard.section.buttons.entries = {
+  { "e", lvim.icons.ui.Watches .. "  Explorer",     "<cmd>RnvimrToggle<CR>" },
   { "f", lvim.icons.ui.FindFile .. "  Find File",   "<CMD>Telescope find_files<CR>" },
   { "n", lvim.icons.ui.NewFile .. "  New File",     "<CMD>ene!<CR>" },
   { "p", lvim.icons.ui.Project .. "  Projects ",    "<cmd>Telescope neovim-project<cr>" },
   { "r", lvim.icons.ui.History .. "  Recent files", "<cmd>Telescope oldfiles <CR>" },
   { "t", lvim.icons.ui.FindText .. "  Find Text",   "<CMD>Telescope live_grep<CR>" },
-  { "c", lvim.icons.ui.Gear .. "  Configuration",
-    "<CMD>edit " ..
-    require("lvim.config"):get_user_config_path() .. " <CR>", },
-  { "q", lvim.icons.ui.Close .. "  Quit", "<CMD>quit<CR>" },
+  { "q", lvim.icons.ui.Close .. "  Quit",           "<CMD>quit<CR>" },
 }
 
 -- LSP Bindings

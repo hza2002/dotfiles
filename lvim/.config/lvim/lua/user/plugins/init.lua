@@ -130,7 +130,7 @@ local code_plugins    = {
     "kevinhwang91/nvim-ufo",
     event = { "InsertEnter" },
     dependencies = { "kevinhwang91/promise-async" },
-    opts = code.ufo,
+    config = code.ufo,
     keys = {
       { "zR", function() require("ufo").openAllFolds() end,               desc = "Open all folds" },
       { "zM", function() require("ufo").closeAllFolds() end,              desc = "Close all folds" },
