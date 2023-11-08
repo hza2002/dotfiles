@@ -61,7 +61,7 @@ code.ufo = function()
     end,
   })
 
-  vim.api.nvim_create_autocmd('BufEnter', { pattern = { "*" }, command = "setlocal foldlevel=99" })
+  vim.api.nvim_create_autocmd({ 'BufWrite', 'BufEnter' }, { pattern = { "*" }, command = "setlocal foldlevel=99" })
 end
 
 return code

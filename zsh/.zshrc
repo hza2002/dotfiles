@@ -165,6 +165,7 @@ alias find='fd' # A simple, fast and user-friendly alternative to find.
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias m='tldr' # man
 alias mkdir='mkdir -pv'
+alias nn='lvim' # LunarVim
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
 alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
@@ -183,19 +184,6 @@ fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 FUNCTION 🔽 #######################
-# LunarVim
-function nn() {
-  if [[ $# -eq 0 ]]; then
-    if [ "$PWD" = "$HOME" ]; then
-      command lvim
-    else
-      command lvim .
-    fi
-  else
-    command lvim "$@"
-  fi
-}
-
 # Timing With Curl (https://susam.net/blog/timing-with-curl.html)
 function reqtime(){
   command curl -s -o /dev/null -L -w "time_namelookup: %{time_namelookup}\ntime_connect: %{time_connect}\ntime_appconnect: %{time_appconnect}\ntime_pretransfer: %{time_pretransfer}\ntime_redirect: %{time_redirect}\ntime_starttransfer: %{time_starttransfer}\ntime_total: %{time_total}\n" "https://""$@"
@@ -232,11 +220,7 @@ function raspberry() {
 function nvd() {
   if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
     if [[ $# -eq 0 ]]; then
-      if [ "$PWD" = "$HOME" ]; then
-        command lvim --headless --listen localhost:5678 > /dev/null 2>&1 &
-      else
-        command lvim . --headless --listen localhost:5678 > /dev/null 2>&1 &
-      fi
+      command lvim --headless --listen localhost:5678 > /dev/null 2>&1 &
     else
       command lvim "$@" --headless --listen localhost:5678 > /dev/null 2>&1 &
     fi
