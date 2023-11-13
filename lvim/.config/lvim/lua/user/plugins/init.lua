@@ -148,6 +148,16 @@ local code_plugins    = {
       { "[t", function() require("todo-comments").jump_prev() end, desc = "Previous todo comment" },
     },
   }, -- Finds and lists all of the TODO, HACK, BUG, etc comment
+  {
+    "jackMort/ChatGPT.nvim",
+    event = "VeryLazy",
+    config = code.ChatGPT,
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim"
+    }
+  }, -- Effortless Natural Language Generation with OpenAI's ChatGPT API
 }
 
 --#######################################
