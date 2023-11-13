@@ -134,6 +134,9 @@ eval $(thefuck --alias) # thefuck
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+[[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return # 解决emacs zsh颜色问题
+[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
+source "$HOME/.config/op/plugins.sh" # Enable 1Password ability
 # To start the agent daemon automatically
 if [ "$SSH_AUTH_SOCK" = "" -a -x /usr/bin/ssh-agent ]; then
   eval `/usr/bin/ssh-agent` > /dev/null
@@ -141,8 +144,6 @@ fi
 # Ensure ssh key is added
 ssh-add ~/.ssh/id_rsa 2> /dev/null
 ssh-add ~/.ssh/id_ed25519 2> /dev/null
-# 解决emacs zsh颜色问题
-[[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return 
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 ##########################
 
 ########################## 🔽 ALIAS 🔽 ###########################
@@ -260,3 +261,4 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
   }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################
+

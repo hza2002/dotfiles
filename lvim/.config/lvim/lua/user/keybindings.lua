@@ -44,10 +44,10 @@ lvim.keys.insert_mode["<C-a>"]       = "<esc>I"
 vim.api.nvim_set_keymap('c', '<C-a>', "<C-b>", { noremap = true })
 
 -- Navigation
-lvim.keys.insert_mode["<C-h>"]                       = "<esc><C-w>h"
-lvim.keys.insert_mode["<C-j>"]                       = "<esc><C-w>j"
-lvim.keys.insert_mode["<C-k>"]                       = "<esc><C-w>k"
-lvim.keys.insert_mode["<C-l>"]                       = "<esc><C-w>l"
+lvim.keys.insert_mode["<C-h>"]                       = "<Left>"
+lvim.keys.insert_mode["<C-j>"]                       = "<Down>"
+lvim.keys.insert_mode["<C-k>"]                       = "<Up>"
+lvim.keys.insert_mode["<C-l>"]                       = "<Right>"
 
 -- Resize
 lvim.keys.normal_mode["<C-Left>"]                    = "<cmd>lua require('tmux').resize_left()<cr>"
@@ -84,7 +84,14 @@ lvim.lsp.buffer_mappings.normal_mode["gh"]           = { vim.lsp.buf.hover, "Sho
 
 -- Telescope
 local _, actions                                     = pcall(require, "telescope.actions")
-lvim.builtin.telescope.defaults.mappings             = { i = { ["<Esc>"] = actions.close, }, }
+lvim.builtin.telescope.defaults.mappings             = {
+  i = {
+    ["<Esc>"] = actions.close,
+    -- Navigation
+    ["<C-j>"] = actions.move_selection_next,
+    ["<C-k>"] = actions.move_selection_previous,
+  },
+}
 
 -- Ranger
 lvim.builtin.which_key.mappings.e                    = { "<cmd>RnvimrToggle<CR>", "Explorer" }
