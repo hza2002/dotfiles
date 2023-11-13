@@ -68,6 +68,8 @@ forbidden_app=(
   "Barrier"
   "Tencent Lemon"
   "kitty"
+  "V2rayU"
+  "Raycast"
 )
 
 for app in "${forbidden_app[@]}"; do

@@ -2,7 +2,7 @@
 #                           YABAI                                 #
 # ############################################################### #
 # Restart Yabai
-shift + cmd + ctrl + alt - r : \
+shift + cmd + alt - y : \
     /usr/bin/env osascript <<< "display notification \"Restarting Yabai\" with title \"Yabai\""; \
     yabai --restart-service
 
@@ -14,11 +14,6 @@ shift + cmd + ctrl + alt - r : \
 #                          Window                                 #
 # ############################################################### #
 # Focus window
-# home     : yabai -m window --focus west
-# pagedown : yabai -m window --focus south
-# pageup   : yabai -m window --focus north
-# end      : yabai -m window --focus east
-
 home     : yabai -m window --focus west
 pagedown : yabai -m window --focus south
 pageup   : yabai -m window --focus north
@@ -37,8 +32,8 @@ shift - pageup   : yabai -m window --resize top:0:-50   ; yabai -m window --resi
 shift - end      : yabai -m window --resize right:50:0  ; yabai -m window --resize left:50:0
 
 # Make window fullscreen
-cmd + ctrl + alt - f         : yabai -m window --toggle zoom-fullscreen
-shift + cmd + ctrl +alt - f : yabai -m window --toggle native-fullscreen
+cmd + alt - f         : yabai -m window --toggle zoom-fullscreen
+shift + cmd + alt - f : yabai -m window --toggle native-fullscreen
 
 # ############################################################### #
 #                         Desktop                                 #
@@ -46,7 +41,7 @@ shift + cmd + ctrl +alt - f : yabai -m window --toggle native-fullscreen
 # Send window to desktop
 shift + fn - f13 : yabai -m window --space prev ; yabai -m space --focus prev
 shift + fn - f14 : yabai -m window --space next ; yabai -m space --focus next
-shift + cmd- 0 : yabai -m window --space 0 ; yabai -m space --focus 0
+shift + cmd - 0 : yabai -m window --space 0 ; yabai -m space --focus 0
 shift + cmd - 1 : yabai -m window --space 1 ; yabai -m space --focus 1
 shift + cmd - 2 : yabai -m window --space 2 ; yabai -m space --focus 2
 shift + cmd - 3 : yabai -m window --space 3 ; yabai -m space --focus 3
@@ -57,7 +52,7 @@ shift + cmd - 7 : yabai -m window --space 7 ; yabai -m space --focus 7
 shift + cmd - 8 : yabai -m window --space 8 ; yabai -m space --focus 7
 
 # Desktop focus
-cmd - tab : yabai -m space --focus recent
+shift + cmd - tab : yabai -m space --focus recent
 fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
            current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
            current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
@@ -100,7 +95,7 @@ shift + ctrl - n : yabai -m space --destroy
 #                         Monitor                                 #
 # ############################################################### #
 # Monitor focus
-shift + cmd - tab : yabai -m display --focus recent
+cmd - tab : yabai -m display --focus recent
 # 似乎显示器切换没什么用，用桌面控制即可
 
 # Send window to monitor
@@ -112,8 +107,8 @@ shift + cmd - tab : yabai -m display --focus recent
 # shift + cmd - 3 : yabai -m window --display 3 && yabai -m display --focus 3
 
 # Focus monitor
-ctrl + fn - f13 : yabai -m display --focus prev || yabai -m display --focus last
-ctrl + fn - f14 : yabai -m display --focus next || yabai -m display --focus first
+alt + fn - f13 : yabai -m display --focus prev || yabai -m display --focus last
+alt + fn - f14 : yabai -m display --focus next || yabai -m display --focus first
 # cmd - 0 : yabai -m display --focus 0
 # cmd - 1 : yabai -m display --focus 1
 # cmd - 2 : yabai -m display --focus 2

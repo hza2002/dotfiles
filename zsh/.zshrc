@@ -6,11 +6,23 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 ########################## 🔽 NET 🔽 ###########################
-export https_proxy=http://127.0.0.1:7890 
-export http_proxy=http://127.0.0.1:7890 
-export all_proxy=http://127.0.0.1:7890
-git config --global http.proxy "127.0.0.1:7890" # git 代理
-git config --global https.proxy "127.0.0.1:7890" # git 代理
+function proxy_clash() {
+  export https_proxy=http://127.0.0.1:7890 
+  export http_proxy=http://127.0.0.1:7890 
+  export all_proxy=socks5://127.0.0.1:7890
+  git config --global http.proxy "127.0.0.1:7890" # git 代理
+  git config --global https.proxy "127.0.0.1:7890" # git 代理
+}
+
+function proxy_v2ray() {
+  export http_proxy=http://127.0.0.1:1087
+  export https_proxy=http://127.0.0.1:1087
+  export ALL_PROXY=socks5://127.0.0.1:1080
+  git config --global http.proxy "127.0.0.1:1087" # git 代理
+  git config --global https.proxy "127.0.0.1:1087" # git 代理
+}
+
+proxy_clash
 ########################## 🔼 NET 🔼 ##########################
 
 ########################## 🔽 ENV 🔽 ###########################
@@ -109,6 +121,7 @@ export ZSH=$HOME/.oh-my-zsh # Path to your oh-my-zsh installation.
 POWERLEVEL9K_MODE="nerdfont-complete"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(
+  1password
   adb aliases aws
   colored-man-pages command-not-found
   docker docker-compose dotnet
@@ -135,15 +148,15 @@ eval $(thefuck --alias) # thefuck
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 [[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return # 解决emacs zsh颜色问题
-[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 source "$HOME/.config/op/plugins.sh" # Enable 1Password ability
+[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 # To start the agent daemon automatically
 if [ "$SSH_AUTH_SOCK" = "" -a -x /usr/bin/ssh-agent ]; then
   eval `/usr/bin/ssh-agent` > /dev/null
 fi
 # Ensure ssh key is added
 ssh-add ~/.ssh/id_rsa 2> /dev/null
-ssh-add ~/.ssh/id_ed25519 2> /dev/null
+ssh-add ~/.ssh/id_ed25519 2> /dev/null 
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 ##########################
 
 ########################## 🔽 ALIAS 🔽 ###########################
@@ -261,4 +274,3 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
   }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################
-
