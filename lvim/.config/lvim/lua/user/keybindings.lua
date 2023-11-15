@@ -8,15 +8,15 @@
 
 
 -- Quit
-lvim.keys.normal_mode["<C-q>"] = "<cmd>qa<cr>"
+lvim.keys.normal_mode["<C-q>"]       = "<cmd>qa<cr>"
 
 -- Accelerated jk/DownUp
-vim.api.nvim_set_keymap('n', 'j',
-  "v:count || mode(1)[0:1] == 'no' ? '<Plug>(accelerated_jk_j)' : '<Plug>(accelerated_jk_gj)'",
-  { expr = true, noremap = true, silent = true, })
-vim.api.nvim_set_keymap('n', 'k',
-  "v:count || mode(1)[0:1] == 'no' ? '<Plug>(accelerated_jk_k)' : '<Plug>(accelerated_jk_gk)'",
-  { expr = true, noremap = true, silent = true, })
+-- vim.api.nvim_set_keymap('n', 'j',
+--   "v:count || mode(1)[0:1] == 'no' ? '<Plug>(accelerated_jk_j)' : '<Plug>(accelerated_jk_gj)'",
+--   { expr = true, noremap = true, silent = true, })
+-- vim.api.nvim_set_keymap('n', 'k',
+--   "v:count || mode(1)[0:1] == 'no' ? '<Plug>(accelerated_jk_k)' : '<Plug>(accelerated_jk_gk)'",
+--   { expr = true, noremap = true, silent = true, })
 
 -- Save
 lvim.keys.insert_mode["<D-s>"]       = "<cmd>w<cr>"

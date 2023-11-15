@@ -47,10 +47,10 @@ local ui_plugins      = {
 local editor_plugins  = {
   { "tpope/vim-surround", },                                                                          -- mappings to delete, change and add surroundings
   { "tpope/vim-repeat", },                                                                            -- 使用'.'启用重复支持的插件映射
-  { "lambdalisue/suda.vim",            cmd = { "SudaRead", "SudaWrite" }, },                          -- Read or Write files with sudo command.
-  { "rainbowhxch/accelerated-jk.nvim", event = { "VeryLazy" }, },                                     -- 滚动增强
-  { "windwp/nvim-spectre",             lazy = true,                       opts = editor.spectre, },   -- Search and replace
-  { "ibhagwan/smartyank.nvim",         event = { "BufReadPost" },         opts = editor.smartyank, }, -- Smark powerful yank
+  { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                                  -- Read or Write files with sudo command.
+  -- { "rainbowhxch/accelerated-jk.nvim", event = { "VeryLazy" }, },                                     -- 滚动增强
+  { "windwp/nvim-spectre",     lazy = true,                       opts = editor.spectre, },           -- Search and replace
+  { "ibhagwan/smartyank.nvim", event = { "BufReadPost" },         opts = editor.smartyank, },         -- Smark powerful yank
   {
     "windwp/nvim-ts-autotag",
     ft = { 'html', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'tsx', 'jsx',
@@ -150,7 +150,7 @@ local code_plugins    = {
   }, -- Finds and lists all of the TODO, HACK, BUG, etc comment
   {
     "jackMort/ChatGPT.nvim",
-    event = "VeryLazy",
+    cmd = { "ChatGPT", "ChatGPTActAs", "ChatGPTEditWithInstructions", "ChatGPTRun", },
     config = code.ChatGPT,
     dependencies = {
       "MunifTanjim/nui.nvim",
