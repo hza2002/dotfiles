@@ -61,7 +61,8 @@ code.ufo = function()
     end,
   })
 
-  vim.api.nvim_create_autocmd({ 'BufWrite', 'BufEnter' }, { pattern = { "*" }, command = "setlocal foldlevel=99" })
+  -- vim.api.nvim_create_autocmd({ 'BufWrite', 'BufEnter' }, { pattern = { "*" }, command = "setlocal foldlevel=99" })
+  vim.api.nvim_create_autocmd({ 'BufAdd' }, { pattern = { "*" }, command = "setlocal foldlevel=99" })
 end
 
 code.ChatGPT = function()

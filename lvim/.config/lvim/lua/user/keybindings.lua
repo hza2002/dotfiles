@@ -100,8 +100,10 @@ lvim.builtin.which_key.mappings.e                    = { "<cmd>RnvimrToggle<CR>"
 lvim.builtin.which_key.mappings.l.o                  = { "<cmd>SymbolsOutline<cr>", "Symbols Outline" }
 
 -- Buffer
-lvim.builtin.which_key.mappings.b.b                  = { "<cmd>Telescope buffers<cr>", "Search" }
-lvim.builtin.which_key.mappings.b.p                  = { "<cmd>BufferLineCyclePrev<cr>", "Previous" }
+lvim.builtin.which_key.mappings["b"]                 = {}
+lvim.keys.normal_mode["<C-b>"]                       = "<cmd>Telescope buffers<cr>"
+-- lvim.builtin.which_key.mappings.b.b                  = { "<cmd>Telescope buffers<cr>", "Search" }
+-- lvim.builtin.which_key.mappings.b.p                  = { "<cmd>BufferLineCyclePrev<cr>", "Previous" }
 
 -- Search
 lvim.builtin.which_key.mappings["s"]                 = {

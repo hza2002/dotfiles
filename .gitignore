@@ -1,3 +1,4 @@
 lvim/.config/lvim/lazy-lock.json
 .DS_Store
 ranger/.config/ranger/__pycache__
+nvim/.config/nvim/plugin

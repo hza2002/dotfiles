@@ -161,14 +161,13 @@ ssh-add ~/.ssh/id_ed25519 2> /dev/null
 
 ########################## 🔽 ALIAS 🔽 ###########################
 ## a quick way to get out of current directory ##
-alias .....='cd ../../../../'
-alias ....='cd ../../../../'
-alias ...='cd ../../../'
+alias .....='cd ../../../..'
+alias ....='cd ../../..'
+alias ...='cd ../..'
 alias ..='cd ..'
-alias .4='cd ../../../../'
+alias .4='cd ../../../..'
 alias .5='cd ../../../../..'
 alias cd..='cd ..' ## get rid of command not found ##
-alias apt='sudo apt'
 alias c='clear'
 alias cat='bat' # A cat(1) clone with syntax highlighting and Git integration.
 alias df='duf'

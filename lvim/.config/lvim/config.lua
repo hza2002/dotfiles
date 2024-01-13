@@ -1,9 +1,10 @@
 --[[ lvim is the global options object Linters should be filled in as strings with either a global executable or a path to an executable ]]
+reload("user.neovide")     -- neovide
+
 reload("user.options")     -- options
 reload("user.keybindings") -- keymappings
 reload("user.plugins")     -- plugins
 
-reload("user.neovide")     -- neovide
 
 -- Read the docs: https://www.lunarvim.org/docs/configuration
 -- Example configs: https://github.com/LunarVim/starter.lvim
