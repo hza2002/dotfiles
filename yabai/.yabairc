@@ -24,7 +24,7 @@ yabai -m config left_padding                 "${gaps["left"]}"          # 左侧
 yabai -m config right_padding                "${gaps["right"]}"         # 右侧填充
 yabai -m config window_gap                   "${gaps["window"]}"        # 窗口间隙
 
-yabai -m config auto_balance                 off                        # 自动平衡关闭
+yabai -m config auto_balance                 on                         # 自动平衡关闭
 yabai -m config split_ratio                  0.50                       # 分屏比例 between 0 and 1 (default: 0.5)
 yabai -m config window_animation_duration    0.00                       # 窗口动画持续时间设置为0.00
                                                                         
@@ -38,12 +38,12 @@ yabai -m config mouse_action1                move                       # modifi
 yabai -m config mouse_action2                resize                     # modifier + right-click drag to resize window (default: resize)
                                                                         
 # ===== Window modifications ===================
-yabai -m config window_topmost               on                         # 浮动窗口始终位于顶部
-yabai -m config window_opacity               off                        # 窗口透明度
+yabai -m config window_topmost               off                        # 浮动窗口始终位于顶部
+yabai -m config window_opacity               on                         # 窗口透明度
 yabai -m config window_shadow                on                         # 窗口阴影(default: on, options: on, off, float)
 
-# yabai -m config active_window_opacity        1.0                        # 活动窗口透明度设置为1.0
-# yabai -m config normal_window_opacity        0.9                        # 普通窗口透明度
+yabai -m config active_window_opacity        1.0                        # 活动窗口透明度设置为1.0
+yabai -m config normal_window_opacity        0.9                        # 普通窗口透明度
 
 yabai -m config  active_window_border_color  0xffe1e3e4                 # 活动窗口的边框颜色
 yabai -m config  normal_window_border_color  0xff494d64                 # 非活动窗口的边框颜色
