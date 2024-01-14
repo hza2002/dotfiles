@@ -47,6 +47,7 @@ if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
     # fish_add_path "/usr/local/cuda-12.2/bin"
     fish_add_path "/usr/local/cuda-11.8/bin"
 else if test (uname) = "Darwin" # macOS-specific environment variable settings
+    fish_add_path "/opt/homebrew/bin"
     fish_add_path "$HOME/.local/bin"
     fish_add_path "$HOME/Qt/5.15.2/clang_64/bin"
     fish_add_path "/opt/homebrew/opt/tcl-tk/bin"
