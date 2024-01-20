@@ -26,10 +26,10 @@ local keymaps = {
     ["<Esc><Esc>"] = '<cmd>let @/=""<cr>',
 
     -- Better window movement
-    -- ["<C-h>"]      = "<C-w>h",
-    -- ["<C-j>"]      = "<C-w>j",
-    -- ["<C-k>"]      = "<C-w>k",
-    -- ["<C-l>"]      = "<C-w>l",
+    ["<C-h>"]      = "<C-w>h",
+    ["<C-j>"]      = "<C-w>j",
+    ["<C-k>"]      = "<C-w>k",
+    ["<C-l>"]      = "<C-w>l",
 
     -- Resize with arrows
     ["<C-Up>"]     = "<C-w>+",

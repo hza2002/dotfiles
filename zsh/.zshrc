@@ -23,7 +23,7 @@ function proxy_v2ray() {
 }
 
 proxy_clash
-########################## 🔼 NET 🔼 ##########################
+########################## 🔼 NET 🔼 ###########################
 
 ########################## 🔽 ENV 🔽 ###########################
 if [[ $TMUX != "" ]] then
@@ -47,9 +47,9 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
     export SDKMAN_DIR="$HOME/.sdkman"
     [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 fi
-########################## 🔼 ENV 🔼 ##########################
+########################## 🔼 ENV 🔼 ###########################
 
-########################## 🔽 PATH 🔽 ###########################
+########################## 🔽 PATH 🔽 ##########################
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
     export PATH="$HOME/bin:/usr/local/bin:$PATH"
     export PATH="$HOME/.local/bin:$PATH"
@@ -80,7 +80,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
-########################## 🔽 PERL 🔽 ###########################
+########################## 🔽 PERL 🔽 ##########################
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
     PATH="$HOME/perl5/bin${PATH:+:${PATH}}"; export PATH;
     PERL5LIB="$HOME/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
@@ -101,7 +101,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
 fi
 ########################## 🔼 NVM 🔼 ##########################
 
-########################## 🔽 CONDA 🔽 ##########################
+########################## 🔽 CONDA 🔽 ########################
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
@@ -114,9 +114,9 @@ else
     fi
 fi
 unset __conda_setup
-########################## 🔼 CONDA 🔼 ##########################
+########################## 🔼 CONDA 🔼 #########################
 
-########################## 🔽 OH MY ZSH 🔽 ###########################
+########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH=$HOME/.oh-my-zsh # Path to your oh-my-zsh installation.
 POWERLEVEL9K_MODE="nerdfont-complete"
 ZSH_THEME="powerlevel10k/powerlevel10k"
@@ -140,9 +140,9 @@ plugins=(
 fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 source $ZSH/oh-my-zsh.sh
 source ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-########################## 🔼 OH MY ZSH 🔼 ###########################
+########################## 🔼 OH MY ZSH 🔼 #####################
 
-########################## 🔽 LOAD OTHER CONFIGS 🔽 ##########################
+########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
 eval $(thefuck --alias) # thefuck
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -157,9 +157,9 @@ fi
 # Ensure ssh key is added
 ssh-add ~/.ssh/id_rsa 2> /dev/null
 ssh-add ~/.ssh/id_ed25519 2> /dev/null 
-########################## 🔼 LOAD OTHER CONFIGS 🔼 ##########################
+########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
-########################## 🔽 ALIAS 🔽 ###########################
+########################## 🔽 ALIAS 🔽 ##########################
 ## a quick way to get out of current directory ##
 alias .....='cd ../../../..'
 alias ....='cd ../../..'
