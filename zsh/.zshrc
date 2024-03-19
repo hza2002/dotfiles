@@ -101,21 +101,6 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
 fi
 ########################## 🔼 NVM 🔼 ##########################
 
-########################## 🔽 CONDA 🔽 ########################
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "$HOME/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="$HOME/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-########################## 🔼 CONDA 🔼 #########################
-
 ########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH=$HOME/.oh-my-zsh # Path to your oh-my-zsh installation.
 POWERLEVEL9K_MODE="nerdfont-complete"
@@ -177,6 +162,7 @@ alias sec='sudo env TERM="xterm-direct" emacsclient -t -a ""' # 若只有第一�
 alias find='fd' # A simple, fast and user-friendly alternative to find.
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias m='tldr' # man
+alias make='make -j' # 并行make
 alias mkdir='mkdir -pv'
 alias nn='lvim' # LunarVim
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
@@ -216,7 +202,7 @@ function raspberry() {
   elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
     current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
   fi
-  local_network_name="swu" # 局域网网络名称
+  local_network_name="home" # 局域网网络名称
   success_command="ssh localraspberry" # 要执行的命令，如果Ping成功
   failure_command="ssh remoteraspberry" # 要执行的命令，如果Ping失败
   # 使用ping命令来检测是否可以Ping通地址
@@ -273,3 +259,18 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
   }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################
+
+########################## 🔽 CONDA 🔽 ########################
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "$HOME/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="$HOME/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+########################## 🔼 CONDA 🔼 #########################

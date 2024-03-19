@@ -78,14 +78,6 @@ if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
 end
 
 ################################################################################
-# CONDA
-################################################################################
-# !! Contents within this block are managed by 'conda init' !!
-if test -f "$HOME/miniconda3/bin/conda"
-    eval "$HOME/miniconda3/bin/conda" "shell.fish" "hook" $argv | source
-end
-
-################################################################################
 # Alias
 ################################################################################
 alias .....='cd ../../../..'
@@ -154,3 +146,10 @@ set fish_cursor_external line
 # visual mode, but due to fish_cursor_default, is redundant here
 set fish_cursor_visual block
 
+################################################################################
+# CONDA
+################################################################################
+# !! Contents within this block are managed by 'conda init' !!
+if test -f "$HOME/miniconda3/bin/conda"
+    eval "$HOME/miniconda3/bin/conda" "shell.fish" "hook" $argv | source
+end

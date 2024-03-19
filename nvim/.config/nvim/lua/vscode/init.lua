@@ -1,66 +1,54 @@
--- Visual Block -- 同步选取范围给vscode😅
--- keymap("x", "`", "<Cmd>call VSCodeNotifyVisual('noop', 1)<CR>", opts)
-
--- vim.cmd([[
---         " choose all
---         nmap <D-a> ggVG<Cmd>call VSCodeNotifyVisual('noop', 1)<CR>
---         xmap <D-a> ggVG<Cmd>call VSCodeNotifyVisual('noop', 1)<CR>
-
---         " Bind D-/ to C-/ to comment
---         nmap <D-/> <C-/>
---         xmap <D-/> <C-/>
---     ]])
-
 vim.g.mapleader = " "
+
+-- synchronously executes a vscode command.
+local function call(action)
+  return string.format("<Cmd>lua require('vscode-neovim').call('%s')<CR>", action)
+end
+
+-- Asynchronously executes a vscode command.
+-- local function action(action)
+--   return string.format("<Cmd>lua require('vscode-neovim').call('%s')<CR>", action)
+-- end
 
 local keymaps = {
   insert_mode = {
-    -- Better Editor
+    -- Editor
     ["<C-e>"] = "<esc>A",
     ["<C-a>"] = "<esc>I",
+    ["<C-o>"] = call('lineBreakInsert'),
   },
 
   normal_mode = {
-    -- Better Editor
-    ["K"]          = "<Cmd>call VSCodeNotify('lineBreakInsert')<CR>",
+    -- Editor
     ["<Esc><Esc>"] = '<cmd>let @/=""<cr>',
-
-    -- Better window movement
-    ["<C-h>"]      = "<C-w>h",
-    ["<C-j>"]      = "<C-w>j",
-    ["<C-k>"]      = "<C-w>k",
-    ["<C-l>"]      = "<C-w>l",
-
-    -- Resize with arrows
-    ["<C-Up>"]     = "<C-w>+",
-    ["<C-Down>"]   = "<C-w>-",
-    ["<C-Left>"]   = "<C-w><",
-    ["<C-Right>"]  = "<C-w>>",
-
-    -- BufferLine Cycle
-    ["H"]          = "<Cmd>call VSCodeNotify('workbench.action.previousEditorInGroup')<CR>",
-    ["L"]          = "<Cmd>call VSCodeNotify('workbench.action.nextEditorInGroup')<CR>",
-
-    -- folding
-    ["za"]         = "<Cmd>call VSCodeNotify('editor.toggleFold')<CR>",
-    ["zp"]         = "<Cmd>call VSCodeNotify('editor.gotoParentFold')<CR>",
-    ["zj"]         = "<Cmd>call VSCodeNotify('editor.gotoNextFold')<CR>",
-    ["zk"]         = "<Cmd>call VSCodeNotify('editor.gotoPreviousFold')<CR>",
-    ["zC"]         = "<Cmd>call VSCodeNotify('editor.foldAll')<CR>",
-    ["z0"]         = "<Cmd>call VSCodeNotify('editor.unfoldAll')<CR>",
-
+    ["j"]          = "gj",
+    ["k"]          = "gk",
+    -- Split window
+    ["ss"]         = call('workbench.action.splitEditorRight'),
+    ["sv"]         = call('workbench.action.splitEditorDown'),
+    -- Fold
+    ["zd"]         = call('editor.removeManualFoldingRanges'),
+    ["zo"]         = call('editor.unfold'),
+    ["zO"]         = call('editor.unfoldRecursively'),
+    ["zc"]         = call('editor.fold'),
+    ["zC"]         = call('editor.foldRecursively'),
+    ["za"]         = call('editor.toggleFold'),
+    ["zM"]         = call('editor.foldAll'),
+    ["zR"]         = call('editor.unfoldAll'),
+    ["zp"]         = call('editor.gotoParentFold'),
+    ["zj"]         = call('editor.gotoNextFold'),
+    ["zk"]         = call('editor.gotoPreviousFold'),
     -- Lsp
-    ["gh"]         = "vim.lsp.buf.hover",
-    ["gr"]         = "<Cmd>call VSCodeNotify('editor.action.goToReferences')<CR>",
-
-    -- terminal
-    ["<C-\\>"]     = "<Cmd>call VSCodeNotify('workbench.action.terminal.toggleTerminal')<CR>",
+    ["gr"]         = call('editor.action.goToReferences'),
+    ["gR"]         = call('editor.action.referenceSearch.trigger'),
   },
 
   visual_mode = {
-    -- Better indenting
-    ["<"] = "<gv",
-    [">"] = ">gv",
+    -- Fold
+    ["zf"] = call('editor.createFoldingRangeFromSelection'),
+    -- Indent
+    ["<"]  = call('editor.action.outdentLines'),
+    [">"]  = call('editor.action.indentLines'),
   },
 
   visual_block_mode = {
@@ -69,27 +57,28 @@ local keymaps = {
 }
 
 local leader = {
-  -- insert_mode = {
-  -- },
-
   normal_mode = {
-    ["<leader>q"] = "<cmd>confirm q<CR>",
-    ["<leader>/"] = "<Cmd>call VSCodeNotify('editor.action.commentLine')<CR>",
-    ["<leader>e"] = "<Cmd>call VSCodeNotify('workbench.view.explorer')<CR>",
-    ["<leader>c"] = "<Cmd>call VSCodeNotify('workbench.action.closeActiveEditor')<CR>",
+    -- Editor
+    ["<leader>."] = call('breadcrumbs.toggleToOn'),
+    ["<leader>/"] = call('editor.action.commentLine'),
+    ["<leader>:"] = call('workbench.action.gotoLine'),
+    ["<leader>c"] = call('workbench.action.closeActiveEditor'),
+    ["<leader>q"] = call('editor.action.quickFix'),
     -- file
-    ["<leader>f"] = "<Cmd>call VSCodeNotify('workbench.action.quickOpen')<CR>",
-    ["<leader>r"] = "<Cmd>call VSCodeNotify('workbench.action.openRecent')<CR>",
+    ["<leader>f"] = call('workbench.action.quickOpen'),
+    ["<leader>r"] = call('workbench.action.openRecent'),
+    --Lsp
+    ["<leader>lr"] = call('editor.action.rename'),
+    ["<leader>lf"] = call('editor.action.formatDocument'),
+    ["<leader>ls"] = call('workbench.action.gotoSymbol'),
     -- window
-    ["<leader>w"] = "<Cmd>call VSCodeNotify('workbench.action.closeActiveEditor')<CR>",
-    -- ["<leader>h"] = "<Cmd>call VSCodeNotify('workbench.action.moveActiveEditorGroupLeft')<CR>",
-    -- ["<leader>j"] = "<Cmd>call VSCodeNotify('workbench.action.moveActiveEditorGroupDown')<CR>",
-    -- ["<leader>k"] = "<Cmd>call VSCodeNotify('workbench.action.moveActiveEditorGroupUp')<CR>",
-    -- ["<leader>l"] = "<Cmd>call VSCodeNotify('workbench.action.moveActiveEditorGroupRight')<CR>",
+    ["<leader>wm"] = call('workbench.action.toggleEditorWidths'), -- max/min
+    ["<leader>we"] = call('workbench.action.evenEditorWidths'),   -- equal
   },
 
-  -- visual_mode = {
-  -- },
+  visual_mode = {
+    ["<leader>/"] = "<Cmd>lua require('vscode-neovim').call('editor.action.commentLine')<CR>",
+  },
 
   -- visual_block_mode = {
   -- },

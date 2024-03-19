@@ -17,7 +17,7 @@ sudo yabai --load-sa
 
 # ===== Tiling setting =========================
 yabai -m config layout                       bsp                        # 布局设置为二叉分割(bsp or float)
-                                                                        
+
 yabai -m config top_padding                  "${gaps["top"]}"           # 顶部填充
 yabai -m config bottom_padding               "${gaps["bottom"]}"        # 底部填充
 yabai -m config left_padding                 "${gaps["left"]}"          # 左侧填充
@@ -27,16 +27,16 @@ yabai -m config window_gap                   "${gaps["window"]}"        # 窗口
 yabai -m config auto_balance                 on                         # 自动平衡关闭
 yabai -m config split_ratio                  0.50                       # 分屏比例 between 0 and 1 (default: 0.5)
 yabai -m config window_animation_duration    0.00                       # 窗口动画持续时间设置为0.00
-                                                                        
+
 # ===== Mouse support ==========================
 yabai -m config focus_follows_mouse          off                        # 焦点跟随鼠标(default: off, options: off, autoraise, autofocus)
 yabai -m config mouse_follows_focus          off                        # 鼠标跟随焦点(default: off)
 
-yabai -m config mouse_modifier               fn                         # 鼠标修饰键(default: fn)
+yabai -m config mouse_modifier               alt                        # 鼠标修饰键(default: fn)
 yabai -m config mouse_drop_action            swap                       # 鼠标拖放动作设置为交换
 yabai -m config mouse_action1                move                       # modifier + left-click drag to move window (default: move)
 yabai -m config mouse_action2                resize                     # modifier + right-click drag to resize window (default: resize)
-                                                                        
+
 # ===== Window modifications ===================
 yabai -m config window_topmost               off                        # 浮动窗口始终位于顶部
 yabai -m config window_opacity               on                         # 窗口透明度
@@ -61,7 +61,7 @@ forbidden_app=(
   "Dash"
   "Karabiner-Elements"
   "Karabiner-EventViewer"
-  "iStat Menus" 
+  "iStat Menus"
   "系统设置"
   "LyricsX"
   "JetBrains Toolbox"
