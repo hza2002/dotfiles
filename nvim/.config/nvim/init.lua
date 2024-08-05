@@ -1,5 +1,5 @@
 if vim.g.vscode then
-  require("vscode")
+  require("code")
 else
   require("user")
 end

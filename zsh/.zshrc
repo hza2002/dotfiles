@@ -7,17 +7,13 @@ fi
 
 ########################## 🔽 NET 🔽 ###########################
 function proxy_clash() {
-  export https_proxy=http://127.0.0.1:7890 
-  export http_proxy=http://127.0.0.1:7890 
-  export all_proxy=socks5://127.0.0.1:7890
+  export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890
   git config --global http.proxy "127.0.0.1:7890" # git 代理
   git config --global https.proxy "127.0.0.1:7890" # git 代理
 }
 
 function proxy_v2ray() {
-  export http_proxy=http://127.0.0.1:1087
-  export https_proxy=http://127.0.0.1:1087
-  export ALL_PROXY=socks5://127.0.0.1:1080
+  export https_proxy=http://127.0.0.1:1087 http_proxy=http://127.0.0.1:1087 all_proxy=socks5://127.0.0.1:1080
   git config --global http.proxy "127.0.0.1:1087" # git 代理
   git config --global https.proxy "127.0.0.1:1087" # git 代理
 }
@@ -41,11 +37,15 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variabl
     export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
 source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
-    export HOMEBREW_BOTTLE_DOMAIN=https://mirrors.ustc.edu.cn/homebrew-bottles
+    # brew 清华源
+    export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
+    export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
+    export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
+    export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
+    export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+
     export JAVA_HOME=$(/usr/libexec/java_home) # Path to Java
     export MATLAB_ROOT=/Applications/MATLAB_R2022b_Beta.app
-    export SDKMAN_DIR="$HOME/.sdkman"
-    [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
@@ -77,6 +77,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
     export PATH="/Applications/gtkwave.app/Contents/Resources/bin/:$PATH"
     export PATH=$PATH:/usr/local/mysql/bin
     export PATH=$PATH:$HOME/.spicetify
+    export PATH="$HOME/.jenv/bin:$PATH" \ eval "$(jenv init -)"
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
@@ -102,6 +103,7 @@ fi
 ########################## 🔼 NVM 🔼 ##########################
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
+export ZSH_COMPDUMP=$ZSH/cache/.zcompdump-$HOST
 export ZSH=$HOME/.oh-my-zsh # Path to your oh-my-zsh installation.
 POWERLEVEL9K_MODE="nerdfont-complete"
 ZSH_THEME="powerlevel10k/powerlevel10k"
@@ -133,15 +135,11 @@ eval $(thefuck --alias) # thefuck
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 [[ $TERM == "dumb" ]] && unsetopt zle && PS1='$ ' && return # 解决emacs zsh颜色问题
-source "$HOME/.config/op/plugins.sh" # Enable 1Password ability
 [ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 # To start the agent daemon automatically
 if [ "$SSH_AUTH_SOCK" = "" -a -x /usr/bin/ssh-agent ]; then
   eval `/usr/bin/ssh-agent` > /dev/null
 fi
-# Ensure ssh key is added
-ssh-add ~/.ssh/id_rsa 2> /dev/null
-ssh-add ~/.ssh/id_ed25519 2> /dev/null 
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
@@ -155,10 +153,9 @@ alias .5='cd ../../../../..'
 alias cd..='cd ..' 
 alias c='clear'
 alias cat='bat' # A cat(1) clone with syntax highlighting and Git integration.
+alias clear='clear -x' # Clear the screen but keep the terminal's scrollback buffer:
 alias df='duf'
 alias du='dust'
-alias ec='env TERM="xterm-direct" emacsclient -t -a ""' # 其中-a表示alternative-editor，用于指定无法连接emacs server时使用的编辑器。空字符串有特殊意义，表示先启动emacs server，再重新连接。
-alias sec='sudo env TERM="xterm-direct" emacsclient -t -a ""' # 若只有第一行，执行sudo ec file会找不到命令，因为root用户并没有定义ec别名。因此定义sec，作为ec的sudo版本。
 alias find='fd' # A simple, fast and user-friendly alternative to find.
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias m='tldr' # man
@@ -183,38 +180,6 @@ fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 FUNCTION 🔽 #######################
-# Timing With Curl (https://susam.net/blog/timing-with-curl.html)
-function reqtime(){
-  command curl -s -o /dev/null -L -w "time_namelookup: %{time_namelookup}\ntime_connect: %{time_connect}\ntime_appconnect: %{time_appconnect}\ntime_pretransfer: %{time_pretransfer}\ntime_redirect: %{time_redirect}\ntime_starttransfer: %{time_starttransfer}\ntime_total: %{time_total}\n" "https://""$@"
-  #    time_namelookup: took from the start until the name resolving was completed.
-  #       time_connect: took from the start until the TCP connect to the remote host (or proxy) was completed.
-  #    time_appconnect: took from the start until the SSL/SSH/etc connect/handshake to the remote host was completed. (Added in 7.19.0)
-  #   time_pretransfer: took from the start until the file transfer was just about to begin. This includes all pre-transfer commands and negotiations that are specific to the particular protocol(s) involved.
-  #      time_redirect: took for all redirection steps include name lookup, connect, pretransfer and transfer before the final transaction was started. time_redirect shows the complete execution time for multiple redirections. (Added in 7.12.3)
-  # time_starttransfer: took from the start until the first byte was just about to be transferred. This includes time_pretransfer and also the time the server needed to calculate the result.
-  #         time_total: The total time, in seconds, that the full operation lasted. The time will be displayed with millisecond resolution.
-}
-
-# ssh choose local or remote raspberry
-function raspberry() {
-  if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
-    current_network_name=$(nmcli -t -f active,ssid dev wifi show | grep SSID | awk '{print $2}' | tr -d '\n') # 当前所在网络名称
-  elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
-    current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
-  fi
-  local_network_name="home" # 局域网网络名称
-  success_command="ssh localraspberry" # 要执行的命令，如果Ping成功
-  failure_command="ssh remoteraspberry" # 要执行的命令，如果Ping失败
-  # 使用ping命令来检测是否可以Ping通地址
-  if [ "$current_network_name" = "$local_network_name" ]; then
-    # 如果Ping成功，则执行成功命令
-    eval "$success_command"
-  else
-    # 如果Ping失败，则执行失败命令
-    eval "$failure_command"
-  fi
-}
-
 # neovide server
 function nvd() {
   if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
@@ -229,10 +194,6 @@ function nvd() {
 }
 
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
-  # Spark LLM from  iFLY TEK
-  function spk() {
-    command python3 ~/repo/spark/run.py "$@"
-  }
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
   # update sketchybar after brew commands
   function brew() {

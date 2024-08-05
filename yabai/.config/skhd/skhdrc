@@ -52,7 +52,7 @@ shift + fn - f14 : yabai -m window --space next ; yabai -m space --focus next
 # shift + cmd - 8 : yabai -m window --space 8 ; yabai -m space --focus 7
 
 # Desktop focus
-cmd - tab : yabai -m space --focus recent
+# cmd - tab : yabai -m space --focus recent
 fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
            current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
            current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
@@ -95,7 +95,7 @@ shift + cmd + ctrl + alt - n : yabai -m space --destroy
 #                         Monitor                                 #
 # ############################################################### #
 # Monitor focus
-# cmd - tab : yabai -m display --focus recent
+cmd - tab : yabai -m display --focus recent
 # 似乎显示器切换没什么用，用桌面控制即可
 
 # Send window to monitor
@@ -107,15 +107,9 @@ shift + cmd + ctrl + alt - n : yabai -m space --destroy
 # shift + cmd - 3 : yabai -m window --display 3 && yabai -m display --focus 3
 
 # Focus monitor
-alt + fn - f13 : yabai -m display --focus prev || yabai -m display --focus last
-alt + fn - f14 : yabai -m display --focus next || yabai -m display --focus first
+# alt + fn - f13 : yabai -m display --focus prev || yabai -m display --focus last
+# alt + fn - f14 : yabai -m display --focus next || yabai -m display --focus first
 # cmd - 0 : yabai -m display --focus 0
 # cmd - 1 : yabai -m display --focus 1
 # cmd - 2 : yabai -m display --focus 2
 # cmd - 3 : yabai -m display --focus 3
-
-# ############################################################### #
-#                           Other                                 #
-# ############################################################### #
-
-# osascript -e 'tell application "Spotify" to play next track'
