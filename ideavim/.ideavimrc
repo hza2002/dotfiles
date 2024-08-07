@@ -1,0 +1,177 @@
+" ================================================================================================
+" = Plugins =
+" ================================================================================================
+set easymotion
+set NERDTree " https://raw.githubusercontent.com/wiki/JetBrains/ideavim/NERDTree-support.md
+set surround " https://github.com/tpope/vim-surround/blob/master/doc/surround.txt
+set highlightedyank
+set matchit
+set vim-paragraph-motion
+set which-key
+" ================================================================================================
+" = Plugin settings =
+" ================================================================================================
+" nmap f <Plug>(easymotion-s)
+" map <leader>f <Plug>(easymotion-s)
+" map <leader>e <Plug>(easymotion-f)
+" IdeaVimExtension
+set keep-english-in-normal
+" ================================================================================================
+" = Basic options =
+" ================================================================================================
+set clipboard=unnamed,unnamedplus,ideaput " Uses the IDEs own paste implementation for put operations
+set hlsearch  " Highlight matches with the last search pattern
+set history=1000 " Number of command-lines that are remembered
+set incsearch  " Enable incremental searching
+set showcmd " Show (partial) command in the status bar
+set showmode " Show the current mode in the status bar
+set smartcase " Use case sensitive search if any character in the pattern is uppercase
+set visualbell " When on, prevents beeping on error
+" IdeaVim options mapped to IntelliJ-based IDE settings
+set scrolloff=5 " Minimal number of lines above and below the cursor
+" IdeaVim options for IntelliJ-based IDE features
+set number " Show line numbers. Maps to the editor's local setting in the View
+set relativenumber " Show line numbers relative to the current line
+" IdeaVim only options
+set ideajoin " enable join via the IDE https://github.com/JetBrains/ideavim/blob/master/doc/ideajoin-examples.md
+" ================================================================================================
+" = Keymaps =
+" ================================================================================================
+" Editor
+inoremap <S-delete> <delete>
+nmap $ g$
+nmap ^ g^
+vnoremap p "_dP
+nnoremap K i<CR><Esc>
+nnoremap <Esc><Esc> :nohlsearch<CR>
+inoremap <C-e> <Esc>A
+inoremap <C-a> <Esc>I
+nmap L <Action>(NextTab)
+nmap H <Action>(PreviousTab)
+nmap <A-s> <Action>(SurroundWith)
+vmap <A-s> <Action>(SurroundWith)
+" multiple cursors
+nmap <A-k> <Action>(EditorCloneCaretAbove)
+nmap <A-j> <Action>(EditorCloneCaretBelow)
+" Window navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+" Resize splits with arrow keys
+nmap <C-up> <Action>(StretchSplitToTop)
+nmap <C-down> <Action>(StretchSplitToBottom)
+nmap <C-left> <Action>(StretchSplitToLeft)
+nmap <C-right> <Action>(StretchSplitToRight)
+" Indentation
+nnoremap < <<
+nnoremap > >>
+vnoremap < <gv
+vnoremap > >gv
+" Search Center
+nmap n nzz
+nmap N Nzz
+vmap n nzz
+vmap N Nzz
+" LSP
+nmap gd <Action>(GotoDeclaration)
+nmap ge <Action>(GotoNextError)
+nmap gi <Action>(GotoImplementation)
+nmap gt <Action>(GotoTypeDeclaration)
+nmap gs <Action>(GotoSuperMethod)
+nmap gh <Action>(ShowHoverInfo)
+nmap gr <Action>(RecentFiles)
+" Fold
+nmap za <Action>(ExpandCollapseToggleAction) " 切换折叠
+" Split the screens
+" nnoremap ss <C-w>v
+" nnoremap sv <C-w>s
+nmap [[ <Action>(MethodUp) " 上一个方法
+nmap ]] <Action>(MethodDown) " 下一个方法
+nmap (( <Action>(VcsShowPrevChangeMarker) " 上一个修改点
+nmap )) <Action>(VcsShowNextChangeMarker) " 下一个修改点
+nmap [e <Action>(GotoPreviousError) " 上一个异常
+nmap ]e <Action>(GotoNextError) " 下一个异常
+" ================================================================================================
+" = Leader Keymaps =
+" ================================================================================================
+let mapleader = "\<space>"
+set timeoutlen=5000 " 设置超时长度
+" f: Find
+let g:WhichKeyDesc_Find = "<leader>f Find"
+let g:WhichKeyDesc_Find_FindFile = "<leader>ff FindFile"
+nmap <leader>ff <Action>(GotoFile)
+let g:WhichKeyDesc_Find_FindFileLocation = "<leader>fl FindFileLocation"
+nmap <leader>fl <Action>(SelectInProjectView)
+let g:WhichKeyDesc_Find_FindText = "<leader>ft FindText"
+nmap <leader>ft <Action>(FindInPath)
+let g:WhichKeyDesc_Find_Commands = "<leader>fc Commands"
+nmap <leader>fc <Action>(GotoAction)
+let g:WhichKeyDesc_Find_OpenedProject = "<leader>fp OpenedProject"
+nmap <leader>fp <Action>(OpenProjectWindows)
+let g:WhichKeyDesc_Find_RecentLocations = "<leader>fr RecentLocations"
+nmap <Leader>fr <Action>(RecentLocations)
+" g: Git
+let g:WhichKeyDesc_Git = "<leader>g Git"
+let g:WhichKeyDesc_Git_RollbackHunk = "<leader>gr RollbackHunk"
+nmap <leader>gr :action Vcs.RollbackChangedLines<CR>
+" l: lsp: Language server protocol
+let g:WhichKeyDesc_LSP = "<leader>l LSP"
+let g:WhichKeyDesc_LSP_Rename = "<leader>lr Rename"
+nmap <leader>lr <Action>(RenameElement)
+let g:WhichKeyDesc_LSP_ReRun = "<leader>la ReRun"
+nmap <leader>la <Action>(Rerun)
+let g:WhichKeyDesc_LSP_Format = "<leader>lf Format"
+nmap <leader>lF <Action>(ReformatCode) \| <Action>(OptimizeImports)
+xmap <leader>lf <Action>(ReformatCode)
+let g:WhichKeyDesc_LSP_ReRunTests = "<leader>lt ReRunTests"
+nmap <leader>lt <Action>(RerunTests)
+" s: Show ⭐️
+let g:WhichKeyDesc_Show = "<leader>s Show"
+let g:WhichKeyDesc_Show_FileStructure = "<leader>ss ShowFileStructure"
+nmap <leader>ss <Action>(FileStructurePopup)
+let g:WhichKeyDesc_Show_Bookmarks = "<leader>sb ShowBookmarks"
+nmap <leader>sb <Action>(ShowBookmarks)
+let g:WhichKeyDesc_Show_ParameterInfo = "<leader>sb ShowParameterInfo"
+nmap <leader>sp <Action>(ParameterInfo)
+" /: Comment toggle
+let g:WhichKeyDesc_CommentByLine = "<leader>/ CommentByLine"
+nmap <leader>/ <Action>(CommentByLineComment)
+xmap <leader>/ <Action>(CommentByLineComment)
+let g:WhichKeyDesc_CommentByBlock = "<leader>? CommentByBlock"
+nmap <leader>? <Action>(CommentByBlockComment)
+xmap <leader>? <Action>(CommentByBlockComment)
+" c: Close
+let g:WhichKeyDesc_CloseEditor = "<leader>c CloseEditor"
+nmap <leader>c <Action>(CloseEditor)
+" e: Explorer
+let g:WhichKeyDesc_ToggleExplorerOrExtract = "<leader>e Explorer"
+nmap <leader>e <Action>(ActivateProjectToolWindow)
+" h: History
+let g:WhichKeyDesc_History = "<leader>h history"
+nmap <leader>h <Action>(Vcs.ShowTabbedFileHistory)
+" z: Zen Mode
+let g:WhichKeyDesc_Zen_Mode = "<leader>z Zen"
+nmap <leader>z <Action>(ToggleDistractionFreeMode)
+" folding
+let g:WhichKeyDesc_Fold = "<leader>- Fold"
+nmap <leader>- <Action>(CollapseRegion)
+let g:WhichKeyDesc_Unfold = "<leader>+ Unfold"
+nmap <leader>+ <Action>(ExpandRegion)
+" ================================================================================================
+" = IDE specific options =
+" ================================================================================================
+if has('ide')
+  " mappings and options that exist only in IdeaVim
+  if &ide =~? 'intellij idea'
+    if &ide =~? 'community'
+      " some mappings and options for IntelliJ IDEA Community Edition
+    elseif &ide =~? 'ultimate'
+      " some mappings and options for IntelliJ IDEA Ultimate Edition
+    endif
+  elseif &ide =~? 'pycharm'
+    " PyCharm specific mappings and options
+  endif
+else
+  " some mappings for Vim/Neovim
+endif

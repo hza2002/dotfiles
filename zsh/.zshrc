@@ -77,7 +77,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
     export PATH="/Applications/gtkwave.app/Contents/Resources/bin/:$PATH"
     export PATH=$PATH:/usr/local/mysql/bin
     export PATH=$PATH:$HOME/.spicetify
-    export PATH="$HOME/.jenv/bin:$PATH" \ eval "$(jenv init -)"
+    export PATH="$HOME/.jenv/bin:$PATH" && eval "$(jenv init -)"
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
@@ -109,17 +109,17 @@ POWERLEVEL9K_MODE="nerdfont-complete"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(
   1password
-  adb aliases aws
+  aliases aws
   colored-man-pages command-not-found
   docker docker-compose dotnet
   extract
-  fasd fzf-tab fd
+  fasd fzf-tab
   gcloud gem gh git gitignore golang gradle
   httpie
   mvn
   node npm nvm
   perl pip python
-  ripgrep rust rvm
+  rust rvm
   safe-paste 
   themes
   zsh-vi-mode z zsh-autosuggestions zsh-syntax-highlighting
