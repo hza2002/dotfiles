@@ -140,6 +140,7 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 if [ "$SSH_AUTH_SOCK" = "" -a -x /usr/bin/ssh-agent ]; then
   eval `/usr/bin/ssh-agent` > /dev/null
 fi
+export HISTCONTROL='ignoreboth:erasedups' # https://serverfault.com/questions/48769/avoid-to-keep-command-in-history
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
