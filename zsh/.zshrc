@@ -1,7 +1,6 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
 export LANG=en_US.UTF-8 
-export TERM="${TMUX:+tmux-256color}${TMUX:-xterm-256color}"
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
   # ysyx
   export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
@@ -51,7 +50,7 @@ export ZSH="$HOME/.oh-my-zsh" # Path to your oh-my-zsh installation.
 export ZSH_COMPDUMP="ZSH_CACHE_DIR/.zcompdump-$HOST"
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
-  command-not-found timer shell-proxy
+  command-not-found shell-proxy
   # Commands
   copypath extract perms qrcode
   # Shortcut
@@ -67,12 +66,13 @@ source $ZSH/oh-my-zsh.sh
 ########################## 🔼 OH MY ZSH 🔼 #####################
 
 ########################## 🔽 BIND KEY 🔽 ######################
-function bind_for_modes() { bindkey -M vicmd $1 $2 && bindkey -M viins $1 $2 }
-bind_for_modes "\e[A" history-substring-search-up # zsh-history-substring-search: Up arrow
-bind_for_modes "\e[B" history-substring-search-down # zsh-history-substring-search: Down arrow
-bind_for_modes "\es" sudo-command-line # sudo: alt-s
-bind_for_modes "\ef" fuck-command-line # the fuck: alt-f
-bind_for_modes "\em" tldr-command-line # tldr: alt-m
+function bindkey_zsh_vim() { bindkey -M vicmd $1 $2 && bindkey -M viins $1 $2 }
+bindkey_zsh_vim "\e[A" history-substring-search-up # zsh-history-substring-search: Up arrow
+bindkey_zsh_vim "\e[B" history-substring-search-down # zsh-history-substring-search: Down arrow
+bindkey_zsh_vim "^Z" fancy-ctrl-z # fancy-ctrl-z
+bindkey_zsh_vim "\es" sudo-command-line # sudo: alt-s
+bindkey_zsh_vim "\ef" fuck-command-line # the fuck: alt-f
+bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 ########################## 🔼 BIND KEY 🔼 ######################
 
 ########################## 🔽 NET 🔽 ###########################
@@ -86,10 +86,6 @@ eval "$(starship init zsh)" # Customizable prompt for any shell
 source <(fzf --zsh) # Set up fzf key bindings and fuzzy completion
 eval "$(fnm env --use-on-cd --shell zsh)" # fnm: Fast and simple Node.js version manager
 eval "$(jenv init -)" # jenv: Manage your Java environment
-# To start the agent daemon automatically
-if [ "$SSH_AUTH_SOCK" = "" -a -x /usr/bin/ssh-agent ]; then
-  eval `/usr/bin/ssh-agent` > /dev/null
-fi
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
