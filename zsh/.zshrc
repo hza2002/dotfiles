@@ -9,7 +9,6 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variabl
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
   source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
-  export HISTCONTROL='ignoreboth:erasedups' # https://serverfault.com/questions/48769/avoid-to-keep-command-in-history
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
@@ -50,7 +49,7 @@ export ZSH="$HOME/.oh-my-zsh" # Path to your oh-my-zsh installation.
 export ZSH_COMPDUMP="ZSH_CACHE_DIR/.zcompdump-$HOST"
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
-  command-not-found shell-proxy
+  colored-man-pages command-not-found shell-proxy
   # Commands
   copypath extract perms qrcode
   # Shortcut
@@ -59,9 +58,11 @@ plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   aliases common-aliases 
   brew docker-compose git golang rust ssh zoxide 
   # Custom
-  autoupdate fzf-tab you-should-use
-  zsh-autosuggestions zsh-syntax-highlighting zsh-vi-mode zsh-history-substring-search
+  autoupdate fzf-tab you-should-use iterm2-shell-integration
+  zsh-lazyload zsh-vi-mode zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
 )
+fpath+="${ZSH_CUSTOM:-"$ZSH/custom"}/plugins/zsh-completions/src" # https://github.com/zsh-users/zsh-completions/issues/603
+zvm_after_init_commands+=("source $HOME/.config/fzf/fzfrc.sh") # zvm and fzf conflict
 source $ZSH/oh-my-zsh.sh
 ########################## 🔼 OH MY ZSH 🔼 #####################
 
@@ -82,10 +83,11 @@ proxy enable
 ########################## 🔼 NET 🔼 ###########################
 
 ########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
+setopt HIST_IGNORE_ALL_DUPS # Remove duplicate older commands
+setopt HIST_IGNORE_SPACE    # Remove commands with leading space
 eval "$(starship init zsh)" # Customizable prompt for any shell
-source <(fzf --zsh) # Set up fzf key bindings and fuzzy completion
-eval "$(fnm env --use-on-cd --shell zsh)" # fnm: Fast and simple Node.js version manager
-eval "$(jenv init -)" # jenv: Manage your Java environment
+lazyload fnm node npm npx -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
+lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
