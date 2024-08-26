@@ -1,29 +1,30 @@
 #!/usr/bin/env bash
 
 # ===== Loading Scripting Additions ============
-# 监听信号，并在dock重启后重新加载yabai
-yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 # 使用sudo来运行yabai，并加载状态保存文件
 sudo yabai --load-sa
+# 监听信号，并在dock重启后重新加载yabai
+yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 
 # ===== Tiling setting =========================
 yabai -m config layout                       bsp                        # 布局设置为二叉分割(bsp or float)
+yabai -m config top_padding                  8                          # 顶部填充
+yabai -m config bottom_padding               8                          # 底部填充
+yabai -m config left_padding                 8                          # 左侧填充
+yabai -m config right_padding                8                          # 右侧填充
+yabai -m config window_gap                   10                         # 窗口间隙
 
-yabai -m config top_padding                  6                          # 顶部填充
-yabai -m config bottom_padding               6                          # 底部填充
-yabai -m config left_padding                 6                          # 左侧填充
-yabai -m config right_padding                6                          # 右侧填充
-yabai -m config window_gap                   6                          # 窗口间隙
-
-yabai -m config auto_balance                 on                         # 自动平衡
+yabai -m config auto_balance                 off                        # 自动平衡
 yabai -m config split_ratio                  0.50                       # 分屏比例 between 0 and 1 (default: 0.5)
 yabai -m config window_animation_duration    0.00                       # 窗口动画持续时间设置为0.00
+yabai -m config window_animation_easing      ease_out_quint             # 窗口动画种类
 
 # ===== Mouse support ==========================
 yabai -m config focus_follows_mouse          off                        # 焦点跟随鼠标(default: off, options: off, autoraise, autofocus)
 yabai -m config mouse_follows_focus          off                        # 鼠标跟随焦点(default: off)
 
 yabai -m config mouse_modifier               alt                        # 鼠标修饰键(default: fn)
+yabai -m config insert_feedback_color        0xff9dd274                 # 插入窗口提示颜色
 yabai -m config mouse_drop_action            swap                       # 鼠标拖放动作设置为交换
 yabai -m config mouse_action1                move                       # modifier + left-click drag to move window (default: move)
 yabai -m config mouse_action2                resize                     # modifier + right-click drag to resize window (default: resize)
@@ -32,8 +33,9 @@ yabai -m config mouse_action2                resize                     # modifi
 yabai -m config window_shadow                float                      # 窗口阴影(default: on, options: on, off, float)
 
 yabai -m config window_opacity               on                         # 窗口透明度
-yabai -m config active_window_opacity        0.97                       # 活动窗口透明度设置为1.0
-yabai -m config normal_window_opacity        0.9                        # 普通窗口透明度
+yabai -m config window_opacity_duration      0.1                        # 透明度切换动画时长
+yabai -m config active_window_opacity        1.0                        # 活动窗口透明度设置为1.0
+yabai -m config normal_window_opacity        0.8                        # 普通窗口透明度
 
 yabai -m config window_origin_display        default                    # 窗口起始显示器设置为默认
 yabai -m config window_placement             second_child               # 窗口位置设置为第二个子窗口
@@ -46,7 +48,6 @@ forbidden_app=(
   "系统设置"
   "JetBrains Toolbox"
   "Tencent Lemon"
-  "V2rayU"
   "wine64-preloader"
   "Raycast"
 )
