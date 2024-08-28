@@ -45,6 +45,7 @@ forbidden_app=(
   "Karabiner-Elements"
   "Karabiner-EventViewer"
   "iStat Menus"
+  "iBar"
   "系统设置"
   "JetBrains Toolbox"
   "Tencent Lemon"
