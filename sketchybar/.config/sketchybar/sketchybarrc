@@ -71,15 +71,16 @@ source "$ITEM_DIR/front_app.sh"
 # source "$ITEM_DIR/fortune.sh"
 
 # Center
-source "$ITEM_DIR/spotify.sh"
+# source "$ITEM_DIR/spotify.sh"
 
 # Right
 source "$ITEM_DIR/calendar.sh"
 # source "$ITEM_DIR/alias/weather.sh"
 source "$ITEM_DIR/alias/focusmodes.sh"
-source "$ITEM_DIR/brew.sh"
-source "$ITEM_DIR/network.sh"
+source "$ITEM_DIR/svim.sh"
+# source "$ITEM_DIR/brew.sh"
 source "$ITEM_DIR/wifi.sh"
+source "$ITEM_DIR/network.sh"
 # source "$ITEM_DIR/github.sh"
 source "$ITEM_DIR/battery.sh"
 source "$ITEM_DIR/volume.sh"
@@ -87,6 +88,9 @@ source "$ITEM_DIR/volume.sh"
 source "$ITEM_DIR/alias/sensor.sh"
 source "$ITEM_DIR/mem.sh"
 source "$ITEM_DIR/cpu.sh"
+
+sketchybar --hotload on
+
 # Forcing all item scripts to run (never do this outside of sketchybarrc)
 sketchybar --update
 

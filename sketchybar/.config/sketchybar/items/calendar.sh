@@ -3,7 +3,6 @@
 calendar=(
   icon=cal
   icon.font="$FONT:Black:12.0"
-  icon.padding_right=0
   label.width=45
   label.align=right
   padding_left=15

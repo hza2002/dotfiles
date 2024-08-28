@@ -26,8 +26,6 @@ do
     label.y_offset=-1
     background.color="$BACKGROUND_1"
     background.border_color="$BACKGROUND_2"
-    background.drawing=off
-    label.drawing=off
     script="$PLUGIN_DIR/space.sh"
   )
 
@@ -54,6 +52,5 @@ separator=(
 
 sketchybar --add bracket spaces_bracket '/space\..*/'  \
            --set spaces_bracket "${spaces_bracket[@]}" \
-                                                       \
            --add item separator left                   \
            --set separator "${separator[@]}"
