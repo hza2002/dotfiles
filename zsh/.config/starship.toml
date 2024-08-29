@@ -36,7 +36,7 @@ format = "[$symbol($version )]($style)"
 [cmd_duration]
 min_time = 0
 show_milliseconds	= true
-format = "took [$duration](bold yellow)"
+format = "[󱎫 $duration](bold yellow)"
 
 [conda]
 symbol = "🅒  "

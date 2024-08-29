@@ -35,7 +35,6 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variabl
   export PATH="$PATH:$HOME/go/bin"
   export PATH="$PATH:$HOME/.local/share/coursier/bin" # coursier install directory
   export PATH="$PATH:$HOME/julia-1.9.2/bin"
-  # export PATH=/usr/local/cuda-12.2/bin${PATH:+:${PATH}}
   export PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
   export PATH="$HOME/.local/bin:$PATH"
@@ -88,6 +87,7 @@ setopt HIST_IGNORE_SPACE    # Remove commands with leading space
 eval "$(starship init zsh)" # Customizable prompt for any shell
 lazyload fnm node npm npx -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
+lazyload conda python3 pip3 -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
@@ -153,18 +153,3 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
   }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################
-
-########################## 🔽 CONDA 🔽 ########################
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-  eval "$__conda_setup"
-else
-  if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-    . "$HOME/miniconda3/etc/profile.d/conda.sh"
-  else
-    export PATH="$HOME/miniconda3/bin:$PATH"
-  fi
-fi
-unset __conda_setup
-########################## 🔼 CONDA 🔼 #########################
