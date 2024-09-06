@@ -50,9 +50,11 @@ nmap L <Action>(NextTab)
 nmap H <Action>(PreviousTab)
 nmap <A-s> <Action>(SurroundWith)
 vmap <A-s> <Action>(SurroundWith)
-" multiple cursors
-nmap <A-k> <Action>(EditorCloneCaretAbove)
-nmap <A-j> <Action>(EditorCloneCaretBelow)
+" Move line
+nmap <A-j> <Action>(MoveLineDown)
+nmap <A-k> <Action>(MoveLineUp)
+xmap <A-j> <Action>(MoveStatementDown)
+xmap <A-k> <Action>(MoveStatementUp)
 " Window navigation
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j

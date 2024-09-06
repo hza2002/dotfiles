@@ -2,7 +2,7 @@
 
 source "$CONFIG_DIR/colors.sh"
 
-SENSOR="iStat Menus Status,com.bjango.istatmenus.sensors"
+SENSOR="iStat Menus Menubar,com.bjango.istatmenus.sensors"
 
 sketchybar --add alias "$SENSOR" right \
            --set "$SENSOR" \
