@@ -50,7 +50,6 @@ forbidden_app=(
   "JetBrains Toolbox"
   "Tencent Lemon"
   "wine64-preloader"
-  "Raycast"
 )
 
 for app in "${forbidden_app[@]}"; do
