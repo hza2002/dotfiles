@@ -12,7 +12,7 @@ window_state() {
 
   if [ "$(echo "$WINDOW" | jq '.["is-floating"]')" = "true" ]; then
     ICON+=$YABAI_FLOAT
-    COLOR=$MAGENTA
+    COLOR=$PURPLE
   elif [ "$(echo "$WINDOW" | jq '.["has-fullscreen-zoom"]')" = "true" ]; then
     ICON+=$YABAI_FULLSCREEN_ZOOM
     COLOR=$GREEN

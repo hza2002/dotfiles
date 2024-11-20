@@ -9,14 +9,8 @@ local code            = reload("user.plugins.code")
 --## Ui
 --#######################################
 local ui_plugins      = {
-
-  {
-    "catppuccin/nvim",
-    lazy = false,
-    priority = 1000,
-    name = "catppuccin",
-    opts = ui.catppuccin,
-  },                                                                                                              -- Color Scheme
+  { "ellisonleao/gruvbox.nvim",      lazy = false,                                  priority = 1000,           opts = ui.gruvbox },
+  -- { "catppuccin/nvim", lazy = false, priority = 1000, name = "catppuccin", opts = ui.catppuccin, },                                                                                                              -- Color Scheme
   { "wfxr/minimap.vim",              build = "cargo install --locked code-minimap", cmd = { "MinimapToggle" }, }, -- Blazing fast minimap/scrollbar written in Rust
   { "simrat39/symbols-outline.nvim", cmd = { "SymbolsOutline" },                    opts = ui.symbols_outline, }, -- A tree like view for symbols in Neovim using LSP
   { "nacro90/numb.nvim",             event = { "BufRead" },                         opts = ui.numb, },            -- numb.nvim 可以以非侵入性的方式查看缓冲区的行
@@ -45,12 +39,12 @@ local ui_plugins      = {
 --## Editor
 --#######################################
 local editor_plugins  = {
-  { "tpope/vim-surround", },                                                                          -- mappings to delete, change and add surroundings
-  { "tpope/vim-repeat", },                                                                            -- 使用'.'启用重复支持的插件映射
-  { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                                  -- Read or Write files with sudo command.
+  { "tpope/vim-surround", },                                                                  -- mappings to delete, change and add surroundings
+  { "tpope/vim-repeat", },                                                                    -- 使用'.'启用重复支持的插件映射
+  { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                          -- Read or Write files with sudo command.
   -- { "rainbowhxch/accelerated-jk.nvim", event = { "VeryLazy" }, },                                     -- 滚动增强
-  { "windwp/nvim-spectre",     lazy = true,                       opts = editor.spectre, },           -- Search and replace
-  { "ibhagwan/smartyank.nvim", event = { "BufReadPost" },         opts = editor.smartyank, },         -- Smark powerful yank
+  { "windwp/nvim-spectre",     lazy = true,                       opts = editor.spectre, },   -- Search and replace
+  { "ibhagwan/smartyank.nvim", event = { "BufReadPost" },         opts = editor.smartyank, }, -- Smark powerful yank
   {
     "windwp/nvim-ts-autotag",
     ft = { 'html', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'tsx', 'jsx',

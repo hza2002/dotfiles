@@ -32,7 +32,7 @@ yabai -m config mouse_action2                resize                     # modifi
 # ===== Window modifications ===================
 yabai -m config window_shadow                float                      # 窗口阴影(default: on, options: on, off, float)
 
-yabai -m config window_opacity               on                         # 窗口透明度
+yabai -m config window_opacity               off                        # 窗口透明度
 yabai -m config window_opacity_duration      0.1                        # 透明度切换动画时长
 yabai -m config active_window_opacity        1.0                        # 活动窗口透明度设置为1.0
 yabai -m config normal_window_opacity        0.8                        # 普通窗口透明度
@@ -50,6 +50,7 @@ forbidden_app=(
   "JetBrains Toolbox"
   "Tencent Lemon"
   "wine64-preloader"
+  "scrcpy"
 )
 
 for app in "${forbidden_app[@]}"; do

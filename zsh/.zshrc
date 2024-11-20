@@ -142,7 +142,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
   # ssh choose local or remote ubuntu
   function ubuntu() {
     current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
-    local_network_name="swu" # 局域网网络名称
+    local_network_name="按点上网" # 局域网网络名称
     success_command="ssh localubuntu" # 要执行的命令，如果同个局域网内
     failure_command="ssh remoteubuntu" # 要执行的命令，如果不在同个局域网内
     if [ "$current_network_name" = "$local_network_name" ]; then
@@ -151,5 +151,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
       eval "$failure_command"
     fi
   }
+  function lubt() { eval "ssh localubuntu" }
+  function rubt() { eval "ssh remoteubuntu" }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################

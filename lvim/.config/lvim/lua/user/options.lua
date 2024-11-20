@@ -1,6 +1,6 @@
 -- UI
-lvim.colorscheme = "catppuccin" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
-lvim.builtin.lualine.options.theme = "catppuccin"
+lvim.colorscheme = "gruvbox" -- catppuccin-latte, catppuccin-frappe, catppuccin-macchiato, catppuccin-mocha
+lvim.builtin.lualine.options.theme = "gruvbox"
 lvim.builtin.alpha.dashboard.section.header.val = {
   [[     ___  _____                 ]],
   [[ .'/,-Y"     "~-.               ]],

@@ -1,11 +1,13 @@
 #!/bin/bash
 
+source "CONFIG_DIR/colors.sh"
+
 mem=(
   icon=􀫦 
   icon.padding_left=8 
   label.font="$FONT:BOLD:13.0" 
-  icon.color=0xFFFFFFFF 
-  label.color=0xFFFFFFFF
+  icon.color=$WHITE
+  label.color=$WHITE
   background.height=24 
   background.corner_radius=4 
   label.padding_right=8

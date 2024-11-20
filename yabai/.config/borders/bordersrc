@@ -2,11 +2,11 @@
 
 options=(
 	style=round
-	width=6.0
+	width=4.0
 	hidpi=on
-	active_color=0xc0e2e2e3
-	inactive_color=0xc02c2e34
-  blacklist="clion"
+	active_color=0xffebdbb2
+	inactive_color=0xff282828
+  blacklist="clion,idea,pycharm,iPhone Mirroring"
 )
 
 borders "${options[@]}"

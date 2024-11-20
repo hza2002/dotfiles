@@ -11,11 +11,11 @@ fi
 
 COLOR=$RED
 case ${PERCENTAGE} in
-  8[0-9]|9[0-9]|100)  COLOR=$RED 
+  8[0-9]|9[0-9]|100)  COLOR=$RED
   ;;
   [5-7][0-9])  COLOR=$ORANGE
   ;;
-  [1-4][0-9])  COLOR=$GREY
+  [1-4][0-9])  COLOR=$GREEN
   ;;
   *)  COLOR=$GREY
 esac
