@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Color Palette
-export BLACK=0xff282828
-export WHITE=0xffebdbb2
+export BLACK=0xff1d2021
+export WHITE=0xfffbf1c7
 export RED_HARD=0xffcc241d
 export RED_SOFT=0xfffb4934
 export RED=$RED_HARD

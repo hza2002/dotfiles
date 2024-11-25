@@ -20,28 +20,7 @@ ui.catppuccin = {
 }
 
 ui.gruvbox = {
-  terminal_colors = true, -- add neovim terminal colors
-  undercurl = true,
-  underline = true,
-  bold = true,
-  italic = {
-    strings = true,
-    emphasis = true,
-    comments = true,
-    operators = false,
-    folds = true,
-  },
-  strikethrough = true,
-  invert_selection = false,
-  invert_signs = false,
-  invert_tabline = false,
-  invert_intend_guides = false,
-  inverse = true,    -- invert background for search, diffs, statuslines and errors
-  contrast = "hard", -- can be "hard", "soft" or empty string
-  palette_overrides = {},
-  overrides = {},
-  dim_inactive = false,
-  transparent_mode = false,
+  -- transparent_mode = true,
 }
 
 ui.symbols_outline = {
@@ -69,7 +48,11 @@ ui.colorizer = {
   "css", "scss", "html", "javascript",
 }
 
-ui.rnvimr = function() end
+ui.rnvimr = function()
+  vim.g.rnvimr_draw_border = 1
+  vim.g.rnvimr_pick_enable = 1
+  vim.g.rnvimr_bw_enable = 1
+end
 
 ui.focus = function()
   -- Disabling Focus
@@ -148,7 +131,6 @@ ui.noice = {
     long_message_to_split = true, -- long messages will be sent to a split
     lsp_doc_border = true,        -- add a border to hover docs and signature help
   },
-  background_colour = "#000000",
 }
 
 return ui

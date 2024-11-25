@@ -3,6 +3,7 @@
 FRONT_APP_SCRIPT='[ "$SENDER" = "front_app_switched" ] && sketchybar --set $NAME label="$INFO" icon.background.image="app.$INFO"'
 
 front_app=(
+  y_offset=-1
   label.font="$FONT:Black:13.0"
   icon.background.drawing=on
   display=active

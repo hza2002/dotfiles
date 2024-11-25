@@ -1,11 +1,11 @@
-# Scheme name: Gruvbox dark, soft
+# Scheme name: Gruvbox dark, medium
 # Scheme system: base16
 # Scheme author: Dawid Kurek (dawikur@gmail.com), morhetz (https://github.com/morhetz/gruvbox)
 # Template author: Tinted Theming (https://github.com/tinted-theming)
 
 _gen_fzf_default_opts() {
-local color00='#32302f'
-local color00='#000000'
+
+local color00='#282828'
 local color01='#3c3836'
 local color02='#504945'
 local color03='#665c54'
@@ -23,7 +23,6 @@ local color0E='#d3869b'
 local color0F='#d65d0e'
 
 FZF_DEFAULT_OPTS='--no-height --no-reverse'
-
 export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS"\
 " --color=bg+:$color01,bg:$color00,spinner:$color0C,hl:$color0D"\
 " --color=fg:$color04,header:$color0D,info:$color0A,pointer:$color0C"\

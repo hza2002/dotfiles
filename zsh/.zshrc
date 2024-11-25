@@ -87,7 +87,7 @@ setopt HIST_IGNORE_SPACE    # Remove commands with leading space
 eval "$(starship init zsh)" # Customizable prompt for any shell
 lazyload fnm node npm npx -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
-lazyload conda python3 pip3 -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
+lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
