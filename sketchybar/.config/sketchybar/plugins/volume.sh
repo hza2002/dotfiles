@@ -18,7 +18,12 @@ volume_change() {
     *) ICON=$VOLUME_100
   esac
 
-  sketchybar --set volume_icon label="$ICON"
+  case $(SwitchAudioSource -c) in
+    *"按点消遣"*) ICON=$VOLUME_AIRPODS_PRO
+    ;;
+  esac
+
+  sketchybar --set volume_icon icon="$ICON"
 
   sketchybar --set "$NAME" slider.percentage="$INFO" \
              --animate tanh 30 --set "$NAME" slider.width=$WIDTH 
