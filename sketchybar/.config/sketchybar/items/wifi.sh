@@ -9,7 +9,7 @@ wifi=(
   label.width=0
   icon="$WIFI_DISCONNECTED"
   script="$PLUGIN_DIR/wifi.sh"
-  icon.color=$ORANGE_SOFT
+  icon.color=$BLUE_SOFT
 )
 
 sketchybar --add item wifi right \

@@ -21,6 +21,8 @@ volume_change() {
   case $(SwitchAudioSource -c) in
     *"按点消遣"*) ICON=$VOLUME_AIRPODS_PRO
     ;;
+    *"DELL U2720Q"*) ICON=$VOLUME_SPEAKER
+    ;;
   esac
 
   sketchybar --set volume_icon icon="$ICON"

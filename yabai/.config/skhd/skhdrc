@@ -31,10 +31,10 @@ shift + fn - f13 : yabai -m window --space prev ; yabai -m space --focus prev
 shift + fn - f14 : yabai -m window --space next ; yabai -m space --focus next
 
 # Desktop focus
-# cmd - tab : yabai -m space --focus recent
+cmd - tab : yabai -m space --focus recent
 fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
-           current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
-           current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
+           current_display_maxindex="$(echo "$display_query" | jq 'map(.index)[-1]')" && \
+           current_display_minindex="$(echo "$display_query" | jq 'map(.index)[0]')" && \
            current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
            if [ "$current_space_index" -eq "$current_display_maxindex" ] ; \
            then ; \
@@ -43,8 +43,8 @@ fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
                yabai -m space --focus next ; \
            fi
 fn - f13 : display_query="$(yabai -m query --spaces --display)" && \
-           current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
-           current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
+           current_display_maxindex="$(echo "$display_query" | jq 'map(.index)[-1]')" && \
+           current_display_minindex="$(echo "$display_query" | jq 'map(.index)[0]')" && \
            current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
            if [ "$current_space_index" -eq "$current_display_minindex" ] ; \
            then ; \
@@ -52,6 +52,26 @@ fn - f13 : display_query="$(yabai -m query --spaces --display)" && \
            else ; \
                yabai -m space --focus prev; \
            fi
+# fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
+#            current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
+#            current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
+#            current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
+#            if [ "$current_space_index" -eq "$current_display_maxindex" ] ; \
+#            then ; \
+#                yabai -m space --focus "$current_display_minindex" ; \
+#            else ; \
+#                yabai -m space --focus next ; \
+#            fi
+# fn - f13 : display_query="$(yabai -m query --spaces --display)" && \
+#            current_display_maxindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
+#            current_display_minindex="$(echo "$display_query" | jq 'map(select(."is-native-fullscreen" == false))[0].index')" && \
+#            current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
+#            if [ "$current_space_index" -eq "$current_display_minindex" ] ; \
+#            then ; \
+#                yabai -m space --focus "$current_display_maxindex" ; \
+#            else ; \
+#                yabai -m space --focus prev; \
+#            fi
 
 # Create desktop, move window and follow focus - uses jq for parsing json (brew install jq)
 cmd + ctrl + alt - n : yabai -m space --create && \
