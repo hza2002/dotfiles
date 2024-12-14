@@ -1,21 +1,21 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
-if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then
+if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then # Ubuntu/WSL settings
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   # ysyx
   export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
   export NEMU_HOME="$HOME/repo/ysyx-workbench/nemu"
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
   source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
 ########################## 🔽 BREW 🔽 ##########################
-if [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   # 换清华源
   export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
   export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
@@ -31,21 +31,21 @@ fi
 
 ########################## 🔽 PATH 🔽 ##########################
 . "$HOME/.cargo/env" # Rust
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   export PATH="$PATH:$HOME/bin:/usr/local/bin"
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:/usr/local/go/bin"
   export PATH="$PATH:$HOME/julia-1.9.2/bin"
   export PATH="$PATH:$HOME/.fnm"
   export PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
-export ZSH="$HOME/.oh-my-zsh" # Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
 export ZSH_COMPDUMP="ZSH_CACHE_DIR/.zcompdump-$HOST"
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
@@ -96,7 +96,6 @@ lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
-## a quick way to get out of current directory ##
 alias c='clear -x' # Clear the screen but keep the terminal's scrollback buffer.
 alias cat='bat' # A cat(1) clone with syntax highlighting and Git integration.
 alias df='duf'
@@ -113,11 +112,11 @@ alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
 alias python='python3'
 alias mysudo='sudo -E env "PATH=$PATH"'
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   alias ra='ranger'
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   alias ra="$HOME/miniconda3/bin/ranger"
   alias update='brew update && brew upgrade'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
@@ -125,9 +124,9 @@ fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 FUNCTION 🔽 #######################
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
-  # add yabai to 
+if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
+elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+  # Add yabai to sudoers
   function suyabai () {
     SHA256=$(shasum -a 256 $(brew --prefix)/bin/yabai | awk "{print \$1;}")
     if [ -f "/private/etc/sudoers.d/yabai" ]; then
@@ -137,29 +136,25 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
     fi
   }
 
-  # update sketchybar after brew commands
-  function brew() {
-    command brew "$@" 
-    if [[ $* =~ "upgrade" ]] || [[ $* =~ "update" ]] || [[ $* =~ "outdated" ]]; then
-      sketchybar --trigger brew_update
+  # 通用的 ssh 命令选择函数
+  function ssh_connect() {
+    local target=$1
+    current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n')
+    local_network_name="按点上网" # 局域网网络名称
+
+    local_command="ssh l${target}" # 本地目标
+    remote_command="ssh r${target}" # 远程目标
+
+    # 判断当前网络，并执行相应的命令
+    if [ "$current_network_name" = "$local_network_name" ]; then
+      eval "$local_command"
+    else
+      eval "$remote_command"
     fi
   }
 
-  # ssh choose local or remote ubuntu
-  function ubuntu() {
-    current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n') # 当前所在网络名称
-    local_network_name="按点上网" # 局域网网络名称
-    success_command="ssh localubuntu" # 要执行的命令，如果同个局域网内
-    failure_command="ssh remoteubuntu" # 要执行的命令，如果不在同个局域网内
-    if [ "$current_network_name" = "$local_network_name" ]; then
-      eval "$success_command"
-    else
-      eval "$failure_command"
-    fi
-  }
-  function lwin() { eval "ssh lwin" }
-  function rwin() { eval "ssh rwin" }
-  function lubt() { eval "ssh lubt" }
-  function rubt() { eval "ssh rubt" }
+  # 具体的快捷方式
+  function ubt() { ssh_connect "ubt"; }
+  function wsl() { ssh_connect "wsl"; }
 fi
 ########################## 🔼 FUNCTION 🔼 #######################
