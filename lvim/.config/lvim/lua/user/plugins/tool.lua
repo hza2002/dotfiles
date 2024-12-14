@@ -8,13 +8,7 @@ tool.urlview = {
 
 tool.neovim_project = {
   projects = { -- define project roots
-    "~/projects/*",
     "~/.config/*",
-
-    "~/repo/*",
-    "~/repo/os/experiment/*",
-    "~/repo/keyboard/zmk-config",
-    "~/repo/AlgorithmAndDataStructures/tutorial*"
   },
   last_session_on_startup = false,
 }

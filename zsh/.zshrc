@@ -1,7 +1,9 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
-export LANG=en_US.UTF-8 
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+if [[ $(grep -i Microsoft /proc/version) ]]; then
+  export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
+  export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
+elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
   # ysyx
   export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
   export NEMU_HOME="$HOME/repo/ysyx-workbench/nemu"
@@ -28,18 +30,17 @@ fi
 ########################## 🔼 BREW 🔼 ##########################
 
 ########################## 🔽 PATH 🔽 ##########################
+. "$HOME/.cargo/env" # Rust
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
-  export PATH="$HOME/bin:/usr/local/bin:$PATH"
-  export PATH="$HOME/.local/bin:$PATH"
+  export PATH="$PATH:$HOME/bin:/usr/local/bin"
+  export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:/usr/local/go/bin"
-  export PATH="$PATH:$HOME/go/bin"
-  export PATH="$PATH:$HOME/.local/share/coursier/bin" # coursier install directory
   export PATH="$PATH:$HOME/julia-1.9.2/bin"
+  export PATH="$PATH:$HOME/.fnm"
   export PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
-  export PATH="$HOME/.local/bin:$PATH"
+  export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
-  . "$HOME/.cargo/env" # Rust
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
@@ -76,7 +77,11 @@ bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 ########################## 🔼 BIND KEY 🔼 ######################
 
 ########################## 🔽 NET 🔽 ###########################
-SHELLPROXY_URL="http://127.0.0.1:7890"
+#if [[ $(grep -i Microsoft /proc/version) ]]; then
+#  HOST_IP=$(cat /etc/resolv.conf | grep "nameserver" | cut -f 2 -d " ")
+#fi
+HOST_IP="http://127.0.0.1"
+SHELLPROXY_URL="$HOST_IP:7890"
 SHELLPROXY_NO_PROXY="localhost,127.0.0.1"
 proxy enable
 ########################## 🔼 NET 🔼 ###########################
@@ -107,12 +112,13 @@ alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
 alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
 alias python='python3'
-alias ra='/Users/ghot/miniconda3/bin/ranger'
 alias mysudo='sudo -E env "PATH=$PATH"'
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
+  alias ra='ranger'
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable settings
+  alias ra="$HOME/miniconda3/bin/ranger"
   alias update='brew update && brew upgrade'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
 fi
@@ -152,6 +158,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS-specific environment variable se
     fi
   }
   function lwin() { eval "ssh lwin" }
+  function rwin() { eval "ssh rwin" }
   function lubt() { eval "ssh lubt" }
   function rubt() { eval "ssh rubt" }
 fi
