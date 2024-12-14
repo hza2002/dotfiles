@@ -1,6 +1,6 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
-if [[ $(grep -i Microsoft /proc/version) ]]; then
+if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
 elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux-specific environment variable settings
