@@ -37,6 +37,7 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   export PATH="$PATH:/usr/local/go/bin"
   export PATH="$PATH:$HOME/julia-1.9.2/bin"
   export PATH="$PATH:$HOME/.fnm"
+  export PATH="$PATH:$HOME/.jenv/bin"
   export PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   export PATH="$PATH:$HOME/.local/bin"
