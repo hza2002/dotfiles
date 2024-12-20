@@ -47,7 +47,7 @@ fi
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
-export ZSH_COMPDUMP="ZSH_CACHE_DIR/.zcompdump-$HOST"
+export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST"
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
   colored-man-pages command-not-found shell-proxy
@@ -141,7 +141,7 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   function ssh_connect() {
     local target=$1
     current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n')
-    local_network_name="按点上网" # 局域网网络名称
+    local_network_name="RhodesIsland" # 局域网网络名称
 
     local_command="ssh l${target}" # 本地目标
     remote_command="ssh r${target}" # 远程目标
