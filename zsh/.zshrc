@@ -114,17 +114,24 @@ alias ps='procs' # A modern replacement for ps written in Rust.
 alias python='python3'
 alias mysudo='sudo -E env "PATH=$PATH"'
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
-  alias ra='ranger'
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
-  alias ra="$HOME/miniconda3/bin/ranger"
   alias update='brew update && brew upgrade'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
 fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 FUNCTION 🔽 #######################
+function y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    builtin cd -- "$cwd"
+  fi
+  rm -f -- "$tmp"
+}
+
 if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   # Add yabai to sudoers

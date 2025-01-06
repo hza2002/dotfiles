@@ -1,0 +1,12 @@
+[manager]
+
+prepend_keymap = [
+  { on = "l", run = 'plugin smart-enter', desc = "Enter the child directory, or open the file" }, # smart-enter
+  { on   = "`", run  = "plugin max-preview", desc = "Maximize or restore preview" }, # max-preview
+  { on   = "\\", run  = "plugin hide-preview", desc = "Hide or show preview" }, # hide-preview
+	{ on   = "T", run = "plugin eza-preview",  desc = "Toggle tree/list dir preview" }, # eza-preview
+  { on   = "F", run  = "plugin smart-filter", desc = "Smart filter"}, # smart-filter
+  { on   = [ "c", "a" ], run  = "plugin ouch --args=zip", desc = "Archive selected files" }, # ouch
+  { on   = [ "c", "m" ], run  = "plugin chmod", desc = "Chmod on selected files" }, # chmod
+  { on = "<C-g>", run = "shell --confirm --block lazygit", desc = "Lazygit" }, # lazygit
+]

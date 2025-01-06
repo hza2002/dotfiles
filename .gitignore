@@ -3,3 +3,5 @@ lvim/.config/lvim/lazy-lock.json
 ranger/.config/ranger/__pycache__
 nvim/.config/nvim/plugin
 fish/.config/fish/fish_variables
+yazi/.config/yazi/flavors/gruvbox-dark.yazi
+yazi/.config/yazi/plugins
