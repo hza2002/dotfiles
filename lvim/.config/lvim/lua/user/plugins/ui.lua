@@ -133,4 +133,8 @@ ui.noice = {
   },
 }
 
+ui.yazi = {
+  open_for_directories = false, -- enable this if you want to open yazi instead of netrw.
+}
+
 return ui

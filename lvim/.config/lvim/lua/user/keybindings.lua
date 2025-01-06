@@ -93,8 +93,9 @@ lvim.builtin.telescope.defaults.mappings             = {
   },
 }
 
--- Ranger
-lvim.builtin.which_key.mappings.e                    = { "<cmd>RnvimrToggle<CR>", "Explorer" }
+-- Yazi
+lvim.builtin.which_key.mappings.e                    = { "<cmd>Yazi<CR>", "Yazi at current file" }
+lvim.builtin.which_key.mappings.E                    = { "<cmd>Yazi cwd<CR>", "Yazi in working directory" }
 
 -- LSP
 lvim.builtin.which_key.mappings.l.o                  = { "<cmd>SymbolsOutline<cr>", "Symbols Outline" }

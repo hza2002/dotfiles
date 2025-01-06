@@ -64,10 +64,4 @@ code.ufo = function()
   vim.api.nvim_create_autocmd({ 'BufWrite', 'BufEnter' }, { pattern = { "*" }, command = "setlocal foldlevel=99" })
 end
 
-code.ChatGPT = function()
-  require("chatgpt").setup({
-    api_key_cmd = "op read op://Personal/OpenAI/credential --no-newline"
-  })
-end
-
 return code

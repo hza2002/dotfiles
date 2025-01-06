@@ -16,8 +16,8 @@ local ui_plugins      = {
   { "nacro90/numb.nvim",             event = { "BufRead" },                         opts = ui.numb, },            -- numb.nvim 可以以非侵入性的方式查看缓冲区的行
   { "aserowy/tmux.nvim",             event = { "VeryLazy" },                        opts = ui.tmux, },            -- Vim 和 Tmux 导航
   { "nvim-focus/focus.nvim",         event = { "VeryLazy" },                        config = ui.focus, },         -- Auto-Focusing and Auto-Resizing Splits/Windows
+  { "mikavilpas/yazi.nvim",          event = { "VeryLazy" },                        opts = ui.yazi, },            -- yazi file explorer window
   { "sindrets/winshift.nvim",        cmd = { "WinShift" }, },                                                     -- Rearrange your windows with ease
-  { "kevinhwang91/rnvimr",           cmd = { "RnvimrToggle" },                      config = ui.rnvimr, },        -- ranger file explorer window
   { "s1n7ax/nvim-window-picker",     lazy = true, },                                                              -- jump to any window using a selector like the one nvim-tree uses
   {
     "norcalli/nvim-colorizer.lua",
@@ -142,16 +142,6 @@ local code_plugins    = {
       { "[t", function() require("todo-comments").jump_prev() end, desc = "Previous todo comment" },
     },
   }, -- Finds and lists all of the TODO, HACK, BUG, etc comment
-  {
-    "jackMort/ChatGPT.nvim",
-    cmd = { "ChatGPT", "ChatGPTActAs", "ChatGPTEditWithInstructions", "ChatGPTRun", },
-    config = code.ChatGPT,
-    dependencies = {
-      "MunifTanjim/nui.nvim",
-      "nvim-lua/plenary.nvim",
-      "nvim-telescope/telescope.nvim"
-    }
-  }, -- Effortless Natural Language Generation with OpenAI's ChatGPT API
 }
 
 --#######################################
