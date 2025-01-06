@@ -48,12 +48,6 @@ ui.colorizer = {
   "css", "scss", "html", "javascript",
 }
 
-ui.rnvimr = function()
-  vim.g.rnvimr_draw_border = 1
-  vim.g.rnvimr_pick_enable = 1
-  vim.g.rnvimr_bw_enable = 1
-end
-
 ui.focus = function()
   -- Disabling Focus
   local ignore_buftypes = { 'nofile', 'prompt', 'popup', 'terminal' }
@@ -134,7 +128,7 @@ ui.noice = {
 }
 
 ui.yazi = {
-  open_for_directories = false, -- enable this if you want to open yazi instead of netrw.
+  open_for_directories = true, -- enable this if you want to open yazi instead of netrw.
 }
 
 return ui

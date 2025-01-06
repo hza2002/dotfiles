@@ -68,7 +68,7 @@ lvim.builtin.terminal.execs                          = {
 
 -- Alpha
 lvim.builtin.alpha.dashboard.section.buttons.entries = {
-  { "e", lvim.icons.ui.Watches .. "  Explorer",     "<cmd>RnvimrToggle<CR>" },
+  { "e", lvim.icons.ui.Watches .. "  Explorer",     "<cmd>Yazi<CR>" },
   { "f", lvim.icons.ui.FindFile .. "  Find File",   "<CMD>Telescope find_files<CR>" },
   { "n", lvim.icons.ui.NewFile .. "  New File",     "<CMD>ene!<CR>" },
   { "p", lvim.icons.ui.Project .. "  Projects ",    "<cmd>Telescope neovim-project<cr>" },
