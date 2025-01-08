@@ -1,7 +1,11 @@
+[manager]
+ratio    = [1, 3, 4]
+linemode = "size"
+
 [plugin]
-prepend_fetchers= [
+prepend_fetchers = [
   # git
-	{ id = "git", name = "*", run = "git", prio = "normal" },
+	{ id = "git", name = "*",  run = "git", prio = "normal" },
 	{ id = "git", name = "*/", run = "git", prio = "normal" },
 ]
 
