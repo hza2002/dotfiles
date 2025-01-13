@@ -1,16 +1,15 @@
 [manager]
-
 prepend_keymap = [
   { on = "l",          run = 'plugin smart-enter',      desc = "Enter the child directory, or open the file" }, # smart-enter
   { on = "`",          run = "plugin max-preview",      desc = "Maximize or restore preview" }, # max-preview
   { on = "\\",         run = "plugin hide-preview",     desc = "Hide or show preview" }, # hide-preview
-	{ on = "T",          run = "plugin eza-preview",      desc = "Toggle tree/list dir preview" }, # eza-preview
   { on = "F",          run = "plugin smart-filter",     desc = "Smart filter"}, # smart-filter
   { on = [ "c", "a" ], run = "plugin ouch --args=zip",  desc = "Archive selected files" }, # ouch
   { on = [ "c", "m" ], run = "plugin chmod",            desc = "Chmod on selected files" }, # chmod
   { on = [ "c", "p" ], run = "plugin command",          desc = "Yazi command prompt" }, # command
 
-  { on = [ "g", "r" ], run = "shell 'ya emit cd \"$(git rev-parse --show-toplevel)\"'" }, # goto root of the current Git repo
+  { on = [ "g", "r" ], run = "shell 'ya emit cd \"$(git rev-parse --show-toplevel)\"'", desc = "Goto git repo root" }, # goto root of the current Git repo
+  { on = [ "g", "y" ], run = "cd ~/.config/yazi", desc = "Goto yazi config" }, # goto yazi config
 
   { on = "<C-g>", run = "shell --confirm --block lazygit", desc = "Lazygit" }, # lazygit
   { on = "<C-p>", run = "shell 'qlmanage -p \"$@\"'",      desc = "Preview with Quick Look"}, # quick look
@@ -20,5 +19,3 @@ prepend_keymap = [
 prepend_keymap = [
   { on = "<Esc>", run  = "close", desc = "Cancel input" }, # Close input by once Esc press
 ]
-
-
