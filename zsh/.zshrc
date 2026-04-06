@@ -1,5 +1,6 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
+export GPG_TTY=$(tty)
 if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then # Ubuntu/WSL settings
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
@@ -11,7 +12,6 @@ elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
   source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
-  export GPG_TTY=$(tty)
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
@@ -39,7 +39,10 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   export PATH="$PATH:$HOME/julia-1.9.2/bin"
   export PATH="$PATH:$HOME/.fnm"
   export PATH="$PATH:$HOME/.jenv/bin"
-  export PATH=/usr/local/cuda-11.8/bin${PATH:+:${PATH}}
+  export PATH="$PATH:/snap/bin"
+  # cuda
+  export PATH=${PATH}:/usr/local/cuda/bin
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
