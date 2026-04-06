@@ -11,21 +11,22 @@ elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
   source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+  export GPG_TTY=$(tty)
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
 ########################## 🔽 BREW 🔽 ##########################
 if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   # 换清华源
-  export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
-  export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
-  export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
-  export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
-  export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+  # export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
+  # export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
+  # export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
+  # export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
+  # export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
   # 配置 Homebrew 环境变量
   eval $(/opt/homebrew/bin/brew shellenv) 
   # Shell Completion (https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh)
-  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+  FPATH="$/opt/homebrew/share/zsh/site-functions:${FPATH}"
 fi
 ########################## 🔼 BREW 🔼 ##########################
 
@@ -42,6 +43,7 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
+  export PATH="$PATH:$HOME/repo/scripts" # my custom scripts
 fi
 ########################## 🔼 PATH 🔼 ##########################
 
@@ -78,6 +80,7 @@ bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 ########################## 🔼 BIND KEY 🔼 ######################
 
 ########################## 🔽 NET 🔽 ###########################
+# export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890
 #if [[ $(grep -i Microsoft /proc/version) ]]; then
 #  HOST_IP=$(cat /etc/resolv.conf | grep "nameserver" | cut -f 2 -d " ")
 #fi
@@ -90,14 +93,21 @@ proxy enable
 ########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
 setopt HIST_IGNORE_ALL_DUPS # Remove duplicate older commands
 setopt HIST_IGNORE_SPACE    # Remove commands with leading space
+setopt EXTENDED_HISTORY      # Record timestamps in .zsh_history
+setopt INC_APPEND_HISTORY_TIME  # Record command execution duration
+if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi # Mole shell completion
+source <(COMPLETE=zsh jj) # Jujutsu
 eval "$(starship init zsh)" # Customizable prompt for any shell
+eval "$(codex completion zsh)" # OpenAI Codex Completion
+source "$HOME/.openclaw/completions/openclaw.zsh" # OpenClaw Completion
+# eval "$(fnm env --use-on-cd --shell zsh)"
 lazyload fnm node npm npx pnpm -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
-alias c='clear -x' # Clear the screen but keep the terminal's scrollback buffer.
+alias c='printf "\e[H\e[2J"' # Sends control characters Esc-C to the console which resets the terminal
 alias cat='bat' # A cat(1) clone with syntax highlighting and Git integration.
 alias df='duf'
 alias du='dust'
@@ -105,7 +115,7 @@ alias find='fd' # A simple, fast and user-friendly alternative to find.
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias lg='lazygit'
 alias ld='lazydocker'
-alias make='make -j' # 并行make
+alias make='make -j32' # 并行make
 alias mkdir='mkdir -pv'
 alias nn='lvim' # LunarVim
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
@@ -117,10 +127,18 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
-  alias update='brew update && brew upgrade'
+  alias update='brew update && brew upgrade && brew cu -a -y && brew cleanup'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
 fi
 ########################## 🔼 ALIAS 🔼 ##########################
+
+########################## 🔽 SAFEHOUSE 🔽 ######################
+# Sandbox local AI - github.com/eugene1g/agent-safehouse
+function safe() { safehouse "$@" }
+# Sandboxed — the default. Just type the command name.
+function claude() { safe claude --dangerously-skip-permissions "$@" }
+function codex() { safe codex --dangerously-bypass-approvals-and-sandbox "$@" }
+########################## 🔼 SAFEHOUSE 🔼 ######################
 
 ########################## 🔽 FUNCTION 🔽 #######################
 function y() {

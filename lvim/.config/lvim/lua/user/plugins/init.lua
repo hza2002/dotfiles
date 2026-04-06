@@ -41,7 +41,8 @@ local ui_plugins      = {
 local editor_plugins  = {
   { "tpope/vim-surround", },                                                                  -- mappings to delete, change and add surroundings
   { "tpope/vim-repeat", },                                                                    -- 使用'.'启用重复支持的插件映射
-  { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                          -- Read or Write files with sudo command.
+  { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                          -- Read or Write files with sudo command
+  { "keaising/im-select.nvim", config = function() require("im_select").setup({}) end,},      -- Switch Input Method automatically
   -- { "rainbowhxch/accelerated-jk.nvim", event = { "VeryLazy" }, },                                     -- 滚动增强
   { "windwp/nvim-spectre",     lazy = true,                       opts = editor.spectre, },   -- Search and replace
   { "ibhagwan/smartyank.nvim", event = { "BufReadPost" },         opts = editor.smartyank, }, -- Smark powerful yank
@@ -61,7 +62,7 @@ local editor_plugins  = {
     keys = { { "ga", "<Plug>(EasyAlign)", mode = { "n", "x" }, desc = "Align with delimiter" } }
   },
   {
-    "ggandor/leap.nvim",
+    url = "https://codeberg.org/andyg/Leap.nvim",
     event = { "VeryLazy" },
     config = function() require("leap").add_default_mappings() end,
   }, -- Neovim's answer to the mouse

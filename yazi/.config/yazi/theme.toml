@@ -1,2 +1,34 @@
 [flavor]
 dark = "gruvbox-dark"
+
+[icon]
+prepend_dirs = [
+	{ name = ".Trash",       text = "" },
+	{ name = ".android",     text = "" },
+	{ name = ".cache",       text = "" },
+	{ name = ".docker",      text = "󰡨" },
+	{ name = ".fonts",       text = "" },
+	{ name = ".gem",         text = "" },
+	{ name = ".gradle",      text = "" },
+	{ name = ".npm",         text = "" },
+	{ name = ".rustup",      text = "󱘗" },
+	{ name = ".tmux",        text = "" },
+	{ name = ".wine",        text = "" },
+	{ name = "Applications", text = "󰣆" },
+	{ name = "QtProject",    text = "" },
+	{ name = "Users",        text = "" },
+	{ name = "Windows 11",   text = "" },
+	{ name = "bin",          text = "" },
+	{ name = "cpp",          text = "" },
+	{ name = "dotfiles",     text = "" },
+	{ name = "ghot",         text = "" },
+	{ name = "go",           text = "" },
+	{ name = "keyboard",     text = "" },
+	{ name = "kicad",        text = "" },
+	{ name = "lvim",         text = "" },
+	{ name = "nvim",         text = "" },
+	{ name = "python",       text = "" },
+	{ name = "qt",           text = "" },
+	{ name = "repo",         text = "󰳏" },
+	{ name = "share",        text = "" },
+]
