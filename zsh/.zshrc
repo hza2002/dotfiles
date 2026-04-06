@@ -87,7 +87,9 @@ bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 HOST_IP="http://127.0.0.1"
 SHELLPROXY_URL="$HOST_IP:7890"
 SHELLPROXY_NO_PROXY="localhost,127.0.0.1"
-proxy enable
+if [[ "$(uname)" == "Darwin" ]]; then
+  proxy enable
+fi
 ########################## 🔼 NET 🔼 ###########################
 
 ########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
@@ -133,11 +135,12 @@ fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 SAFEHOUSE 🔽 ######################
-# Sandbox local AI - github.com/eugene1g/agent-safehouse
-function safe() { safehouse "$@" }
-# Sandboxed — the default. Just type the command name.
-function claude() { safe claude --dangerously-skip-permissions "$@" }
-function codex() { safe codex --dangerously-bypass-approvals-and-sandbox "$@" }
+if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+  # Sandbox local AI - github.com/eugene1g/agent-safehouse
+  function safe() { safehouse "$@" }
+  function claude() { safe claude --dangerously-skip-permissions "$@" }
+  function codex() { safe codex --dangerously-bypass-approvals-and-sandbox "$@" }
+fi
 ########################## 🔼 SAFEHOUSE 🔼 ######################
 
 ########################## 🔽 FUNCTION 🔽 #######################
