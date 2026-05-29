@@ -16,8 +16,10 @@ yabai -m config window_gap                   10                         # 窗口
 
 yabai -m config auto_balance                 off                        # 自动平衡
 yabai -m config split_ratio                  0.50                       # 分屏比例 between 0 and 1 (default: 0.5)
-yabai -m config window_animation_duration    0.00                       # 窗口动画持续时间设置为0.00
-yabai -m config window_animation_easing      ease_out_quint             # 窗口动画种类
+yabai -m config split_type                   auto                       # 根据窗口宽高比自动决定横/纵分割
+yabai -m config window_animation_duration    0.20                       # 窗口动画持续时间（需要 Screen Recording 权限）
+yabai -m config window_animation_easing      ease_out_circ              # 窗口动画种类
+yabai -m config window_opacity_duration      0.0                        # 透明度变化过渡时长
 
 # ===== Mouse support ==========================
 yabai -m config focus_follows_mouse          off                        # 焦点跟随鼠标(default: off, options: off, autoraise, autofocus)
@@ -33,6 +35,8 @@ yabai -m config mouse_action2                resize                     # modifi
 yabai -m config window_shadow                float                      # 窗口阴影(default: on, options: on, off, float)
 yabai -m config window_origin_display        default                    # 窗口起始显示器设置为默认
 yabai -m config window_placement             second_child               # 窗口位置设置为第二个子窗口
+yabai -m config window_insertion_point       focused                    # 新窗口插入到当前焦点窗口旁
+yabai -m config window_zoom_persist          on                         # zoom 状态在切换 space 后保持
 
 # ===== Transparency ===========================
 yabai -m config window_opacity on
@@ -48,14 +52,11 @@ no_transparent_apps=(
     "PDF Expert"
     "地图"
     "VirtualBox VM"
-
     "Visual Studio Code"
     "Code"
     "Fusion"
 )
-for app in "${no_transparent_apps[@]}"; do
-    yabai -m rule --add app="$app" opacity=1.0
-done
+( IFS='|'; yabai -m rule --add app="^(${no_transparent_apps[*]})$" opacity=1.0 )
 
 # ===== Excluded apps ==========================
 forbidden_app=(
@@ -69,9 +70,7 @@ forbidden_app=(
   "VirtualBox VM"
 )
 
-for app in "${forbidden_app[@]}"; do
-    yabai -m rule --add app="$app" manage=off
-done
+( IFS='|'; yabai -m rule --add app="^(${forbidden_app[*]})$" manage=off )
 
 # ===== Status bar =============================
 # add padding to the top and bottom
