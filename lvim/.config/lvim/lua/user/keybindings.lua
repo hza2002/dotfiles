@@ -103,8 +103,10 @@ lvim.builtin.which_key.mappings.l.o                  = { "<cmd>SymbolsOutline<cr
 -- Buffer
 lvim.builtin.which_key.mappings["b"]                 = {}
 lvim.keys.normal_mode["<C-b>"]                       = "<cmd>Telescope buffers<cr>"
--- lvim.builtin.which_key.mappings.b.b                  = { "<cmd>Telescope buffers<cr>", "Search" }
--- lvim.builtin.which_key.mappings.b.p                  = { "<cmd>BufferLineCyclePrev<cr>", "Previous" }
+lvim.keys.normal_mode["<leader>c"]                   = "<cmd>enew<cr>"
+lvim.keys.normal_mode["<leader>x"]                   = "<cmd>bd<cr>"
+lvim.builtin.which_key.mappings["c"]                 = { "<cmd>enew<cr>", "New Buffer" }
+lvim.builtin.which_key.mappings["x"]                 = { "<cmd>bd<cr>", "Close Buffer" }
 
 -- Search
 lvim.builtin.which_key.mappings["s"]                 = {

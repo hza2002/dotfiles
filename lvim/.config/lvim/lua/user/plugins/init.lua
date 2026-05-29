@@ -25,6 +25,10 @@ local ui_plugins      = {
     ft = { "css", "scss", "html", "javascript", },
   }, -- color highlighter 代码着色
   {
+    "rcarriga/nvim-notify",
+    opts = { background_colour = "#000000" },
+  },
+  {
     "folke/noice.nvim",
     event = "VeryLazy",
     opts = ui.noice,
@@ -85,7 +89,7 @@ local tool_plugins    = {
     config = function()
       vim.g.mkdp_echo_preview_url = 1
       -- vim.g.mkdp_open_to_the_world = 1
-      vim.gmkdp_open_ip = '127.0.0.1'
+      vim.g.mkdp_open_ip = '127.0.0.1'
       vim.g.mkdp_port = 7086
     end,
   }, -- Markdown 预览
@@ -123,7 +127,7 @@ local code_plugins    = {
   }, -- Previewing goto definition calls
   {
     "kevinhwang91/nvim-ufo",
-    event = { "InsertEnter" },
+    event = { "BufReadPost" },
     dependencies = { "kevinhwang91/promise-async" },
     config = code.ufo,
     keys = {

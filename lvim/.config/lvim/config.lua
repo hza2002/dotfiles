@@ -4,7 +4,7 @@ reload("user.neovide")     -- neovide
 reload("user.options")     -- options
 reload("user.keybindings") -- keymappings
 reload("user.plugins")     -- plugins
-
+reload("user.lsp")         -- lsp
 
 -- Read the docs: https://www.lunarvim.org/docs/configuration
 -- Example configs: https://github.com/LunarVim/starter.lvim
