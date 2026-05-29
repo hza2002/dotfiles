@@ -1,11 +1,11 @@
 #!/bin/bash
 
-source "CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/colors.sh"
 
 mem=(
   icon=􀫦 
   icon.padding_left=8 
-  label.font="$FONT:BOLD:13.0" 
+  label.font="$FONT:Bold:13.0"
   icon.color=$WHITE
   label.color=$WHITE
   background.height=24 
@@ -18,4 +18,4 @@ mem=(
 sketchybar -m --add item mem right \
               --set mem "${mem[@]}"
 
-sketchybar --add bracket system "iStat Menus Status,com.bjango.istatmenus.sensors" mem
+sketchybar --add bracket system "控制中心,com.bjango.istatmenus.sensors" mem

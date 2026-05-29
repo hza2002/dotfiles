@@ -17,7 +17,7 @@ zen_on() {
              --set fortune drawing=off \
              --set system drawing=off \
              --set battery drawing=off \
-             --set "iStat Menus Menubar,com.bjango.istatmenus.sensors" drawing=off \
+             --set "控制中心,com.bjango.istatmenus.sensors" drawing=off \
              --set "iStat Menus Menubar,com.bjango.istatmenus.weather" drawing=off \
              --set "控制中心,FocusModes" drawing=off
 }
@@ -38,7 +38,7 @@ zen_off() {
              --set fortune drawing=on \
              --set system drawing=on \
              --set battery drawing=on \
-             --set "iStat Menus Menubar,com.bjango.istatmenus.sensors" drawing=on \
+             --set "控制中心,com.bjango.istatmenus.sensors" drawing=on \
              --set "iStat Menus Menubar,com.bjango.istatmenus.weather" drawing=on \
              --set "控制中心,FocusModes" drawing=on
 }

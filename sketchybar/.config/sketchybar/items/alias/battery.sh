@@ -2,7 +2,7 @@
 
 source "$CONFIG_DIR/colors.sh"
 
-BATTERY="iStat Menus Menubar,com.bjango.istatmenus.battery"
+BATTERY="控制中心,com.bjango.istatmenus.battery"
 
 sketchybar --add alias "$BATTERY" right \
            --set "$BATTERY" \

@@ -17,7 +17,7 @@ apple_logo=(
 apple_prefs=(
   icon=$PREFERENCES
   label="Preferences"
-  click_script="open -a 'System Preferences'; $POPUP_OFF"
+  click_script="open -a 'System Settings'; $POPUP_OFF"
 )
 
 apple_activity=(
