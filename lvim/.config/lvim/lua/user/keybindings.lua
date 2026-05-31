@@ -60,10 +60,10 @@ lvim.keys.normal_mode["L"]                           = "<cmd>BufferLineCycleNext
 lvim.keys.normal_mode["H"]                           = "<cmd>BufferLineCyclePrev<cr>"
 
 -- Terminal
+lvim.builtin.terminal.open_mapping                   = "<C-`>"
 lvim.builtin.terminal.execs                          = {
-  { nil, "<M-h>", "Horizontal Terminal", "horizontal", 0.3 },
-  { nil, "<M-v>", "Vertical Terminal",   "vertical",   0.4 },
-  { nil, "<M-f>", "Float Terminal",      "float",      nil },
+  { nil, "<M-h>",  "Horizontal Terminal", "horizontal", 0.3 },
+  { nil, "<M-\\>", "Vertical Terminal",   "vertical",   0.4 },
 }
 
 -- Alpha
@@ -101,12 +101,20 @@ lvim.builtin.which_key.mappings.E                    = { "<cmd>Yazi cwd<CR>", "Y
 lvim.builtin.which_key.mappings.l.o                  = { "<cmd>SymbolsOutline<cr>", "Symbols Outline" }
 
 -- Buffer
+vim.api.nvim_create_user_command("CloseWindowOrBuffer", function()
+  if vim.fn.winnr("$") > 1 then
+    vim.cmd("close")
+  else
+    vim.cmd("BufferKill")
+  end
+end, {})
+
 lvim.builtin.which_key.mappings["b"]                 = {}
 lvim.keys.normal_mode["<C-b>"]                       = "<cmd>Telescope buffers<cr>"
 lvim.keys.normal_mode["<leader>c"]                   = "<cmd>enew<cr>"
-lvim.keys.normal_mode["<leader>x"]                   = "<cmd>bd<cr>"
+lvim.keys.normal_mode["<leader>x"]                   = "<cmd>CloseWindowOrBuffer<cr>"
 lvim.builtin.which_key.mappings["c"]                 = { "<cmd>enew<cr>", "New Buffer" }
-lvim.builtin.which_key.mappings["x"]                 = { "<cmd>bd<cr>", "Close Buffer" }
+lvim.builtin.which_key.mappings["x"]                 = { "<cmd>CloseWindowOrBuffer<cr>", "Close Window/Buffer" }
 
 -- Search
 lvim.builtin.which_key.mappings["s"]                 = {
@@ -188,24 +196,27 @@ lvim.keys.normal_mode["<M-w>"]       = "<cmd>lua PickWindow()<cr>"
 lvim.builtin.which_key.mappings["w"] = {
   name = "Windows",
   M = { "<cmd>MinimapToggle<cr>", "Minimap" },
-  c = { "<C-w>c", "Close" },
+  h = { "<cmd>leftabove vsplit<cr>", "Split Left" },
+  j = { "<cmd>belowright split<cr>", "Split Down" },
+  k = { "<cmd>leftabove split<cr>", "Split Up" },
+  l = { "<cmd>belowright vsplit<cr>", "Split Right" },
   m = { "<cmd>FocusMaxOrEqual<cr>", "Max or Equal" },
-  s = { "<C-w>s", "Split Horizontally" },
-  v = { "<C-w>v", "Split Vertically" },
-  w = { "<cmd>WinShift<cr>", "Rearrange" },
-  x = { function()
+  o = { "<C-w>o", "Only" },
+  s = { function()
     local window = require('window-picker').pick_window({
       include_current_win = false,
       hint = 'floating-big-letter',
     })
     local target_buffer = vim.fn.winbufnr(window)
     if target_buffer ~= nil then
-      vim.api.nvim_win_set_buf(window, 0)        -- Set the target window to contain current buffer
-      vim.api.nvim_win_set_buf(0, target_buffer) -- Set current window to contain target buffer
+      vim.api.nvim_win_set_buf(window, 0)
+      vim.api.nvim_win_set_buf(0, target_buffer)
     end
   end,
     "Swap",
   },
+  w = { "<cmd>WinShift<cr>", "Rearrange" },
+  x = { "<C-w>c", "Close" },
 }
 
 -- Trouble
