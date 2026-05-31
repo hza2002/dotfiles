@@ -1,22 +1,23 @@
 ########################## 🔽 ENV 🔽 ###########################
 export EDITOR='lvim'
 export GPG_TTY=$(tty)
+ZSH_OS="$(uname -s)"
 if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then # Ubuntu/WSL settings
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-elif [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
+elif [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   # ysyx
   export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
   export NEMU_HOME="$HOME/repo/ysyx-workbench/nemu"
   export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
   export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-  source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux #  Zephyr SDK, installed for zmk
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+  [[ -r "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" ]] && source "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" #  Zephyr SDK, installed for zmk
+elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
 fi
 ########################## 🔼 ENV 🔼 ###########################
 
 ########################## 🔽 BREW 🔽 ##########################
-if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+if [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   # 换清华源
   # export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
   # export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
@@ -24,15 +25,19 @@ if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   # export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
   # export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
   # 配置 Homebrew 环境变量
-  eval $(/opt/homebrew/bin/brew shellenv) 
-  # Shell Completion (https://docs.brew.sh/Shell-Completion#configuring-completions-in-zsh)
-  FPATH="$/opt/homebrew/share/zsh/site-functions:${FPATH}"
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+  fpath=("${(@)fpath:#\$/opt/homebrew/share/zsh/site-functions}")
+  typeset -U fpath
 fi
 ########################## 🔼 BREW 🔼 ##########################
 
 ########################## 🔽 PATH 🔽 ##########################
-. "$HOME/.cargo/env" # Rust
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
+[[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env" # Rust
+if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   export PATH="$PATH:$HOME/bin:/usr/local/bin"
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:/usr/local/go/bin"
@@ -43,26 +48,30 @@ if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
   # cuda
   export PATH=${PATH}:/usr/local/cuda/bin
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
   export PATH="$PATH:$HOME/repo/scripts" # my custom scripts
 fi
+typeset -U path
 ########################## 🔼 PATH 🔼 ##########################
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
+ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$ZSH/cache}"
 export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST"
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
   colored-man-pages command-not-found shell-proxy
   # Commands
-  copypath extract perms qrcode
+  extract
+  # Disabled commands: copypath perms qrcode
   # Shortcut
   fancy-ctrl-z sudo thefuck tldr
   # Aliases
-  aliases common-aliases 
-  brew docker-compose git golang rust ssh zoxide 
+  common-aliases
+  # Disabled aliases: aliases
+  git rust zoxide
   # Custom
   autoupdate fzf-tab you-should-use iterm2-shell-integration
   zsh-lazyload zsh-vi-mode zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
@@ -90,7 +99,7 @@ bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 HOST_IP="http://127.0.0.1"
 SHELLPROXY_URL="$HOST_IP:7890"
 SHELLPROXY_NO_PROXY="localhost,127.0.0.1"
-if [[ "$(uname)" == "Darwin" ]]; then
+if [[ "$ZSH_OS" == "Darwin" ]]; then
   proxy enable
 fi
 ########################## 🔼 NET 🔼 ###########################
@@ -98,15 +107,35 @@ fi
 ########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
 setopt HIST_IGNORE_ALL_DUPS # Remove duplicate older commands
 setopt HIST_IGNORE_SPACE    # Remove commands with leading space
-setopt EXTENDED_HISTORY      # Record timestamps in .zsh_history
+setopt EXTENDED_HISTORY     # Record timestamps in .zsh_history
 setopt INC_APPEND_HISTORY_TIME  # Record command execution duration
-if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi # Mole shell completion
-source <(COMPLETE=zsh jj) # Jujutsu
-eval "$(starship init zsh)" # Customizable prompt for any shell
-eval "$(codex completion zsh)" # OpenAI Codex Completion
-source "$HOME/.openclaw/completions/openclaw.zsh" # OpenClaw Completion
+function _ignore_unknown_command_history() {
+  emulate -L zsh
+  setopt extended_glob
+
+  local -a words
+  # Split the raw history line the same way zsh parses command words.
+  words=(${(z)${1%%$'\n'}}) || return 0
+
+  local cmd
+  for cmd in "${words[@]}"; do
+    [[ "$cmd" == [[:alpha:]_][[:alnum:]_]#=* ]] && continue
+    [[ "$cmd" == (builtin|command|exec|noglob|time|sudo|env) ]] && return 0
+    # Reject command-not-found typos before they pollute autosuggestions.
+    whence -w -- "$cmd" >/dev/null 2>&1
+    return $?
+  done
+
+  return 0
+}
+autoload -Uz add-zsh-hook # Load zsh hook registration helper.
+add-zsh-hook zshaddhistory _ignore_unknown_command_history # Filter history before saving.
+if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi # Mole shell completion
+(( $+commands[jj] )) && source <(COMPLETE=zsh jj) # Jujutsu
+(( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
+(( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
 # eval "$(fnm env --use-on-cd --shell zsh)"
-lazyload fnm node npm npx pnpm -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
+lazyload fnm node npm npx pnpm corepack lvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
@@ -120,7 +149,7 @@ alias find='fd' # A simple, fast and user-friendly alternative to find.
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias lg='lazygit'
 alias ld='lazydocker'
-alias make='make -j32' # 并行make
+alias make='make -j10' # 并行make
 alias mkdir='mkdir -pv'
 alias nn='lvim' # LunarVim
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
@@ -128,23 +157,49 @@ alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
 alias python='python3'
 alias mysudo='sudo -E env "PATH=$PATH"'
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
+if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   alias update='brew update && brew upgrade && brew cu -a -y && brew cleanup'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
+  alias cdx='open "codex://new?path=$(pwd)"' # open codex app
 fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
-########################## 🔽 SAFEHOUSE 🔽 ######################
-if [[ "$(uname)" == "Darwin" ]]; then # macOS settings
-  # Sandbox local AI - github.com/eugene1g/agent-safehouse
-  function safe() { safehouse "$@" }
-  function claude() { safe claude --dangerously-skip-permissions "$@" }
-  function codex() { safe codex --dangerously-bypass-approvals-and-sandbox "$@" }
+########################## 🔽 AGENT SANDBOX 🔽 ##################
+if [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
+  export SANDBOX_AGENT_PROFILE="$HOME/.config/sandbox-exec/agent.sb"
+
+  function safe() {
+    "$HOME/.config/sandbox-exec/run-sandboxed.sh" "$@"
+  }
+
+  function claude() {
+    local workdir_arg=()
+    if [[ "${1:-}" == --workdir=* ]]; then
+      workdir_arg=("$1")
+      shift
+    elif [[ "${1:-}" == --workdir && -n "${2:-}" ]]; then
+      workdir_arg=("$1" "$2")
+      shift 2
+    fi
+    safe "${workdir_arg[@]}" claude --dangerously-skip-permissions "$@"
+  }
+
+  function codex() {
+    local workdir_arg=()
+    if [[ "${1:-}" == --workdir=* ]]; then
+      workdir_arg=("$1")
+      shift
+    elif [[ "${1:-}" == --workdir && -n "${2:-}" ]]; then
+      workdir_arg=("$1" "$2")
+      shift 2
+    fi
+    safe "${workdir_arg[@]}" codex --dangerously-bypass-approvals-and-sandbox "$@"
+  }
 fi
-########################## 🔼 SAFEHOUSE 🔼 ######################
+########################## 🔼 AGENT SANDBOX 🔼 ##################
 
 ########################## 🔽 FUNCTION 🔽 #######################
 function y() {
@@ -156,8 +211,8 @@ function y() {
   rm -f -- "$tmp"
 }
 
-if [[ "$(uname)" == "Linux" ]]; then # Ubuntu/Linux settings
-elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
+if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
+elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   # Add yabai to sudoers
   function suyabai () {
     SHA256=$(shasum -a 256 $(brew --prefix)/bin/yabai | awk "{print \$1;}")
@@ -171,17 +226,17 @@ elif [[ "$(uname)" == "Darwin" ]]; then # macOS settings
   # 通用的 ssh 命令选择函数
   function ssh_connect() {
     local target=$1
-    current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n')
-    local_network_name="RhodesIsland" # 局域网网络名称
+    local current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n')
+    local local_network_name="CU_2613-5G" # 局域网网络名称
 
-    local_command="ssh l${target}" # 本地目标
-    remote_command="ssh r${target}" # 远程目标
+    local local_host="l${target}" # 本地目标
+    local remote_host="r${target}" # 远程目标
 
     # 判断当前网络，并执行相应的命令
     if [ "$current_network_name" = "$local_network_name" ]; then
-      eval "$local_command"
+      ssh "$local_host"
     else
-      eval "$remote_command"
+      ssh "$remote_host"
     fi
   }
 
