@@ -1,17 +1,25 @@
 [mgr]
-ratio    = [1, 3, 4]
-linemode = "size"
+ratio          = [1, 3, 4]
+linemode       = "size"
+sort_by        = "natural"
+sort_sensitive = false
+sort_reverse   = false
+sort_dir_first = true
+sort_translit  = false
+show_symlink   = true
+scrolloff      = 5
 
 [preview]
-max_width = 3840
-max_height = 2160
+max_width     = 3840
+max_height    = 2160
 image_quality = 50
+tab_size      = 2
 
 [plugin]
 prepend_fetchers = [
   # git
-	{ id = "git", name = "*",  run = "git", prio = "normal" },
-	{ id = "git", name = "*/", run = "git", prio = "normal" },
+	{ id = "git", url = "*",  run = "git", prio = "normal", group = "git" },
+	{ id = "git", url = "*/", run = "git", prio = "normal", group = "git" },
 ]
 
 prepend_previewers = [
