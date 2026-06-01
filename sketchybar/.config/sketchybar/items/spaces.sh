@@ -26,17 +26,42 @@ do
     label.y_offset=-1
     background.color="$BACKGROUND_1"
     background.border_color="$BACKGROUND_2"
+    background.border_width=1
+    background.height=26
+    popup.background.border_width=5
+    popup.background.border_color="$BLACK"
     script="$PLUGIN_DIR/space.sh"
   )
 
-  sketchybar --add space space.$sid left    \
-             --set space.$sid "${space[@]}" \
-             --subscribe space.$sid mouse.clicked
+  space_popup=(
+    padding_left=5
+    padding_right=0
+    icon.drawing=off
+    label.drawing=off
+    background.drawing=on
+    background.image.corner_radius=9
+    background.image.scale=0.2
+  )
+
+  sketchybar --add space space.$sid left            \
+             --set space.$sid "${space[@]}"         \
+             --subscribe space.$sid mouse.clicked   \
+                                  mouse.exited      \
+             --add item space.$sid.preview popup.space.$sid \
+             --set space.$sid.preview "${space_popup[@]}"
 done
 
 spaces_bracket=(
   background.color="$BACKGROUND_1"
   background.border_color="$BACKGROUND_2"
+  background.border_width=2
+  background.height=28
+)
+
+spaces_padding=(
+  width="$GROUP_PADDINGS"
+  label.drawing=off
+  icon.drawing=off
 )
 
 separator=(
@@ -52,5 +77,7 @@ separator=(
 
 sketchybar --add bracket spaces_bracket '/space\..*/'  \
            --set spaces_bracket "${spaces_bracket[@]}" \
+           --add item spaces.padding left              \
+           --set spaces.padding "${spaces_padding[@]}" \
            --add item separator left                   \
            --set separator "${separator[@]}"

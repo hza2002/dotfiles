@@ -39,6 +39,24 @@ window_state() {
 }
 
 windows_on_spaces () {
+  if [ "$SENDER" = "space_windows_change" ] && [ -n "$INFO" ]; then
+    space="$(echo "$INFO" | jq -r '.space // empty' 2>/dev/null)"
+    if [ -n "$space" ] && [ "$space" != "null" ]; then
+      icon_strip=" "
+      apps="$(echo "$INFO" | jq -r '.apps | keys[]?' 2>/dev/null)"
+      if [ -n "$apps" ]; then
+        while IFS= read -r app; do
+          icon_strip+=" $("$CONFIG_DIR"/plugins/icon_map.sh "$app")"
+        done <<< "$apps"
+      else
+        icon_strip=" —"
+      fi
+
+      sketchybar --animate sin 10 --set space."$space" label="$icon_strip" label.drawing=on
+      return
+    fi
+  fi
+
   CURRENT_SPACES="$(yabai -m query --displays | jq -r '.[].spaces | @sh')"
 
   args=(--set spaces_bracket drawing=off
@@ -75,6 +93,6 @@ case "$SENDER" in
   ;;
   "window_focus") window_state 
   ;;
-  "windows_on_spaces" | "space_change") windows_on_spaces
+  "windows_on_spaces" | "space_change" | "space_windows_change") windows_on_spaces
   ;;
 esac

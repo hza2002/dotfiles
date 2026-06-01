@@ -15,20 +15,18 @@ set_space_label() {
   sketchybar --set $NAME icon="$@"
 }
 
+toggle_preview() {
+  sketchybar --set "$NAME.preview" background.image="$NAME" \
+             --set "$NAME" popup.drawing=toggle
+}
+
 mouse_clicked() {
   if [ "$BUTTON" = "right" ]; then
     yabai -m space --destroy "$SID"
     sketchybar --trigger windows_on_spaces --trigger space_change
   else
-    if [ "$MODIFIER" = "shift" ]; then
-      SPACE_LABEL="$(osascript -e "return (text returned of (display dialog \"Give a name to space $NAME:\" default answer \"\" with icon note buttons {\"Cancel\", \"Continue\"} default button \"Continue\"))")"
-      if [ $? -eq 0 ]; then
-        if [ "$SPACE_LABEL" = "" ]; then
-          set_space_label "${NAME:6}"
-        else
-          set_space_label "${NAME:6} ($SPACE_LABEL)"
-        fi
-      fi
+    if [ "$MODIFIER" = "cmd" ] || [ "$MODIFIER" = "command" ]; then
+      toggle_preview
     else
       yabai -m space --focus "$SID" 2>/dev/null
     fi
@@ -37,6 +35,8 @@ mouse_clicked() {
 
 case "$SENDER" in
   "mouse.clicked") mouse_clicked
+  ;;
+  "mouse.exited") sketchybar --set "$NAME" popup.drawing=off
   ;;
   *) update
   ;;

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/colors.sh"
 
 fortune=(
   label="按点下班"

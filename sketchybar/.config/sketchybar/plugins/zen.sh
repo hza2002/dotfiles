@@ -1,56 +1,56 @@
 #!/bin/bash
 
-zen_on() {
-  sketchybar --set wifi drawing=off \
-             --set apple.logo drawing=off \
-             --set '/cpu.*/' drawing=off \
-             --set calendar icon.drawing=off \
-             --set separator drawing=off \
-             --set front_app drawing=off \
-             --set volume_icon drawing=off \
-             --set spotify.anchor drawing=off \
-             --set spotify.play updates=off \
-             --set brew drawing=off \
-             --set mem drawing=off \
-             --set network_up drawing=off \
-             --set network_down drawing=off \
-             --set fortune drawing=off \
-             --set system drawing=off \
-             --set battery drawing=off \
-             --set "控制中心,com.bjango.istatmenus.sensors" drawing=off \
-             --set "iStat Menus Menubar,com.bjango.istatmenus.weather" drawing=off \
-             --set "控制中心,FocusModes" drawing=off
-}
+ZEN_ITEMS=(
+  wifi
+  apple.logo
+  '/cpu.*/'
+  separator
+  spaces.padding
+  front_app
+  volume_icon
+  status.padding
+  spotify.anchor
+  brew
+  mem
+  network_up_unit
+  network_down_unit
+  network_up
+  network_down
+  fortune
+  system
+  battery
+  "控制中心,com.bjango.istatmenus.sensors"
+  "iStat Menus Menubar,com.bjango.istatmenus.weather"
+  "控制中心,FocusModes"
+)
 
-zen_off() {
-  sketchybar --set wifi drawing=on \
-             --set apple.logo drawing=on \
-             --set '/cpu.*/' drawing=on \
-             --set calendar icon.drawing=on \
-             --set separator drawing=on \
-             --set front_app drawing=on \
-             --set volume_icon drawing=on \
-             --set spotify.play updates=on \
-             --set brew drawing=on \
-             --set mem drawing=on \
-             --set network_up drawing=on \
-             --set network_down drawing=on \
-             --set fortune drawing=on \
-             --set system drawing=on \
-             --set battery drawing=on \
-             --set "控制中心,com.bjango.istatmenus.sensors" drawing=on \
-             --set "iStat Menus Menubar,com.bjango.istatmenus.weather" drawing=on \
-             --set "控制中心,FocusModes" drawing=on
+set_zen_state() {
+  local state="$1"
+  local args=()
+
+  for item in "${ZEN_ITEMS[@]}"; do
+    args+=(--set "$item" drawing="$state")
+  done
+
+  args+=(--set calendar icon.drawing="$state")
+
+  if [ "$state" = "off" ]; then
+    args+=(--set spotify.play updates=off)
+  else
+    args+=(--set spotify.play updates=on)
+  fi
+
+  sketchybar "${args[@]}"
 }
 
 if [ "$1" = "on" ]; then
-  zen_on
+  set_zen_state off
 elif [ "$1" = "off" ]; then
-  zen_off
+  set_zen_state on
 else
   if [ "$(sketchybar --query apple.logo | jq -r ".geometry.drawing")" = "on" ]; then
-    zen_on
+    set_zen_state off
   else
-    zen_off
+    set_zen_state on
   fi
 fi
