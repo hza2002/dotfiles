@@ -83,7 +83,7 @@ if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then e
 (( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
 (( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
 # eval "$(fnm env --use-on-cd --shell zsh)"
-lazyload fnm node npm npx pnpm corepack lvim nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
+lazyload fnm node npm npx pnpm corepack nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############

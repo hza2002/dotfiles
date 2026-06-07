@@ -25,7 +25,6 @@ prepend_dirs = [
 	{ name = "go",           text = "" },
 	{ name = "keyboard",     text = "" },
 	{ name = "kicad",        text = "" },
-	{ name = "lvim",         text = "" },
 	{ name = "nvim",         text = "" },
 	{ name = "python",       text = "" },
 	{ name = "qt",           text = "" },

@@ -103,7 +103,6 @@ alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
 alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
 alias python='python3'
-alias ra='ranger'
 alias mysudo='sudo -E env "PATH=$PATH"'
 if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
     alias update='sudo apt update && sudo apt upgrade -y'

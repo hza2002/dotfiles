@@ -2,7 +2,7 @@
 
 network_up=(
   icon=$NETWORK_UP
-  label.font="$FONT_MAIN:SemiBold:10.0"
+  label.font="$FONT_MAIN:Bold:10.0"
   icon.font="$FONT_ICON:Bold:10.0"
   icon.highlight_color="$BLUE"
   y_offset=5
@@ -15,7 +15,7 @@ network_up=(
 
 network_down=(
   icon=$NETWORK_DOWN
-  label.font="$FONT_MAIN:SemiBold:10.0"
+  label.font="$FONT_MAIN:Bold:10.0"
   icon.font="$FONT_ICON:Bold:10.0"
   icon.highlight_color="$YELLOW"
   y_offset=-5
@@ -26,7 +26,7 @@ network_down=(
 
 network_up_unit=(
   icon.drawing=off
-  label.font="$FONT_MAIN:SemiBold:10.0"
+  label.font="$FONT_MAIN:Bold:10.0"
   y_offset=5
   width=0
   label.width=26
@@ -35,7 +35,7 @@ network_up_unit=(
 
 network_down_unit=(
   icon.drawing=off
-  label.font="$FONT_MAIN:SemiBold:10.0"
+  label.font="$FONT_MAIN:Bold:10.0"
   y_offset=-5
   width=26
   label.width=26
