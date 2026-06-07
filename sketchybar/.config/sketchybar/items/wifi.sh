@@ -1,25 +1,22 @@
 #!/bin/bash
 
-source "$CONFIG_DIR/colors.sh"
-source "$CONFIG_DIR/icons.sh"
-
 wifi=(
-  padding_left=0
-  padding_right=9
+  padding_right=$PAD_ITEM
   label.width=0
   icon="$WIFI_DISCONNECTED"
   script="$PLUGIN_DIR/wifi.sh"
   icon.color=$BLUE_SOFT
   popup.align=center
+  padding_right=$PAD_WIDE
 )
 
 wifi_ip=(
   icon.drawing=off
-  label="IP: 未连接"
+  label="内网: 未连接"
   label.width=dynamic
   label.align=center
-  label.padding_left=10
-  label.padding_right=10
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
   script="$PLUGIN_DIR/wifi.sh"
 )
 
@@ -28,8 +25,28 @@ wifi_gateway=(
   label="网关: 未连接"
   label.width=dynamic
   label.align=center
-  label.padding_left=10
-  label.padding_right=10
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
+  script="$PLUGIN_DIR/wifi.sh"
+)
+
+wifi_public_ip=(
+  icon.drawing=off
+  label="公网: 未连接"
+  label.width=dynamic
+  label.align=center
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
+  script="$PLUGIN_DIR/wifi.sh"
+)
+
+wifi_country=(
+  icon.drawing=off
+  label="地区: 未知"
+  label.width=dynamic
+  label.align=center
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
   script="$PLUGIN_DIR/wifi.sh"
 )
 
@@ -46,4 +63,10 @@ sketchybar --add item wifi right                    \
                                                          \
            --add item wifi.gateway popup.wifi       \
            --set wifi.gateway "${wifi_gateway[@]}"  \
-           --subscribe wifi.gateway mouse.exited.global
+           --subscribe wifi.gateway mouse.exited.global \
+                                                         \
+           --add item wifi.public_ip popup.wifi     \
+           --set wifi.public_ip "${wifi_public_ip[@]}" \
+                                                         \
+           --add item wifi.country popup.wifi       \
+           --set wifi.country "${wifi_country[@]}"

@@ -180,7 +180,7 @@ static inline char *sketchybar(char *message) {
 
   char quote = '\0';
   uint32_t caret = 0;
-  for (int i = 0; i < message_length; ++i) {
+  for (uint32_t i = 0; i < message_length; ++i) {
     if (message[i] == '"' || message[i] == '\'') {
       if (quote == message[i])
         quote = '\0';
@@ -194,8 +194,9 @@ static inline char *sketchybar(char *message) {
     caret++;
   }
 
-  if (caret > 0 && formatted_message[caret] == '\0' &&
-      formatted_message[caret - 1] == '\0') {
+  // Collapse a trailing double NUL produced by a trailing space + source NUL.
+  if (caret >= 2 && formatted_message[caret - 1] == '\0' &&
+      formatted_message[caret - 2] == '\0') {
     caret--;
   }
 

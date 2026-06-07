@@ -72,7 +72,7 @@ case "$SENDER" in
   ;;
   "mouse.exited.global") collapse_devices
   ;;
-  *)
+  "mouse.clicked")
     if [ "$BUTTON" = "right" ]; then
       toggle_devices
     else

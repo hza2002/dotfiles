@@ -1,20 +1,25 @@
 #!/bin/bash
-CONFIG_DIR="$HOME/.config/sketchybar"
+export CONFIG_DIR="$HOME/.config/sketchybar"
 
-source "$CONFIG_DIR/colors.sh" # Loads all defined colors
-source "$CONFIG_DIR/icons.sh" # Loads all defined icons
+source "$CONFIG_DIR/colors.sh"  # Loads all defined colors
+source "$CONFIG_DIR/icons.sh"   # Loads all defined icons
+source "$CONFIG_DIR/spacing.sh" # Loads spacing variables
 
 ITEM_DIR="$CONFIG_DIR/items" # Directory where the items are configured
 PLUGIN_DIR="$CONFIG_DIR/plugins" # Directory where all the plugin scripts are stored
 
-FONT="SF Pro" # Needs to have Regular, Bold, Semibold, Heavy and Black variants
-PADDINGS=3 # All paddings use this value (icon, label, background)
-GROUP_PADDINGS=5 # Spacing between bracketed item groups
+# Font system:
+#   FONT_ICON — SF Pro, only for Apple SF Symbols (icon glyphs)
+#   FONT_MAIN  — JetBrains Maple Mono, default for everything (Chinese, English, digits, Nerd Font)
+#   FONT_CN   — XQzhaopaiti0517 (喜鹊体), only for the caffeinate idle label
+export FONT_ICON="SF Pro"
+export FONT_MAIN="JetBrains Maple Mono"
+export FONT_CN="XQzhaopaiti0517"
 
 # Setting up and starting the helper process
 HELPER=git.felix.helper
 killall helper 2>/dev/null || true
-if [ "$CONFIG_DIR/helper/helper" -ot "$CONFIG_DIR/helper/helper.c" ]; then
+if ! (cd "$CONFIG_DIR"/helper && make -q); then
   (cd "$CONFIG_DIR"/helper && make)
 fi
 "$CONFIG_DIR"/helper/helper $HELPER > /dev/null 2>&1 &
@@ -31,8 +36,8 @@ bar=(
   shadow=off
   position=top
   sticky=on
-  padding_right=10
-  padding_left=10
+  padding_right=$PAD_WIDE
+  padding_left=$PAD_WIDE
   y_offset=0
   margin=-2
   topmost=window
@@ -43,20 +48,20 @@ sketchybar --bar "${bar[@]}"
 # Setting up default values
 defaults=(
   updates=when_shown
-  icon.font="$FONT:Bold:14.0"
+  icon.font="$FONT_ICON:Bold:14.0"
   icon.color="$ICON_COLOR"
-  icon.padding_left="$PADDINGS"
-  icon.padding_right="$PADDINGS"
-  label.font="$FONT:Semibold:13.0"
+  icon.padding_left="$PAD"
+  icon.padding_right="$PAD"
+  label.font="$FONT_MAIN:Bold:13.0"
   label.color="$LABEL_COLOR"
-  label.padding_left="$PADDINGS"
-  label.padding_right="$PADDINGS"
-  padding_right="$PADDINGS"
-  padding_left="$PADDINGS"
+  label.padding_left="$PAD"
+  label.padding_right="$PAD"
+  padding_right="$PAD"
+  padding_left="$PAD"
   background.height=26
   background.corner_radius=9
-  background.border_width=2
-  popup.background.border_width=2
+  background.border_width="$BD"
+  popup.background.border_width="$BD"
   popup.background.corner_radius=9
   popup.background.border_color="$POPUP_BORDER_COLOR"
   popup.background.color="$POPUP_BACKGROUND_COLOR"
@@ -68,30 +73,19 @@ sketchybar --default "${defaults[@]}"
 
 # Left
 source "$ITEM_DIR/apple.sh"
+source "$ITEM_DIR/caffeinate.sh"
 source "$ITEM_DIR/spaces.sh"
 source "$ITEM_DIR/yabai.sh"
 source "$ITEM_DIR/front_app.sh"
-# source "$ITEM_DIR/fortune.sh"
-
-# Center
-# source "$ITEM_DIR/spotify.sh"
 
 # Right
 source "$ITEM_DIR/calendar.sh"
-# source "$ITEM_DIR/alias/weather.sh"
-source "$ITEM_DIR/alias/focusmodes.sh"
-# source "$ITEM_DIR/svim.sh"
-# source "$ITEM_DIR/brew.sh"
 source "$ITEM_DIR/wifi.sh"
 source "$ITEM_DIR/network.sh"
-# source "$ITEM_DIR/github.sh"
 source "$ITEM_DIR/battery.sh"
-# source "$ITEM_DIR/alias/battery.sh"
 source "$ITEM_DIR/volume.sh"
 
-source "$ITEM_DIR/alias/sensor.sh"
-source "$ITEM_DIR/mem.sh"
-source "$ITEM_DIR/cpu.sh"
+source "$ITEM_DIR/system.sh"
 
 sketchybar --hotload on
 

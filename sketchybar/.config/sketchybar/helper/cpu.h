@@ -1,116 +1,72 @@
+#pragma once
 #include <mach/mach.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-
-#define MAX_TOPPROC_LEN 28
-
-static const char TOPPROC[] = {"/bin/ps -Aceo pid,pcpu,comm -r"};
-static const char FILTER_PATTERN[] = {"com.apple."};
+#include <string.h>
 
 struct cpu {
-  host_t host;
-  mach_msg_type_number_t count;
+  host_t                    host;
+  mach_msg_type_number_t    count;
   host_cpu_load_info_data_t load;
   host_cpu_load_info_data_t prev_load;
-  bool has_prev_load;
-
-  char command[256];
+  bool                      has_prev_load;
+  char                      command[64];
 };
 
 static inline void cpu_init(struct cpu *cpu) {
-  cpu->host = mach_host_self();
-  cpu->count = HOST_CPU_LOAD_INFO_COUNT;
+  cpu->host         = mach_host_self();
+  cpu->count        = HOST_CPU_LOAD_INFO_COUNT;
   cpu->has_prev_load = false;
-  snprintf(cpu->command, 100, "");
+  cpu->command[0]   = '\0';
+
+  // Prime prev_load so the first cpu_update has a baseline and renders a real
+  // percentage on the first tick instead of an empty label.
+  if (host_statistics(cpu->host, HOST_CPU_LOAD_INFO,
+                      (host_info_t)&cpu->load, &cpu->count) == KERN_SUCCESS) {
+    cpu->prev_load = cpu->load;
+    cpu->has_prev_load = true;
+  }
 }
 
 static inline void cpu_update(struct cpu *cpu) {
   kern_return_t error = host_statistics(cpu->host, HOST_CPU_LOAD_INFO,
                                         (host_info_t)&cpu->load, &cpu->count);
-
-  if (error != KERN_SUCCESS) {
-    printf("Error: Could not read cpu host statistics.\n");
-    return;
-  }
+  if (error != KERN_SUCCESS) return;
 
   if (cpu->has_prev_load) {
-    uint32_t delta_user = cpu->load.cpu_ticks[CPU_STATE_USER] -
-                          cpu->prev_load.cpu_ticks[CPU_STATE_USER];
+    uint32_t delta_user   = cpu->load.cpu_ticks[CPU_STATE_USER]
+                          - cpu->prev_load.cpu_ticks[CPU_STATE_USER];
+    uint32_t delta_system = cpu->load.cpu_ticks[CPU_STATE_SYSTEM]
+                          - cpu->prev_load.cpu_ticks[CPU_STATE_SYSTEM];
+    uint32_t delta_idle   = cpu->load.cpu_ticks[CPU_STATE_IDLE]
+                          - cpu->prev_load.cpu_ticks[CPU_STATE_IDLE];
+    uint32_t delta_total  = delta_user + delta_system + delta_idle;
 
-    uint32_t delta_system = cpu->load.cpu_ticks[CPU_STATE_SYSTEM] -
-                            cpu->prev_load.cpu_ticks[CPU_STATE_SYSTEM];
+    if (delta_total == 0) { cpu->prev_load = cpu->load; return; }
 
-    uint32_t delta_idle = cpu->load.cpu_ticks[CPU_STATE_IDLE] -
-                          cpu->prev_load.cpu_ticks[CPU_STATE_IDLE];
+    double total_perc = (double)(delta_user + delta_system) / (double)delta_total;
 
-    double user_perc =
-        (double)delta_user / (double)(delta_system + delta_user + delta_idle);
+    int pct = (int)(total_perc * 100.0 + 0.5);
 
-    double sys_perc =
-        (double)delta_system / (double)(delta_system + delta_user + delta_idle);
+    // 7-tier HARD-only gradient. SOFT variants are too light against
+    // the dark bar background and read as white at a glance.
+    const char *color;
+    if      (pct >= 90) color = getenv("PURPLE_HARD");
+    else if (pct >= 80) color = getenv("RED_HARD");
+    else if (pct >= 70) color = getenv("ORANGE_HARD");
+    else if (pct >= 50) color = getenv("YELLOW_HARD");
+    else if (pct >= 30) color = getenv("GREEN_HARD");
+    else if (pct >= 10) color = getenv("AQUA_HARD");
+    else                color = getenv("BLUE_HARD");
 
-    double total_perc = user_perc + sys_perc;
+    if (!color || color[0] == '\0') color = "0xffffffff";
 
-    FILE *file;
-    char line[1024];
-
-    file = popen(TOPPROC, "r");
-    if (!file) {
-      printf("Error: TOPPROC command errored out...\n");
-      return;
-    }
-
-    fgets(line, sizeof(line), file);
-    fgets(line, sizeof(line), file);
-
-    char *start = strstr(line, FILTER_PATTERN);
-    char topproc[MAX_TOPPROC_LEN + 4];
-    uint32_t caret = 0;
-    for (int i = 0; i < sizeof(line); i++) {
-      if (start && i == start - line) {
-        i += 9;
-        continue;
-      }
-
-      if (caret >= MAX_TOPPROC_LEN && caret <= MAX_TOPPROC_LEN + 2) {
-        topproc[caret++] = '.';
-        continue;
-      }
-      if (caret > MAX_TOPPROC_LEN + 2)
-        break;
-      topproc[caret++] = line[i];
-      if (line[i] == '\0')
-        break;
-    }
-
-    topproc[MAX_TOPPROC_LEN + 3] = '\0';
-
-    pclose(file);
-
-    char color[16];
-    if (total_perc >= .7) {
-      snprintf(color, 16, "%s", getenv("RED"));
-    } else if (total_perc >= .3) {
-      snprintf(color, 16, "%s", getenv("ORANGE"));
-    } else if (total_perc >= .1) {
-      snprintf(color, 16, "%s", getenv("YELLOW"));
-    } else {
-      snprintf(color, 16, "%s", getenv("LABEL_COLOR"));
-    }
-
-    snprintf(cpu->command, 256,
-             "--push cpu.sys %.2f "
-             "--push cpu.user %.2f "
-             "--set cpu.top label='%s' "
-             "--set cpu.percent label=%.0f%% label.color=%s ",
-             sys_perc, user_perc, topproc, total_perc * 100., color);
-  } else {
-    snprintf(cpu->command, 256, "");
+    snprintf(cpu->command, sizeof(cpu->command),
+             "--set cpu label=%d%% background.color=%s",
+             pct, color);
   }
 
-  cpu->prev_load = cpu->load;
+  cpu->prev_load    = cpu->load;
   cpu->has_prev_load = true;
 }

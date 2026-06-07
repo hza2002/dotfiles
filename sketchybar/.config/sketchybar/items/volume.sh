@@ -7,6 +7,7 @@ volume_slider=(
   padding_right=0
   label.drawing=off
   icon.drawing=off
+  slider.width=0
   slider.highlight_color="$BLUE"
   slider.background.height=5
   slider.background.corner_radius=3
@@ -17,25 +18,24 @@ volume_slider=(
 
 volume_icon=(
   script="$PLUGIN_DIR/volume_click.sh"
-  padding_left=6
-  padding_right=0
+  padding_left=$PAD_WIDE
   label.drawing=off
   icon="$VOLUME_100"
   icon.align=left
   icon.color="$WHITE"
-  icon.font="$FONT:Regular:14.0"
+  icon.font="$FONT_ICON:Regular:14.0"
   popup.align=center
 )
 
 status_bracket=(
-  background.color="$BACKGROUND_1"
+  background.color="$TRANSPARENT"
   background.border_color="$BACKGROUND_2"
-  background.border_width=2
-  background.height=28
+  background.border_width="$BD"
+  background.height="$BR_H"
 )
 
 status_padding=(
-  width="$GROUP_PADDINGS"
+  width=2
   label.drawing=off
   icon.drawing=off
 )
@@ -53,7 +53,7 @@ sketchybar --add slider volume right            \
                                     mouse.scrolled \
                                     mouse.exited.global
 
-sketchybar --add bracket status network_up_unit network_down_unit network_up network_down wifi volume volume_icon \
+sketchybar --add bracket status network_up_unit network_down_unit network_up network_down wifi battery volume volume_icon \
            --set status "${status_bracket[@]}" \
            --add item status.padding right     \
            --set status.padding "${status_padding[@]}"

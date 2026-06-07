@@ -8,7 +8,8 @@ update() {
   fi
   sketchybar --set "$NAME" icon.highlight="$SELECTED" \
                          label.highlight="$SELECTED" \
-                         background.border_color=$COLOR
+                         background.border_color=$COLOR \
+             --set "$NAME.bracket" background.border_color="$COLOR"
 }
 
 set_space_label() {

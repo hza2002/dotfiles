@@ -35,19 +35,23 @@ window_state() {
   [ -z "$ICON" ] && args+=(icon.width=0) \
                  || args+=(icon="$ICON" icon.width=30)
 
-  sketchybar -m "${args[@]}"
+  sketchybar "${args[@]}"
 }
 
 windows_on_spaces () {
   if [ "$SENDER" = "space_windows_change" ] && [ -n "$INFO" ]; then
     space="$(echo "$INFO" | jq -r '.space // empty' 2>/dev/null)"
-    if [ -n "$space" ] && [ "$space" != "null" ]; then
+    if [[ "$space" =~ ^[1-9][0-9]*$ ]]; then
       icon_strip=" "
-      apps="$(echo "$INFO" | jq -r '.apps | keys[]?' 2>/dev/null)"
+      apps="$(echo "$INFO" | jq -r '.apps | to_entries[]? | .key as $app | range(.value) | $app' 2>/dev/null)"
       if [ -n "$apps" ]; then
+        app_args=()
         while IFS= read -r app; do
-          icon_strip+=" $("$CONFIG_DIR"/plugins/icon_map.sh "$app")"
+          [ -n "$app" ] && app_args+=("$app")
         done <<< "$apps"
+        while IFS= read -r icon; do
+          icon_strip+=" $icon"
+        done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
       else
         icon_strip=" —"
       fi
@@ -59,9 +63,7 @@ windows_on_spaces () {
 
   CURRENT_SPACES="$(yabai -m query --displays | jq -r '.[].spaces | @sh')"
 
-  args=(--set spaces_bracket drawing=off
-        --set '/space\..*/' background.drawing=on
-        --animate sin 10)
+  args=(--animate sin 10)
 
   while read -r line
   do
@@ -70,15 +72,19 @@ windows_on_spaces () {
       icon_strip=" "
       apps=$(yabai -m query --windows --space "$space" | jq -r ".[].app")
       if [ "$apps" != "" ]; then
+        app_args=()
         while IFS= read -r app; do
-          icon_strip+=" $("$CONFIG_DIR"/plugins/icon_map.sh "$app")"
+          [ -n "$app" ] && app_args+=("$app")
         done <<< "$apps"
+        while IFS= read -r icon; do
+          icon_strip+=" $icon"
+        done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
       fi
-      args+=(--set space."$space" label="$icon_strip" label.drawing=on)
+      args+=(--set space."$space" label="$icon_strip" label.drawing=on background.drawing=on)
     done
   done <<< "$CURRENT_SPACES"
 
-  sketchybar -m "${args[@]}"
+  sketchybar "${args[@]}"
 }
 
 mouse_clicked() {
@@ -93,6 +99,6 @@ case "$SENDER" in
   ;;
   "window_focus") window_state 
   ;;
-  "windows_on_spaces" | "space_change" | "space_windows_change") windows_on_spaces
+  "windows_on_spaces" | "space_windows_change") windows_on_spaces
   ;;
 esac
