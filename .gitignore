@@ -5,3 +5,9 @@ nvim/.config/nvim/plugin
 fish/.config/fish/fish_variables
 yazi/.config/yazi/flavors/gruvbox-dark.yazi
 yazi/.config/yazi/plugins
+.nvimlog
+CLAUDE.md
+/AGENTS.md
+/nvim/.config/nvim/CHEATSHEET.md
+HANDOFF.md
+sketchybar/.config/sketchybar/helper/helper
