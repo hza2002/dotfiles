@@ -1,0 +1,62 @@
+# https://ghostty.org/docs/config/reference
+
+font-family = "JetBrains Maple Mono"
+font-size = 14
+# improves rendering on non-Apple external displays
+font-thicken = true
+
+theme = "Gruvbox Dark"
+# Gruvbox expects bold text to use bright color variants (classic terminal behavior)
+bold-is-bright = true
+
+# hide the titlebar but keep the native macOS window frame (preserves rounded corners for borders/yabai)
+macos-titlebar-style = hidden
+# left/right breathing room
+window-padding-x = 6
+window-padding-y = 0
+# distribute the cell-remainder space evenly between top and bottom instead of piling it at the bottom
+window-padding-balance = true
+# no shadow when decoration is off
+macos-window-shadow = false
+# don't show the size popup when resizing the window
+resize-overlay = never
+# tmux owns session state; Ghostty should not restore windows on relaunch
+window-save-state = never
+
+# bar cursor avoids confusion with vim normal mode (block)
+cursor-style = bar
+
+# treats Option as Alt, required for nvim and zsh Alt-key bindings
+macos-option-as-alt = true
+
+# quit the app when the last window closes, don't linger in the Dock
+quit-after-last-window-closed = true
+# updates are managed by brew; disable the built-in update checker
+auto-update = off
+
+# open Ghostty → attach the main tmux session, create it if absent.
+# new-session -A is the canonical attach-or-create form and lets
+# tmux-continuum's auto-restore run on a fresh server.
+command = /opt/homebrew/bin/zsh --login -c "tmux new-session -A -s main"
+# ssh-terminfo pushes terminfo to remote hosts, fixing garbled output over SSH
+shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
+
+# hide the mouse pointer while typing
+mouse-hide-while-typing = true
+# send a macOS notification when a command finishes while Ghostty is not focused
+notify-on-command-finish = unfocused
+# notification only, no terminal bell
+notify-on-command-finish-action = no-bell,notify
+# only notify if the command ran longer than 10 seconds
+notify-on-command-finish-after = 10s
+# strip trailing whitespace on copy for cleaner pastes
+clipboard-trim-trailing-spaces = true
+# 100 MB scrollback; default is 10 MB
+scrollback-limit = 100000000
+# 鼠标滚轮一格 = 1 个滚动事件（默认 3 太快，叠加 nvim mousescroll 后单格 ~9 行）；触控板保持默认 0.1
+mouse-scroll-multiplier = discrete:1
+# 640 MB for Kitty graphics protocol, used by yazi image preview
+image-storage-limit = 640000000
+
+# translate Cmd+S to Ctrl+S; nvim maps <C-s> to save (Super modifier can't pass through tmux)
+keybind = cmd+s=text:\x13
