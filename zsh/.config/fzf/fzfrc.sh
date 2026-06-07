@@ -31,6 +31,10 @@ export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS"\
 
 _gen_fzf_default_opts
 
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
+export FZF_CTRL_T_COMMAND='fd --type f --type l --hidden --follow'
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow'
+
 # Paste the selected files and directories onto the command-line
 # --preview '[ -d {} ] && { tree -C {}; } || { bat -n --color=always {}; }'
 export FZF_CTRL_T_OPTS="--select-1 --exit-0 

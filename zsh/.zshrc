@@ -1,60 +1,8 @@
 ########################## 🔽 ENV 🔽 ###########################
-export EDITOR='lvim'
-export GPG_TTY=$(tty)
-ZSH_OS="$(uname -s)"
-if [[ -f /proc/version && $(grep -i Microsoft /proc/version) ]]; then # Ubuntu/WSL settings
-  export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
-  export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-elif [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
-  # ysyx
-  export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
-  export NEMU_HOME="$HOME/repo/ysyx-workbench/nemu"
-  export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
-  export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-  [[ -r "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" ]] && source "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" #  Zephyr SDK, installed for zmk
-elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-fi
+# EDITOR / ZSH_OS / project *_HOME live in .zshenv (visible to all shells).
+# brew shellenv / PATH live in .zprofile (login-time, inherited by tmux).
+export GPG_TTY=$(tty) # interactive-only: tty has no meaning in scripts
 ########################## 🔼 ENV 🔼 ###########################
-
-########################## 🔽 BREW 🔽 ##########################
-if [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  # 换清华源
-  # export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
-  # export HOMEBREW_BOTTLE_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles"
-  # export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
-  # export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
-  # export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
-  # 配置 Homebrew 环境变量
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-  fpath=("${(@)fpath:#\$/opt/homebrew/share/zsh/site-functions}")
-  typeset -U fpath
-fi
-########################## 🔼 BREW 🔼 ##########################
-
-########################## 🔽 PATH 🔽 ##########################
-[[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env" # Rust
-if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
-  export PATH="$PATH:$HOME/bin:/usr/local/bin"
-  export PATH="$PATH:$HOME/.local/bin"
-  export PATH="$PATH:/usr/local/go/bin"
-  export PATH="$PATH:$HOME/julia-1.9.2/bin"
-  export PATH="$PATH:$HOME/.fnm"
-  export PATH="$PATH:$HOME/.jenv/bin"
-  export PATH="$PATH:/snap/bin"
-  # cuda
-  export PATH=${PATH}:/usr/local/cuda/bin
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64
-elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  export PATH="$PATH:$HOME/.local/bin"
-  export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
-  export PATH="$PATH:$HOME/repo/scripts" # my custom scripts
-fi
-typeset -U path
-########################## 🔼 PATH 🔼 ##########################
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
@@ -135,7 +83,7 @@ if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then e
 (( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
 (( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
 # eval "$(fnm env --use-on-cd --shell zsh)"
-lazyload fnm node npm npx pnpm corepack lvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
+lazyload fnm node npm npx pnpm corepack lvim nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
@@ -151,7 +99,7 @@ alias lg='lazygit'
 alias ld='lazydocker'
 alias make='make -j10' # 并行make
 alias mkdir='mkdir -pv'
-alias nn='lvim' # LunarVim
+alias nn='nvim'
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
 alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
