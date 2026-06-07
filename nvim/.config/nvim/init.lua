@@ -1,12 +1,5 @@
-vim.api.nvim_create_autocmd("InsertLeave", {
-  pattern = "*",
-  callback = function()
-    vim.fn.system("macism com.apple.keylayout.ABC")
-  end,
-})
+require("config.lazy")
 
 if vim.g.vscode then
-  require("code")
-else
-  require("user")
+  require("config.vscode")
 end
