@@ -26,7 +26,13 @@ local ui_plugins      = {
   }, -- color highlighter 代码着色
   {
     "rcarriga/nvim-notify",
-    opts = { background_colour = "#000000" },
+    opts = {
+      background_colour = "#000000",
+      render = "compact",
+      stages = "fade_in_slide_out",
+      timeout = 3000,
+      max_width = 60,
+    },
   },
   {
     "folke/noice.nvim",
@@ -46,7 +52,7 @@ local editor_plugins  = {
   { "tpope/vim-surround", },                                                                  -- mappings to delete, change and add surroundings
   { "tpope/vim-repeat", },                                                                    -- 使用'.'启用重复支持的插件映射
   { "lambdalisue/suda.vim",    cmd = { "SudaRead", "SudaWrite" }, },                          -- Read or Write files with sudo command
-  { "keaising/im-select.nvim", config = function() require("im_select").setup({}) end,},      -- Switch Input Method automatically
+  { "keaising/im-select.nvim", config = function() require("im_select").setup({ default_command = "macism" }) end,},      -- Switch Input Method automatically
   -- { "rainbowhxch/accelerated-jk.nvim", event = { "VeryLazy" }, },                                     -- 滚动增强
   { "windwp/nvim-spectre",     lazy = true,                       opts = editor.spectre, },   -- Search and replace
   { "ibhagwan/smartyank.nvim", event = { "BufReadPost" },         opts = editor.smartyank, }, -- Smark powerful yank
@@ -54,6 +60,7 @@ local editor_plugins  = {
     "windwp/nvim-ts-autotag",
     ft = { 'html', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'tsx', 'jsx',
       'rescript', 'xml', 'php', 'markdown', 'astro', 'glimmer', 'handlebars', 'hbs' },
+    opts = {},
   }, -- autoclose and autorename html tag
   {
     "andymass/vim-matchup",
@@ -68,7 +75,7 @@ local editor_plugins  = {
   {
     url = "https://codeberg.org/andyg/Leap.nvim",
     event = { "VeryLazy" },
-    config = function() require("leap").add_default_mappings() end,
+    config = function() require("leap").create_default_mappings() end,
   }, -- Neovim's answer to the mouse
 }
 
@@ -113,7 +120,8 @@ local tool_plugins    = {
 --## Code
 --#######################################
 local code_plugins    = {
-  { "folke/trouble.nvim", cmd = { "TroubleToggle" }, opts = code.trouble, }, -- diagnostics, references, telescope results, quickfix and location lists
+  { "folke/trouble.nvim", cmd = { "Trouble" },        opts = code.trouble, }, -- diagnostics, references, telescope results, quickfix and location lists
+  { "mrcjkb/rustaceanvim",  version = "^5", lazy = false, },                -- Enhanced rust-analyzer: hover actions, cargo/clippy integration
   {
     "rmagatti/goto-preview",
     opts = code.goto_preview,

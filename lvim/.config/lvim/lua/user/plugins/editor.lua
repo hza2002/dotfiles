@@ -4,8 +4,8 @@ editor.spectre = {
   is_block_ui_break = true,
   highlight = {
     ui = "String",
-    search = "@text.warning",
-    replace = "@text.danger"
+    search = "@comment.warning",
+    replace = "@comment.error"
   },
 }
 

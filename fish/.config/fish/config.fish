@@ -21,7 +21,7 @@ if test -n "$TMUX"
 else
     set TERM "xterm-256color"
 end
-set -x EDITOR 'lvim'
+set -x EDITOR 'nvim'
 if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
     # ysyx
     set AM_HOME "$HOME/repo/ysyx-workbench/abstract-machine"
@@ -98,7 +98,7 @@ alias l='ls -lah'
 alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
 alias m='tldr' # man
 alias mkdir='mkdir -pv'
-alias nn='lvim' # LunarVim
+alias nn='nvim'
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
 alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.

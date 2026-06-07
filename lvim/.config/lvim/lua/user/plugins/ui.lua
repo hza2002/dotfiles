@@ -25,10 +25,10 @@ ui.gruvbox = {
 
 ui.symbols_outline = {
   symbols = {
-    File = { icon = "", hl = "@text.uri" },
+    File = { icon = "", hl = "@string.special.url" },
     Module = { icon = "󱒌", hl = "@namespace" },
     Namespace = { icon = "", hl = "@namespace" },
-    Field = { icon = "", hl = "@field" },
+    Field = { icon = "", hl = "@variable.member" },
     Array = { icon = "", hl = "@constant" },
     Event = { icon = "", hl = "@type" },
     Component = { icon = "󰡀", hl = "@function" },
@@ -115,15 +115,24 @@ ui.noice = {
   },
   lsp = {
     override = {
-      ["vim.lsp.util.convert_input_to_markdown_lines"] = true, -- override the default lsp markdown formatter with Noice
-      ["vim.lsp.util.stylize_markdown"] = true,                -- override the lsp markdown formatter with Noice
-      ["cmp.entry.get_documentation"] = true,                  -- override cmp documentation with Noice (needs the other options to work)
+      ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+      ["vim.lsp.util.stylize_markdown"] = true,
+      ["cmp.entry.get_documentation"] = true,
     },
   },
+  routes = {
+    -- Downgrade routine status messages to mini (bottom bar, non-intrusive)
+    { filter = { event = "msg_show", kind = "", find = "written" },     view = "mini" },
+    { filter = { event = "msg_show", kind = "", find = "fewer lines" }, view = "mini" },
+    { filter = { event = "msg_show", kind = "", find = "more lines" },  view = "mini" },
+    { filter = { event = "msg_show", kind = "", find = "yanked" },      view = "mini" },
+    -- search_count is already rendered in the cmdline area by Noice
+    { filter = { event = "msg_show", kind = "search_count" },           opts = { skip = true } },
+  },
   presets = {
-    command_palette = true,       -- position the cmdline and popupmenu together
-    long_message_to_split = true, -- long messages will be sent to a split
-    lsp_doc_border = true,        -- add a border to hover docs and signature help
+    command_palette = true,
+    long_message_to_split = true,
+    lsp_doc_border = true,
   },
 }
 

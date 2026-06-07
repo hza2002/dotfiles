@@ -222,10 +222,10 @@ lvim.builtin.which_key.mappings["w"] = {
 -- Trouble
 lvim.builtin.which_key.mappings["t"] = {
   name = "Diagnostics",
-  d = { "<cmd>TroubleToggle document_diagnostics<cr>", "document" },
-  l = { "<cmd>TroubleToggle loclist<cr>", "loclist" },
-  q = { "<cmd>TroubleToggle quickfix<cr>", "quickfix" },
-  r = { "<cmd>TroubleToggle lsp_references<cr>", "references" },
-  t = { "<cmd>TroubleToggle<cr>", "trouble" },
-  w = { "<cmd>TroubleToggle workspace_diagnostics<cr>", "workspace" },
+  d = { "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", "document" },
+  l = { "<cmd>Trouble loclist toggle<cr>", "loclist" },
+  q = { "<cmd>Trouble qflist toggle<cr>", "quickfix" },
+  r = { "<cmd>Trouble lsp_references toggle<cr>", "references" },
+  t = { "<cmd>Trouble diagnostics toggle<cr>", "trouble" },
+  w = { "<cmd>Trouble diagnostics toggle<cr>", "workspace" },
 }

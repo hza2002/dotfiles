@@ -1,10 +1,9 @@
 local code = {}
 
 code.trouble = {
-  mode = "workspace_diagnostics", -- "workspace_diagnostics", "document_diagnostics", "quickfix", "lsp_references", "loclist"
-  action_keys = {                 -- key mappings for actions in the trouble list
-    open_split = { "<c-s>" },     -- open buffer in new split
-    hover = "gh",                 -- opens a small popup with the full multiline message
+  keys = {
+    ["<c-s>"] = "jump_split",
+    ["gh"]    = "hover",
   },
 }
 
