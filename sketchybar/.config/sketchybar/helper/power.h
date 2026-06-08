@@ -30,12 +30,17 @@ static inline void power_update(struct power *p) {
   else                     color = getenv("BLUE_HARD");
   if (!color || color[0] == '\0') color = "0xffffffff";
 
+  // 2-tier icon: HIGH at YELLOW threshold (sustained draw), else LOW.
+  const char *icon = getenv(watts >= 25.f ? "SYS_POWER_HIGH" : "SYS_POWER_LOW");
+  if (!icon || icon[0] == '\0') icon = "";
+
   if (watts >= 0.f) {
     snprintf(p->command, sizeof(p->command),
-             "--set power label=%.1fW background.color=%s",
-             watts, color);
+             "--set power icon=%s label=%.1fW background.color=%s",
+             icon, watts, color);
   } else {
     snprintf(p->command, sizeof(p->command),
-             "--set power label=--W background.color=%s", color);
+             "--set power icon=%s label=--W background.color=%s",
+             icon, color);
   }
 }

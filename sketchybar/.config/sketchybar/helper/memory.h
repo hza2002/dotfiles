@@ -55,7 +55,11 @@ static inline void memory_update(struct memory *mem) {
 
   if (!color || color[0] == '\0') color = "0xffffffff";
 
+  // 2-tier icon: HIGH once real pressure hits (ORANGE threshold), else LOW.
+  const char *icon = getenv(pressure >= 50 ? "SYS_MEM_HIGH" : "SYS_MEM_LOW");
+  if (!icon || icon[0] == '\0') icon = "";
+
   snprintf(mem->command, sizeof(mem->command),
-           "--set mem label=%d%% background.color=%s",
-           pressure, color);
+           "--set mem icon=%s label=%d%% background.color=%s",
+           icon, pressure, color);
 }

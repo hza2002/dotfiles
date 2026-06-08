@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Caffeinate sketchybar plugin.
-# State file holds the PID and optional END epoch.
+# State file holds the PID, optional END epoch, and MODE.
 # Subcommands: click, forever, hours N, minutes N, until HH:MM, custom, stop, render.
 
 source "$CONFIG_DIR/colors.sh"
@@ -10,15 +10,24 @@ source "$CONFIG_DIR/spacing.sh"
 
 # Keep in sync with items/caffeinate.sh (IDLE_LABEL only).
 IDLE_LABEL="按點下班"
+# Active-state prefixes — all four share 班 for typographic continuity.
+HOURS_LABEL="加會兒班"
+UNTIL_LABEL="加個夜班"
+FOREVER_LABEL="不下班了"
 
 STATE_FILE="${TMPDIR:-/tmp}/sketchybar-caffeinate.state"
 
 read_state() {
   PID=""
   END=""
+  MODE=""
   [ -f "$STATE_FILE" ] || return
   while IFS='=' read -r k v; do
-    case "$k" in PID) PID=$v ;; END) END=$v ;; esac
+    case "$k" in
+    PID) PID=$v ;;
+    END) END=$v ;;
+    MODE) MODE=$v ;;
+    esac
   done <"$STATE_FILE"
 }
 
@@ -30,6 +39,7 @@ write_state() {
   {
     echo "PID=$1"
     echo "END=$2"
+    echo "MODE=$3"
   } >"$STATE_FILE"
 }
 
@@ -43,16 +53,18 @@ stop() {
   cleanup
 }
 
-# Start caffeinate. Arg: duration in seconds, empty means forever.
+# Start caffeinate. Args: duration_secs (empty=forever), mode.
+# mode: hours | until | forever (empty duration always treated as forever).
 start() {
   stop
   local dur="${1:-}"
+  local mode="${2:-hours}"
   if [ -n "$dur" ] && [ "$dur" -gt 0 ] 2>/dev/null; then
     caffeinate -i -t "$dur" </dev/null >/dev/null 2>&1 &
-    write_state "$!" "$(($(date +%s) + dur))"
+    write_state "$!" "$(($(date +%s) + dur))" "$mode"
   else
     caffeinate -i </dev/null >/dev/null 2>&1 &
-    write_state "$!" ""
+    write_state "$!" "" "forever"
   fi
   disown
 }
@@ -93,7 +105,7 @@ OSA
   [ -z "$input" ] && return 0
   local secs
   if secs=$(parse_duration "$input"); then
-    start "$secs"
+    start "$secs" "hours"
   else
     osascript -e "display notification \"无法识别: ${input//\"/\\\"}\" with title \"Caffeinate\"" 2>/dev/null
   fi
@@ -118,7 +130,7 @@ until_time() {
   else
     [ "$target" -le "$now" ] && target=$((target + 86400))
   fi
-  start $((target - now))
+  start $((target - now)) "until"
 }
 
 toggle() {
@@ -126,7 +138,7 @@ toggle() {
   if is_alive; then
     stop
   else
-    start ""
+    start "" "forever"
   fi
 }
 
@@ -156,46 +168,60 @@ format_remaining() {
 
 render() {
   read_state
-  if is_alive; then
-    if [ -n "$END" ]; then
-      local now remaining
-      now=$(date +%s)
-      remaining=$((END - now))
-      if [ "$remaining" -le 0 ]; then
-        stop
-        render_idle
-        return
-      fi
-      sketchybar --set caffeinate \
-        label="$IDLE_LABEL" \
-        label.color="$YELLOW_SOFT" \
-        label.padding_right=$PAD \
-        padding_right=0 \
-        label.y_offset=1 \
-        update_freq=30 \
-        --set caffeinate.suffix \
-        label="$(format_remaining "$remaining")" \
-        label.color="$YELLOW_HARD" \
-        label.drawing=on \
-        drawing=on
-    else
-      sketchybar --set caffeinate \
-        label="$IDLE_LABEL" \
-        label.color="$ORANGE_SOFT" \
-        label.padding_right=$PAD \
-        padding_right=0 \
-        label.y_offset=1 \
-        update_freq=30 \
-        --set caffeinate.suffix \
-        label="$CAFFEINATE_FOREVER" \
-        label.color="$ORANGE_HARD" \
-        label.drawing=on \
-        drawing=on
-    fi
-  else
+  if ! is_alive; then
     [ -f "$STATE_FILE" ] && cleanup
     render_idle
+    return
   fi
+
+  # Legacy fallback for state files written before MODE was introduced.
+  local mode="$MODE"
+  if [ -z "$mode" ]; then
+    [ -z "$END" ] && mode="forever" || mode="hours"
+  fi
+
+  if [ "$mode" = "forever" ]; then
+    sketchybar --set caffeinate \
+      label="$FOREVER_LABEL" \
+      label.color="$ORANGE_SOFT" \
+      label.padding_right=$PAD \
+      padding_right=0 \
+      label.y_offset=1 \
+      update_freq=30 \
+      --set caffeinate.suffix \
+      label="$CAFFEINATE_FOREVER" \
+      label.color="$ORANGE_HARD" \
+      label.drawing=on \
+      drawing=on
+    return
+  fi
+
+  # hours / until both have a finite END — handle expiry first.
+  local now remaining
+  now=$(date +%s)
+  remaining=$((END - now))
+  if [ "$remaining" -le 0 ]; then
+    stop
+    render_idle
+    return
+  fi
+
+  # hours / until both show countdown — only the prefix differentiates.
+  local prefix="$HOURS_LABEL"
+  [ "$mode" = "until" ] && prefix="$UNTIL_LABEL"
+
+  sketchybar --set caffeinate \
+    label="$prefix" \
+    label.color="$YELLOW_SOFT" \
+    label.padding_right=$PAD \
+    padding_right=0 \
+    label.y_offset=1 \
+    update_freq=30 \
+    --set caffeinate.suffix \
+    label="$(format_remaining "$remaining")" \
+    label.color="$YELLOW_HARD" \
+    label.drawing=on \
+    drawing=on
 }
 
 render_idle() {
@@ -231,7 +257,7 @@ stop)
   render
   ;;
 forever)
-  start ""
+  start "" "forever"
   render
   ;;
 custom)
@@ -243,11 +269,11 @@ until)
   render
   ;;
 hours)
-  start "$((${2:-1} * 3600))"
+  start "$((${2:-1} * 3600))" "hours"
   render
   ;;
 minutes)
-  start "$((${2:-30} * 60))"
+  start "$((${2:-30} * 60))" "hours"
   render
   ;;
 render | *) render ;;

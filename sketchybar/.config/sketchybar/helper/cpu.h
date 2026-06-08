@@ -11,7 +11,7 @@ struct cpu {
   host_cpu_load_info_data_t load;
   host_cpu_load_info_data_t prev_load;
   bool                      has_prev_load;
-  char                      command[64];
+  char                      command[96];
 };
 
 static inline void cpu_init(struct cpu *cpu) {
@@ -62,9 +62,13 @@ static inline void cpu_update(struct cpu *cpu) {
 
     if (!color || color[0] == '\0') color = "0xffffffff";
 
+    // 2-tier icon: HIGH at YELLOW threshold (sustained load), else LOW.
+    const char *icon = getenv(pct >= 50 ? "SYS_CPU_HIGH" : "SYS_CPU_LOW");
+    if (!icon || icon[0] == '\0') icon = "";
+
     snprintf(cpu->command, sizeof(cpu->command),
-             "--set cpu label=%d%% background.color=%s",
-             pct, color);
+             "--set cpu icon=%s label=%d%% background.color=%s",
+             icon, pct, color);
   }
 
   cpu->prev_load    = cpu->load;

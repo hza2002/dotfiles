@@ -57,7 +57,15 @@ static inline void fan_update(struct fan *f) {
   else                  color = getenv("BLUE_HARD");
   if (!color || color[0] == '\0') color = "0xffffffff";
 
+  // 3-tier icon: STOP at 0, HIGH once fan ramps up (YELLOW threshold),
+  // LOW otherwise.
+  const char *icon;
+  if      (avg == 0)    icon = getenv("SYS_FAN_STOP");
+  else if (avg >= 3000) icon = getenv("SYS_FAN_HIGH");
+  else                  icon = getenv("SYS_FAN_LOW");
+  if (!icon || icon[0] == '\0') icon = "";
+
   snprintf(f->command, sizeof(f->command),
-           "--set fan label=%d background.color=%s",
-           avg, color);
+           "--set fan icon=%s label=%d background.color=%s",
+           icon, avg, color);
 }

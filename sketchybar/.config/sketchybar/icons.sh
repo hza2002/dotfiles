@@ -8,13 +8,18 @@ LOCK=􀒳
 LOADING=􀖇
 
 # System Widgets
-SYS_CPU=􀫥
-SYS_MEM=􀫦
+export SYS_CPU_LOW=􀫥
+export SYS_CPU_HIGH=􀧓
+export SYS_MEM_LOW=􀫦
+export SYS_MEM_HIGH=􀧖
 export SYS_TEMP_LOW=􁏃
 export SYS_TEMP_MEDIUM=􀇬
 export SYS_TEMP_HIGH=􁏄
-SYS_POWER=􁌽
-SYS_FAN=􁁌
+export SYS_POWER_LOW=􁌽
+export SYS_POWER_HIGH=􁍀
+export SYS_FAN_LOW=􁁋
+export SYS_FAN_HIGH=􁁌
+export SYS_FAN_STOP=􁝚
 
 # Network
 NETWORK_UP=􀆇
