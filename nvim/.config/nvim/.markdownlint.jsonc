@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
+  "default": true,
+
+  // Personal Markdown notes should stay quiet about style preferences.
+  "MD010": false, // hard tabs
+  "MD012": false, // multiple consecutive blank lines
+  "MD013": false, // line length
+  "MD022": false, // blank lines around headings
+  "MD026": false, // trailing punctuation in headings
+  "MD031": false, // blank lines around fenced code blocks
+  "MD032": false, // blank lines around lists
+  "MD033": false, // inline HTML
+  "MD034": false, // bare URLs
+  "MD040": false, // fenced code block language
+  "MD041": false, // first line must be a top-level heading
+  "MD045": false, // image alt text
+
+  // Repeated section names are fine under different parents.
+  "MD024": {
+    "siblings_only": true
+  }
+}
