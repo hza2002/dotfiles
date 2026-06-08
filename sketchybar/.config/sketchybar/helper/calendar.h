@@ -28,8 +28,12 @@ static inline void calendar_update(struct calendar *c) {
   time_t now = time(NULL);
   struct tm *tm = localtime(&now);
 
+  char weekday[8];
+  strftime(weekday, sizeof(weekday), "%a", tm);
+
   char date_str[16];
-  strftime(date_str, sizeof(date_str), "%a %d. %b", tm);
+  snprintf(date_str, sizeof(date_str), "%s %d/%d",
+           weekday, tm->tm_mon + 1, tm->tm_mday);
 
   char time_str[16];
   strftime(time_str, sizeof(time_str), seconds ? "%H:%M:%S" : "%H:%M", tm);

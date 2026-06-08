@@ -14,7 +14,7 @@
 struct temperature {
   char tp_keys[TP_MAX_KEYS][5];
   int  tp_count;
-  char command[128];
+  char command[192];
 };
 
 static inline void temperature_load_cache(struct temperature *t) {
@@ -101,12 +101,21 @@ static inline void temperature_update(struct temperature *t) {
   else                 color = getenv("BLUE_HARD");
   if (!color || color[0] == '\0') color = "0xffffffff";
 
+  // 3-tier icon: collapse the 7 color tiers onto LOW (<50) / MEDIUM
+  // (50–74) / HIGH (≥75) to match SYS_TEMP_LOW/MEDIUM/HIGH glyphs.
+  const char *icon;
+  if      (temp >= 75) icon = getenv("SYS_TEMP_HIGH");
+  else if (temp >= 50) icon = getenv("SYS_TEMP_MEDIUM");
+  else                 icon = getenv("SYS_TEMP_LOW");
+  if (!icon || icon[0] == '\0') icon = "";
+
   if (temp >= 0) {
     snprintf(t->command, sizeof(t->command),
-             "--set temp label=%d° background.color=%s",
-             temp, color);
+             "--set temp icon=%s label=%d° background.color=%s",
+             icon, temp, color);
   } else {
     snprintf(t->command, sizeof(t->command),
-             "--set temp label=--° background.color=%s", color);
+             "--set temp icon=%s label=--° background.color=%s",
+             icon, color);
   }
 }

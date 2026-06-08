@@ -1,6 +1,7 @@
 #include "battery.h"
 #include "calendar.h"
 #include "cpu.h"
+#include "fan.h"
 #include "memory.h"
 #include "network.h"
 #include "smc.h"
@@ -13,6 +14,7 @@ struct memory      g_memory;
 struct network     g_network;
 struct temperature g_temperature;
 struct power       g_power;
+struct fan         g_fan;
 struct battery     g_battery;
 struct calendar    g_calendar;
 
@@ -39,6 +41,10 @@ void handler(env env) {
     power_update(&g_power);
     if (strlen(g_power.command) > 0)
       sketchybar(g_power.command);
+  } else if (strcmp(name, "fan") == 0) {
+    fan_update(&g_fan);
+    if (strlen(g_fan.command) > 0)
+      sketchybar(g_fan.command);
   } else if (strcmp(name, "battery") == 0) {
     battery_update(&g_battery);
     if (strlen(g_battery.command) > 0)
@@ -57,6 +63,7 @@ int main(int argc, char **argv) {
   smc_init();
   temperature_init(&g_temperature);
   power_init(&g_power);
+  fan_init(&g_fan);
   battery_init(&g_battery);
   calendar_init(&g_calendar);
 

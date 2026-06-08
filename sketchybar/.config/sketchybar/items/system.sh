@@ -20,7 +20,8 @@ add_system_widget() {
   sketchybar --add item "$name" right --set "$name" "${defaults[@]}"
 }
 
-add_system_widget power "$SYS_POWER" 15 13 3
-add_system_widget temp  "$SYS_TEMP"  15 13 5
-add_system_widget mem   "$SYS_MEM"   16 14 15
-add_system_widget cpu   "$SYS_CPU"   16 14 3
+add_system_widget fan   "$SYS_FAN"          15 13 5
+add_system_widget temp  "$SYS_TEMP_MEDIUM" 15 13 5
+add_system_widget power "$SYS_POWER"       15 13 3
+add_system_widget mem   "$SYS_MEM"         16 14 15
+add_system_widget cpu   "$SYS_CPU"         16 14 3
