@@ -19,11 +19,18 @@ toggle_detail() {
   fi
 }
 
+device_items_exist() {
+  sketchybar --query bar 2>/dev/null \
+    | jq -e '.items | any(startswith("volume.device."))' >/dev/null 2>&1
+}
+
 toggle_devices() {
   which SwitchAudioSource >/dev/null || exit 0
   source "$CONFIG_DIR/colors.sh"
 
-  args=(--remove '/volume.device\.*/' --set "$NAME" popup.drawing=toggle)
+  args=()
+  device_items_exist && args+=(--remove '/volume.device\.*/')
+  args+=(--set "$NAME" popup.drawing=toggle)
   COUNTER=0
   CURRENT="$(SwitchAudioSource -t output -c)"
   while IFS= read -r device; do
@@ -44,8 +51,12 @@ toggle_devices() {
 }
 
 collapse_devices() {
-  sketchybar --remove '/volume.device\.*/' \
-             --set volume_icon popup.drawing=off
+  if device_items_exist; then
+    sketchybar --remove '/volume.device\.*/' \
+               --set volume_icon popup.drawing=off
+  else
+    sketchybar --set volume_icon popup.drawing=off
+  fi
 }
 
 scroll_volume() {

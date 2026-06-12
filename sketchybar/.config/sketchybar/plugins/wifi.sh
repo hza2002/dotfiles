@@ -55,17 +55,20 @@ set_details() {
   sketchybar --set wifi.ip drawing=on label="内网: $IP" \
              --set wifi.gateway drawing=on label="网关: $ROUTER"
 
-  # Fetch public IP info (cached)
-  local public_info public_ip country_code
+  # Fetch public IP info (cached). Parse with a single jq call instead of
+  # spawning python3 three times — each python3 startup is ~50ms.
+  local public_info public_ip country_code country country_label
   public_info="$(get_public_info)"
-  public_ip="$(echo "$public_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('query','未知'))" 2>/dev/null)"
-  country_code="$(echo "$public_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('countryCode',''))" 2>/dev/null)"
-  country="$(echo "$public_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('country','未知'))" 2>/dev/null)"
-
+  if [ -n "$public_info" ]; then
+    IFS=$'\t' read -r public_ip country country_code <<<"$(
+      printf '%s' "$public_info" \
+        | jq -r '[.query // "未知", .country // "未知", .countryCode // ""] | @tsv' 2>/dev/null
+    )"
+  fi
   [ -z "$public_ip" ] && public_ip="获取失败"
-  [ -z "$country" ] && country="未知"
+  [ -z "$country" ]   && country="未知"
 
-  local country_label="$country"
+  country_label="$country"
   [ -n "$country_code" ] && country_label="$country ($country_code)"
 
   sketchybar --set wifi.public_ip drawing=on label="公网: $public_ip" \

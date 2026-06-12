@@ -1,6 +1,10 @@
 #pragma once
 
 #include <bootstrap.h>
+#include <stdarg.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include <mach/mach.h>
 #include <mach/message.h>
 #include <pthread.h>
@@ -36,6 +40,31 @@ struct mach_server {
 static struct mach_server g_mach_server;
 static mach_port_t g_mach_port = 0;
 
+static inline const char *helper_log_path(void) {
+  const char *path = getenv("SKETCHYBAR_HELPER_LOG");
+  if (path && path[0] != '\0') return path;
+  return "/tmp/sketchybar-helper.log";
+}
+
+static inline void helper_log(const char *fmt, ...) {
+  FILE *file = fopen(helper_log_path(), "a");
+  if (!file) return;
+
+  time_t now = time(NULL);
+  struct tm tm;
+  localtime_r(&now, &tm);
+  char stamp[32];
+  strftime(stamp, sizeof(stamp), "%Y-%m-%d %H:%M:%S", &tm);
+
+  fprintf(file, "[%s] pid=%d ", stamp, getpid());
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(file, fmt, args);
+  va_end(args);
+  fputc('\n', file);
+  fclose(file);
+}
+
 static inline char *env_get_value_for_key(env env, char *key) {
   uint32_t caret = 0;
   for (;;) {
@@ -54,14 +83,16 @@ static inline mach_port_t mach_get_bs_port() {
   mach_port_name_t task = mach_task_self();
 
   mach_port_t bs_port;
-  if (task_get_special_port(task, TASK_BOOTSTRAP_PORT, &bs_port) !=
-      KERN_SUCCESS) {
+  kern_return_t kr = task_get_special_port(task, TASK_BOOTSTRAP_PORT, &bs_port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("task_get_special_port(sketchybar) failed: %d", kr);
     return 0;
   }
 
   mach_port_t port;
-  if (bootstrap_look_up(bs_port, "git.felix.sketchybar", &port) !=
-      KERN_SUCCESS) {
+  kr = bootstrap_look_up(bs_port, "git.felix.sketchybar", &port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("bootstrap_look_up(git.felix.sketchybar) failed: %d", kr);
     return 0;
   }
 
@@ -83,6 +114,10 @@ static inline void mach_receive_message(mach_port_t port,
                           MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 
   if (msg_return != MACH_MSG_SUCCESS) {
+    if (msg_return != MACH_RCV_TIMED_OUT) {
+      helper_log("mach_receive_message failed: port=%u timeout=%d return=%d",
+                 port, timeout, msg_return);
+    }
     buffer->message.descriptor.address = NULL;
   }
 }
@@ -95,13 +130,17 @@ static inline char *mach_send_message(mach_port_t port, char *message,
 
   mach_port_t response_port;
   mach_port_name_t task = mach_task_self();
-  if (mach_port_allocate(task, MACH_PORT_RIGHT_RECEIVE, &response_port) !=
-      KERN_SUCCESS) {
+  kern_return_t kr = mach_port_allocate(task, MACH_PORT_RIGHT_RECEIVE,
+                                        &response_port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("mach_port_allocate(response) failed: %d", kr);
     return NULL;
   }
 
-  if (mach_port_insert_right(task, response_port, response_port,
-                             MACH_MSG_TYPE_MAKE_SEND) != KERN_SUCCESS) {
+  kr = mach_port_insert_right(task, response_port, response_port,
+                              MACH_MSG_TYPE_MAKE_SEND);
+  if (kr != KERN_SUCCESS) {
+    helper_log("mach_port_insert_right(response) failed: %d", kr);
     return NULL;
   }
 
@@ -121,8 +160,12 @@ static inline char *mach_send_message(mach_port_t port, char *message,
   msg.descriptor.deallocate = false;
   msg.descriptor.type = MACH_MSG_OOL_DESCRIPTOR;
 
-  mach_msg(&msg.header, MACH_SEND_MSG, sizeof(struct mach_message), 0,
-           MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+  kr = mach_msg(&msg.header, MACH_SEND_MSG, sizeof(struct mach_message), 0,
+                MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+  if (kr != MACH_MSG_SUCCESS) {
+    helper_log("mach_send_message failed: port=%u return=%d", port, kr);
+    return NULL;
+  }
 
   struct mach_buffer buffer = {0};
   mach_receive_message(response_port, &buffer, true);
@@ -140,32 +183,46 @@ static inline bool mach_server_begin(struct mach_server *mach_server,
                                      char *bootstrap_name) {
   mach_server->task = mach_task_self();
 
-  if (mach_port_allocate(mach_server->task, MACH_PORT_RIGHT_RECEIVE,
-                         &mach_server->port) != KERN_SUCCESS) {
+  kern_return_t kr = mach_port_allocate(mach_server->task,
+                                        MACH_PORT_RIGHT_RECEIVE,
+                                        &mach_server->port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("mach_port_allocate(server) failed: %d", kr);
     return false;
   }
 
-  if (mach_port_insert_right(mach_server->task, mach_server->port,
-                             mach_server->port,
-                             MACH_MSG_TYPE_MAKE_SEND) != KERN_SUCCESS) {
+  kr = mach_port_insert_right(mach_server->task, mach_server->port,
+                              mach_server->port, MACH_MSG_TYPE_MAKE_SEND);
+  if (kr != KERN_SUCCESS) {
+    helper_log("mach_port_insert_right(server) failed: %d", kr);
     return false;
   }
 
-  if (task_get_special_port(mach_server->task, TASK_BOOTSTRAP_PORT,
-                            &mach_server->bs_port) != KERN_SUCCESS) {
+  kr = task_get_special_port(mach_server->task, TASK_BOOTSTRAP_PORT,
+                             &mach_server->bs_port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("task_get_special_port(server) failed: %d", kr);
     return false;
   }
 
-  if (bootstrap_register(mach_server->bs_port, bootstrap_name,
-                         mach_server->port) != KERN_SUCCESS) {
+  kr = bootstrap_register(mach_server->bs_port, bootstrap_name,
+                          mach_server->port);
+  if (kr != KERN_SUCCESS) {
+    helper_log("bootstrap_register(%s) failed: %d", bootstrap_name, kr);
     return false;
   }
+  helper_log("bootstrap_register(%s) ok", bootstrap_name);
 
   mach_server->handler = handler;
   mach_server->is_running = true;
   struct mach_buffer buffer;
   while (mach_server->is_running) {
     mach_receive_message(mach_server->port, &buffer, false);
+    if (!buffer.message.descriptor.address) {
+      helper_log("received empty mach message");
+      mach_msg_destroy(&buffer.message.header);
+      continue;
+    }
     mach_server->handler((env)buffer.message.descriptor.address);
     mach_msg_destroy(&buffer.message.header);
   }

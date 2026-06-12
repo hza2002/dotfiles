@@ -16,13 +16,23 @@ export FONT_ICON="SF Pro"
 export FONT_MAIN="JetBrains Maple Mono"
 export FONT_CN="XQzhaopaiti0517"
 
-# Setting up and starting the helper process
+# Setting up and starting the helper process.
+# Keep the helper alive across sketchybarrc reloads — only restart it when the
+# binary was rebuilt or when no helper is running. Saves sensor re-init time
+# (smc_init / SMC open) on hotload.
 HELPER=git.felix.helper
-killall helper 2>/dev/null || true
+HELPER_LOG="${TMPDIR:-/tmp}/sketchybar-helper.log"
+
+rebuilt=false
 if ! (cd "$CONFIG_DIR"/helper && make -q); then
-  (cd "$CONFIG_DIR"/helper && make)
+  (cd "$CONFIG_DIR"/helper && make) >> "$HELPER_LOG" 2>&1
+  rebuilt=true
 fi
-"$CONFIG_DIR"/helper/helper $HELPER > /dev/null 2>&1 &
+
+if $rebuilt || ! pgrep -fx "$CONFIG_DIR/helper/helper $HELPER" >/dev/null; then
+  pkill -fx "$CONFIG_DIR/helper/helper $HELPER" 2>/dev/null || true
+  SKETCHYBAR_HELPER_LOG="$HELPER_LOG" "$CONFIG_DIR"/helper/helper $HELPER >> "$HELPER_LOG" 2>&1 &
+fi
 
 # Unload the macOS on screen indicator overlay for volume change
 launchctl bootout gui/$(id -u) /System/Library/LaunchAgents/com.apple.OSDUIHelper.plist > /dev/null 2>&1 || true
@@ -86,6 +96,9 @@ source "$ITEM_DIR/battery.sh"
 source "$ITEM_DIR/volume.sh"
 
 source "$ITEM_DIR/system.sh"
+
+# Hidden item: refreshes bar window on system wake (see file for context)
+source "$ITEM_DIR/wake_refresh.sh"
 
 sketchybar --hotload on
 

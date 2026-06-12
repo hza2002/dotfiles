@@ -8,6 +8,8 @@
 #include "temperature.h"
 #include "power.h"
 #include "sketchybar.h"
+#include <signal.h>
+#include <string.h>
 
 struct cpu         g_cpu;
 struct memory      g_memory;
@@ -18,7 +20,24 @@ struct fan         g_fan;
 struct battery     g_battery;
 struct calendar    g_calendar;
 
+static volatile sig_atomic_t g_last_signal = 0;
+
+static void handle_signal(int sig) {
+  g_last_signal = sig;
+  const char msg[] = "sketchybar helper received signal\n";
+  write(STDERR_FILENO, msg, sizeof(msg) - 1);
+  _exit(128 + sig);
+}
+
+static void log_exit(void) {
+  if (g_last_signal == 0) helper_log("exiting normally");
+}
+
 void handler(env env) {
+  if (!env) {
+    helper_log("handler called with null env");
+    return;
+  }
   char *name = env_get_value_for_key(env, "NAME");
 
   if (strcmp(name, "cpu") == 0) {
@@ -53,24 +72,33 @@ void handler(env env) {
     calendar_update(&g_calendar);
     if (strlen(g_calendar.command) > 0)
       sketchybar(g_calendar.command);
+  } else {
+    helper_log("unknown event name='%s'", name);
   }
 }
 
 int main(int argc, char **argv) {
+  atexit(log_exit);
+  signal(SIGTERM, handle_signal);
+  signal(SIGINT, handle_signal);
+  signal(SIGHUP, handle_signal);
+
+  if (argc < 2) {
+    helper_log("missing bootstrap name");
+    printf("Usage: helper \"<bootstrap name>\"\n");
+    exit(1);
+  }
+
+  helper_log("starting bootstrap=%s", argv[1]);
   cpu_init(&g_cpu);
   memory_init(&g_memory);
   network_init(&g_network);
-  smc_init();
+  if (!smc_init()) helper_log("smc_init failed");
   temperature_init(&g_temperature);
   power_init(&g_power);
   fan_init(&g_fan);
   battery_init(&g_battery);
   calendar_init(&g_calendar);
-
-  if (argc < 2) {
-    printf("Usage: helper \"<bootstrap name>\"\n");
-    exit(1);
-  }
 
   event_server_begin(handler, argv[1]);
   return 0;
