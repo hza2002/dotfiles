@@ -9,6 +9,13 @@ return {
         ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
         ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
       },
+      cmdline = {
+        keymap = {
+          preset = "cmdline",
+          ["<Down>"] = { "select_next", "fallback" },
+          ["<Up>"] = { "select_prev", "fallback" },
+        },
+      },
     },
   },
 }

@@ -2,6 +2,11 @@
 -- Plugin/leader keymaps live in their plugin specs (LazyVim best practice).
 local map = vim.keymap.set
 
+-- Bob's "划词翻译" (bound to F15) simulates Option+C on the focused app to
+-- grab the macOS selection. In a terminal that arrives as <M-c> (\E c),
+-- which Vim splits into ESC + `c` change operator. Swallow it.
+map({ "n", "i", "v", "x", "s", "o", "c", "t" }, "<M-c>", "<Nop>", { desc = "Swallow Bob's Option+C injection" })
+
 -- Save (Ghostty translates Cmd+S → Ctrl+S; Super modifier cannot pass through tmux)
 map({ "n", "i", "v" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save" })
 
