@@ -35,25 +35,28 @@ update() {
   COLOR="$BLUE_SOFT"
 
   sketchybar --set "$NAME" icon="$ICON" icon.color="$COLOR" label="$LABEL"
+
+  # Pre-warm the public-IP cache in the background. By the time the user
+  # clicks the popup, get_public_info() inside set_details() is a cache hit
+  # and the popup can open with all four rows already populated.
+  if [ -n "$IP" ]; then
+    ( get_public_info >/dev/null 2>&1 & ) >/dev/null 2>&1
+  fi
 }
 
 set_details() {
   IP="$(ipconfig getifaddr en0)"
   if [ -z "$IP" ]; then
-    sketchybar --set wifi.ip label="内网: 未连接" \
-               --set wifi.gateway drawing=off \
-               --set wifi.public_ip drawing=off \
-               --set wifi.country drawing=off
+    sketchybar --set wifi.ip         drawing=on  label="内网: 未连接" \
+               --set wifi.gateway    drawing=off \
+               --set wifi.public_ip  drawing=off \
+               --set wifi.country    drawing=off
     return
   fi
 
   WIFI_INFO="$(networksetup -getinfo Wi-Fi 2>/dev/null)"
   ROUTER="$(echo "$WIFI_INFO" | awk -F 'Router: ' '/^Router: / {print $2}')"
-
   [ -z "$ROUTER" ] && ROUTER="无网关"
-
-  sketchybar --set wifi.ip drawing=on label="内网: $IP" \
-             --set wifi.gateway drawing=on label="网关: $ROUTER"
 
   # Fetch public IP info (cached). Parse with a single jq call instead of
   # spawning python3 three times — each python3 startup is ~50ms.
@@ -71,16 +74,23 @@ set_details() {
   country_label="$country"
   [ -n "$country_code" ] && country_label="$country ($country_code)"
 
-  sketchybar --set wifi.public_ip drawing=on label="公网: $public_ip" \
-             --set wifi.country drawing=on label="地区: $country_label"
+  # All four rows go up in a single sketchybar call — the popup opens (in
+  # click(), after this returns) with the final layout, no growth, no swap.
+  sketchybar --set wifi.ip         drawing=on label="内网: $IP" \
+             --set wifi.gateway    drawing=on label="网关: $ROUTER" \
+             --set wifi.public_ip  drawing=on label="公网: $public_ip" \
+             --set wifi.country    drawing=on label="地区: $country_label"
 }
 
 click() {
   DRAWING="$(sketchybar --query "$NAME" | jq -r '.popup.drawing')"
-  sketchybar --set "$NAME" popup.drawing=toggle
-
   if [ "$DRAWING" = "off" ]; then
+    # Populate the rows *before* showing the popup, so the first visible
+    # frame already has the final 4-row layout.
     set_details
+    sketchybar --set "$NAME" popup.drawing=on
+  else
+    sketchybar --set "$NAME" popup.drawing=off
   fi
 }
 
