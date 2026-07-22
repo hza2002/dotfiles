@@ -25,7 +25,7 @@ static volatile sig_atomic_t g_last_signal = 0;
 static void handle_signal(int sig) {
   g_last_signal = sig;
   const char msg[] = "sketchybar helper received signal\n";
-  write(STDERR_FILENO, msg, sizeof(msg) - 1);
+  (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
   _exit(128 + sig);
 }
 
@@ -39,6 +39,7 @@ void handler(env env) {
     return;
   }
   char *name = env_get_value_for_key(env, "NAME");
+  if (!name || name[0] == '\0') return;
 
   if (strcmp(name, "cpu") == 0) {
     cpu_update(&g_cpu);

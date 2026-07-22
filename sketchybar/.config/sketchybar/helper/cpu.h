@@ -11,7 +11,7 @@ struct cpu {
   host_cpu_load_info_data_t load;
   host_cpu_load_info_data_t prev_load;
   bool                      has_prev_load;
-  char                      command[96];
+  char                      command[256];
 };
 
 static inline void cpu_init(struct cpu *cpu) {
@@ -37,17 +37,23 @@ static inline void cpu_update(struct cpu *cpu) {
   if (cpu->has_prev_load) {
     uint32_t delta_user   = cpu->load.cpu_ticks[CPU_STATE_USER]
                           - cpu->prev_load.cpu_ticks[CPU_STATE_USER];
+    uint32_t delta_nice   = cpu->load.cpu_ticks[CPU_STATE_NICE]
+                          - cpu->prev_load.cpu_ticks[CPU_STATE_NICE];
     uint32_t delta_system = cpu->load.cpu_ticks[CPU_STATE_SYSTEM]
                           - cpu->prev_load.cpu_ticks[CPU_STATE_SYSTEM];
     uint32_t delta_idle   = cpu->load.cpu_ticks[CPU_STATE_IDLE]
                           - cpu->prev_load.cpu_ticks[CPU_STATE_IDLE];
-    uint32_t delta_total  = delta_user + delta_system + delta_idle;
+    uint32_t delta_total  = delta_user + delta_nice + delta_system + delta_idle;
 
     if (delta_total == 0) { cpu->prev_load = cpu->load; return; }
 
-    double total_perc = (double)(delta_user + delta_system) / (double)delta_total;
+    double user_perc = (double)(delta_user + delta_nice) / (double)delta_total;
+    double system_perc = (double)delta_system / (double)delta_total;
+    double total_perc = user_perc + system_perc;
 
     int pct = (int)(total_perc * 100.0 + 0.5);
+    int user_pct = (int)(user_perc * 100.0 + 0.5);
+    int system_pct = (int)(system_perc * 100.0 + 0.5);
 
     // 7-tier HARD-only gradient. SOFT variants are too light against
     // the dark bar background and read as white at a glance.
@@ -67,8 +73,10 @@ static inline void cpu_update(struct cpu *cpu) {
     if (!icon || icon[0] == '\0') icon = "";
 
     snprintf(cpu->command, sizeof(cpu->command),
-             "--set cpu icon=%s label=%d%% background.color=%s",
-             icon, pct, color);
+             "--set cpu icon=%s label=%d%% background.color=%s "
+             "--set cpu.user label=%d%% "
+             "--set cpu.system label=%d%%",
+             icon, pct, color, user_pct, system_pct);
   }
 
   cpu->prev_load    = cpu->load;

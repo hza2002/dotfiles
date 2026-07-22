@@ -1,8 +1,11 @@
 #pragma once
 
 #include <bootstrap.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <string.h>
+#include <sysexits.h>
 #include <time.h>
 #include <unistd.h>
 #include <mach/mach.h>
@@ -65,6 +68,26 @@ static inline void helper_log(const char *fmt, ...) {
   fclose(file);
 }
 
+static inline void helper_signal_ready(void) {
+  const char *path = getenv("SKETCHYBAR_HELPER_READY_FIFO");
+  if (!path || path[0] == '\0') return;
+
+  int fd = open(path, O_WRONLY | O_NONBLOCK);
+  if (fd < 0) {
+    helper_log("helper ready signal open failed: %s: %s", path, strerror(errno));
+    return;
+  }
+
+  const char msg[] = "ready\n";
+  ssize_t written = write(fd, msg, sizeof(msg) - 1);
+  if (written < 0) {
+    helper_log("helper ready signal write failed: %s: %s", path, strerror(errno));
+  } else if ((size_t)written != sizeof(msg) - 1) {
+    helper_log("helper ready signal short write: %s: %zd", path, written);
+  }
+  close(fd);
+}
+
 static inline char *env_get_value_for_key(env env, char *key) {
   uint32_t caret = 0;
   for (;;) {
@@ -79,7 +102,7 @@ static inline char *env_get_value_for_key(env env, char *key) {
   return (char *)"";
 }
 
-static inline mach_port_t mach_get_bs_port() {
+static inline mach_port_t mach_get_bs_port(void) {
   mach_port_name_t task = mach_task_self();
 
   mach_port_t bs_port;
@@ -99,9 +122,9 @@ static inline mach_port_t mach_get_bs_port() {
   return port;
 }
 
-static inline void mach_receive_message(mach_port_t port,
-                                        struct mach_buffer *buffer,
-                                        bool timeout) {
+static inline mach_msg_return_t mach_receive_message(mach_port_t port,
+                                                     struct mach_buffer *buffer,
+                                                     bool timeout) {
   *buffer = (struct mach_buffer){0};
   mach_msg_return_t msg_return;
   if (timeout)
@@ -120,28 +143,24 @@ static inline void mach_receive_message(mach_port_t port,
     }
     buffer->message.descriptor.address = NULL;
   }
+
+  return msg_return;
 }
 
-static inline char *mach_send_message(mach_port_t port, char *message,
-                                      uint32_t len) {
+static inline bool mach_send_message(mach_port_t port, const char *message,
+                                     uint32_t len) {
   if (!message || !port) {
-    return NULL;
+    return false;
   }
 
-  mach_port_t response_port;
+  bool success = false;
+  mach_port_t response_port = MACH_PORT_NULL;
   mach_port_name_t task = mach_task_self();
   kern_return_t kr = mach_port_allocate(task, MACH_PORT_RIGHT_RECEIVE,
                                         &response_port);
   if (kr != KERN_SUCCESS) {
     helper_log("mach_port_allocate(response) failed: %d", kr);
-    return NULL;
-  }
-
-  kr = mach_port_insert_right(task, response_port, response_port,
-                              MACH_MSG_TYPE_MAKE_SEND);
-  if (kr != KERN_SUCCESS) {
-    helper_log("mach_port_insert_right(response) failed: %d", kr);
-    return NULL;
+    return false;
   }
 
   struct mach_message msg = {0};
@@ -154,7 +173,7 @@ static inline char *mach_send_message(mach_port_t port, char *message,
 
   msg.header.msgh_size = sizeof(struct mach_message);
   msg.msgh_descriptor_count = 1;
-  msg.descriptor.address = message;
+  msg.descriptor.address = (void *)message;
   msg.descriptor.size = len * sizeof(char);
   msg.descriptor.copy = MACH_MSG_VIRTUAL_COPY;
   msg.descriptor.deallocate = false;
@@ -164,16 +183,26 @@ static inline char *mach_send_message(mach_port_t port, char *message,
                 MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
   if (kr != MACH_MSG_SUCCESS) {
     helper_log("mach_send_message failed: port=%u return=%d", port, kr);
-    return NULL;
+    goto cleanup_port;
   }
 
   struct mach_buffer buffer = {0};
-  mach_receive_message(response_port, &buffer, true);
-  if (buffer.message.descriptor.address)
-    return (char *)buffer.message.descriptor.address;
-  mach_msg_destroy(&buffer.message.header);
+  mach_msg_return_t receive_result =
+      mach_receive_message(response_port, &buffer, true);
+  if (receive_result == MACH_MSG_SUCCESS) {
+    mach_msg_destroy(&buffer.message.header);
+    success = true;
+  }
 
-  return NULL;
+cleanup_port:
+  kr = mach_port_mod_refs(task, response_port, MACH_PORT_RIGHT_RECEIVE, -1);
+  if (kr != KERN_SUCCESS) {
+    helper_log("mach_port_mod_refs(response) failed: port=%u return=%d",
+               response_port, kr);
+    return false;
+  }
+
+  return success;
 }
 
 #pragma clang diagnostic push
@@ -215,14 +244,37 @@ static inline bool mach_server_begin(struct mach_server *mach_server,
 
   mach_server->handler = handler;
   mach_server->is_running = true;
+  helper_signal_ready();
+
   struct mach_buffer buffer;
+  unsigned int receive_failures = 0;
   while (mach_server->is_running) {
-    mach_receive_message(mach_server->port, &buffer, false);
+    mach_msg_return_t receive_result =
+        mach_receive_message(mach_server->port, &buffer, false);
+
+    if (receive_result != MACH_MSG_SUCCESS) {
+      receive_failures++;
+      if (receive_failures >= 5) {
+        helper_log("mach receive failed %u consecutive times; exiting",
+                   receive_failures);
+        _exit(EX_TEMPFAIL);
+      }
+
+      struct timespec retry_delay = {
+          .tv_sec = 0,
+          .tv_nsec = 100000000L << (receive_failures - 1),
+      };
+      nanosleep(&retry_delay, NULL);
+      continue;
+    }
+
+    receive_failures = 0;
     if (!buffer.message.descriptor.address) {
-      helper_log("received empty mach message");
+      helper_log("received mach message without descriptor");
       mach_msg_destroy(&buffer.message.header);
       continue;
     }
+
     mach_server->handler((env)buffer.message.descriptor.address);
     mach_msg_destroy(&buffer.message.header);
   }
@@ -231,7 +283,7 @@ static inline bool mach_server_begin(struct mach_server *mach_server,
 }
 #pragma clang diagnostic pop
 
-static inline char *sketchybar(char *message) {
+static inline bool sketchybar(const char *message) {
   uint32_t message_length = strlen(message) + 1;
   char formatted_message[message_length + 1];
 
@@ -260,15 +312,11 @@ static inline char *sketchybar(char *message) {
   formatted_message[caret] = '\0';
   if (!g_mach_port)
     g_mach_port = mach_get_bs_port();
-  char *response = mach_send_message(g_mach_port, formatted_message, caret + 1);
-
-  if (response)
-    return response;
-  else
-    return (char *)"";
+  return mach_send_message(g_mach_port, formatted_message, caret + 1);
 }
 
 static inline void event_server_begin(mach_handler event_handler,
                                       char *bootstrap_name) {
-  mach_server_begin(&g_mach_server, event_handler, bootstrap_name);
+  if (!mach_server_begin(&g_mach_server, event_handler, bootstrap_name))
+    exit(2);
 }
