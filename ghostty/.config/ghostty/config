@@ -53,7 +53,7 @@ notify-on-command-finish-after = 10s
 clipboard-trim-trailing-spaces = true
 # 100 MB scrollback; default is 10 MB
 scrollback-limit = 100000000
-# 鼠标滚轮一格 = 1 个滚动事件（默认 3 太快，叠加 nvim mousescroll 后单格 ~9 行）；触控板保持默认 0.1
+# Slow discrete mouse-wheel scrolling without changing trackpad behavior.
 mouse-scroll-multiplier = discrete:1
 # 640 MB for Kitty graphics protocol, used by yazi image preview
 image-storage-limit = 640000000

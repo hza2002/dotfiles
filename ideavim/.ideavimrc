@@ -124,7 +124,7 @@ nmap <leader>lr <Action>(RenameElement)
 let g:WhichKeyDesc_LSP_ReRun = "<leader>la ReRun"
 nmap <leader>la <Action>(Rerun)
 let g:WhichKeyDesc_LSP_Format = "<leader>lf Format"
-nmap <leader>lF <Action>(ReformatCode) \| <Action>(OptimizeImports)
+nmap <leader>lF <Action>(ReformatCode)<Action>(OptimizeImports)
 xmap <leader>lf <Action>(ReformatCode)
 let g:WhichKeyDesc_LSP_ReRunTests = "<leader>lt ReRunTests"
 nmap <leader>lt <Action>(RerunTests)
@@ -134,7 +134,7 @@ let g:WhichKeyDesc_Show_FileStructure = "<leader>ss ShowFileStructure"
 nmap <leader>ss <Action>(FileStructurePopup)
 let g:WhichKeyDesc_Show_Bookmarks = "<leader>sb ShowBookmarks"
 nmap <leader>sb <Action>(ShowBookmarks)
-let g:WhichKeyDesc_Show_ParameterInfo = "<leader>sb ShowParameterInfo"
+let g:WhichKeyDesc_Show_ParameterInfo = "<leader>sp ShowParameterInfo"
 nmap <leader>sp <Action>(ParameterInfo)
 " /: Comment toggle
 let g:WhichKeyDesc_CommentByLine = "<leader>/ CommentByLine"
