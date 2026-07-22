@@ -13,6 +13,6 @@ sketchybar --add event window_focus            \
            --add item yabai left               \
            --set yabai "${yabai[@]}"           \
            --subscribe yabai window_focus      \
-                             space_windows_change \
+                             space_change      \
                              windows_on_spaces \
                              mouse.clicked

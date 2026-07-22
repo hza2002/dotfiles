@@ -4,23 +4,25 @@ window_state() {
   source "$CONFIG_DIR/colors.sh"
   source "$CONFIG_DIR/icons.sh"
 
-  WINDOW=$(yabai -m query --windows --window)
-  STACK_INDEX=$(echo "$WINDOW" | jq '.["stack-index"]')
+  WINDOW="$(yabai -m query --windows --window 2>/dev/null)" || return
+  [ -n "$WINDOW" ] || return
+
+  STACK_INDEX="$(printf '%s' "$WINDOW" | jq -r '.["stack-index"] // 0' 2>/dev/null)" || return
 
   COLOR=$BAR_BORDER_COLOR
   ICON=""
 
-  if [ "$(echo "$WINDOW" | jq '.["is-floating"]')" = "true" ]; then
+  if [ "$(printf '%s' "$WINDOW" | jq -r '.["is-floating"] // false' 2>/dev/null)" = "true" ]; then
     ICON+=$YABAI_FLOAT
     COLOR=$PURPLE
-  elif [ "$(echo "$WINDOW" | jq '.["has-fullscreen-zoom"]')" = "true" ]; then
+  elif [ "$(printf '%s' "$WINDOW" | jq -r '.["has-fullscreen-zoom"] // false' 2>/dev/null)" = "true" ]; then
     ICON+=$YABAI_FULLSCREEN_ZOOM
     COLOR=$GREEN
-  elif [ "$(echo "$WINDOW" | jq '.["has-parent-zoom"]')" = "true" ]; then
+  elif [ "$(printf '%s' "$WINDOW" | jq -r '.["has-parent-zoom"] // false' 2>/dev/null)" = "true" ]; then
     ICON+=$YABAI_PARENT_ZOOM
     COLOR=$BLUE
   elif [[ $STACK_INDEX -gt 0 ]]; then
-    LAST_STACK_INDEX=$(yabai -m query --windows --window stack.last | jq '.["stack-index"]')
+    LAST_STACK_INDEX="$(yabai -m query --windows --window stack.last 2>/dev/null | jq -r '.["stack-index"] // 0' 2>/dev/null)"
     ICON+=$YABAI_STACK
     LABEL="$(printf "[%s/%s]" "$STACK_INDEX" "$LAST_STACK_INDEX")"
     COLOR=$RED
@@ -39,56 +41,35 @@ window_state() {
 }
 
 windows_on_spaces () {
-  if [ "$SENDER" = "space_windows_change" ] && [ -n "$INFO" ]; then
-    space="$(echo "$INFO" | jq -r '.space // empty' 2>/dev/null)"
-    if [[ "$space" =~ ^[1-9][0-9]*$ ]]; then
-      icon_strip=" "
-      apps="$(echo "$INFO" | jq -r '.apps | to_entries[]? | .key as $app | range(.value) | $app' 2>/dev/null)"
-      if [ -n "$apps" ]; then
-        app_args=()
-        while IFS= read -r app; do
-          [ -n "$app" ] && app_args+=("$app")
-        done <<< "$apps"
-        while IFS= read -r icon; do
-          icon_strip+=" $icon"
-        done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
-      else
-        icon_strip=" —"
-      fi
-
-      sketchybar --animate sin 10 --set space."$space" label="$icon_strip" label.drawing=on
-      return
-    fi
-  fi
-
-  CURRENT_SPACES="$(yabai -m query --displays | jq -r '.[].spaces | @sh')"
+  # Query all windows + spaces once, then group locally (avoids N+1 yabai IPC).
+  WINDOWS="$(yabai -m query --windows 2>/dev/null)" || return
+  SPACES="$(yabai -m query --spaces 2>/dev/null | jq -r '.[].index' 2>/dev/null)" || return
+  [ -n "$SPACES" ] || return
 
   args=(--animate sin 10)
 
-  while read -r line
+  for space in $SPACES
   do
-    for space in $line
-    do
-      icon_strip=" "
-      apps=$(yabai -m query --windows --space "$space" | jq -r ".[].app")
-      if [ "$apps" != "" ]; then
-        app_args=()
-        while IFS= read -r app; do
-          [ -n "$app" ] && app_args+=("$app")
-        done <<< "$apps"
-        while IFS= read -r icon; do
-          icon_strip+=" $icon"
-        done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
-      fi
-      args+=(--set space."$space" label="$icon_strip" label.drawing=on background.drawing=on)
-    done
-  done <<< "$CURRENT_SPACES"
+    icon_strip=" "
+    apps=$(printf '%s' "$WINDOWS" | jq -r --argjson s "$space" \
+      '.[] | select(.space == $s and ."has-ax-reference" == true and ."is-minimized" == false and ."is-hidden" == false) | .app' 2>/dev/null)
+    if [ -n "$apps" ]; then
+      app_args=()
+      while IFS= read -r app; do
+        [ -n "$app" ] && app_args+=("$app")
+      done <<< "$apps"
+      while IFS= read -r icon; do
+        icon_strip+=" $icon"
+      done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
+    fi
+    args+=(--set space."$space" label="$icon_strip" label.drawing=on background.drawing=on)
+  done
 
   sketchybar "${args[@]}"
 }
 
 mouse_clicked() {
-  yabai -m window --toggle float
+  yabai -m window --toggle float >/dev/null 2>&1 || return
   window_state
 }
 
@@ -99,6 +80,6 @@ case "$SENDER" in
   ;;
   "window_focus") window_state 
   ;;
-  "windows_on_spaces" | "space_windows_change") windows_on_spaces
+  "windows_on_spaces" | "space_change") windows_on_spaces
   ;;
 esac

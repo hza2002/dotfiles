@@ -12,10 +12,6 @@ update() {
              --set "$NAME.bracket" background.border_color="$COLOR"
 }
 
-set_space_label() {
-  sketchybar --set $NAME icon="$@"
-}
-
 toggle_preview() {
   sketchybar --set "$NAME.preview" background.image="$NAME" \
              --set "$NAME" popup.drawing=toggle

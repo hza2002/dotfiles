@@ -1,12 +1,10 @@
 #!/bin/bash
 
-FRONT_APP_SCRIPT='[ "$SENDER" = "front_app_switched" ] && sketchybar --set $NAME label="$INFO" icon.background.image="app.$INFO"'
-
 front_app=(
   label.font="$FONT_MAIN:ExtraBold:14.0"
   icon.background.drawing=on
   display=active
-  script="$FRONT_APP_SCRIPT"
+  script="$PLUGIN_DIR/front_app.sh"
   click_script="open -a 'Mission Control'"
 )
 

@@ -25,7 +25,7 @@ device_items_exist() {
 }
 
 toggle_devices() {
-  which SwitchAudioSource >/dev/null || exit 0
+  command -v SwitchAudioSource >/dev/null 2>&1 || exit 0
   source "$CONFIG_DIR/colors.sh"
 
   args=()

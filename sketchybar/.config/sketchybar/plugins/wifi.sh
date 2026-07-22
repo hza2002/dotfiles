@@ -26,10 +26,21 @@ get_public_info() {
   fi
 }
 
+get_wifi_info() {
+  networksetup -getinfo Wi-Fi 2>/dev/null
+}
+
+get_wifi_value() {
+  local key=$1
+  awk -F ': ' -v key="$key" '$1 == key { print $2; exit }'
+}
+
 update() {
   source "$CONFIG_DIR/icons.sh"
   source "$CONFIG_DIR/colors.sh"
-  IP="$(ipconfig getifaddr en0)"
+  WIFI_INFO="$(get_wifi_info)"
+  IP="$(get_wifi_value "IP address" <<<"$WIFI_INFO")"
+  [ "$IP" = "none" ] && IP=""
   LABEL="$INFO $IP"
   ICON="$([ -n "$IP" ] && echo "$WIFI_CONNECTED" || echo "$WIFI_DISCONNECTED")"
   COLOR="$BLUE_SOFT"
@@ -45,7 +56,9 @@ update() {
 }
 
 set_details() {
-  IP="$(ipconfig getifaddr en0)"
+  WIFI_INFO="$(get_wifi_info)"
+  IP="$(get_wifi_value "IP address" <<<"$WIFI_INFO")"
+  [ "$IP" = "none" ] && IP=""
   if [ -z "$IP" ]; then
     sketchybar --set wifi.ip         drawing=on  label="内网: 未连接" \
                --set wifi.gateway    drawing=off \
@@ -54,9 +67,10 @@ set_details() {
     return
   fi
 
-  WIFI_INFO="$(networksetup -getinfo Wi-Fi 2>/dev/null)"
-  ROUTER="$(echo "$WIFI_INFO" | awk -F 'Router: ' '/^Router: / {print $2}')"
-  [ -z "$ROUTER" ] && ROUTER="无网关"
+  ROUTER="$(get_wifi_value "Router" <<<"$WIFI_INFO")"
+  if [ -z "$ROUTER" ] || [ "$ROUTER" = "none" ]; then
+    ROUTER="无网关"
+  fi
 
   # Fetch public IP info (cached). Parse with a single jq call instead of
   # spawning python3 three times — each python3 startup is ~50ms.
