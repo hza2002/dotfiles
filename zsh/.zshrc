@@ -2,6 +2,11 @@
 # EDITOR / ZSH_OS / project *_HOME live in .zshenv (visible to all shells).
 # brew shellenv / PATH live in .zprofile (login-time, inherited by tmux).
 export GPG_TTY=$(tty) # interactive-only: tty has no meaning in scripts
+# Ask pinentry-smart for the terminal (curses) UI over SSH/tmux; gpg forwards
+# PINENTRY_USER_DATA to the pinentry program. GUI is used otherwise.
+if [[ -n "$SSH_TTY" || -n "$SSH_CONNECTION" || -n "$TMUX" ]]; then
+  export PINENTRY_USER_DATA=curses
+fi
 ########################## 🔼 ENV 🔼 ###########################
 
 ########################## 🔽 OH MY ZSH 🔽 #####################
@@ -83,6 +88,7 @@ if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then e
 (( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
 (( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
 # eval "$(fnm env --use-on-cd --shell zsh)"
+(( $+commands[rbenv] )) && eval "$(rbenv init - zsh)" # rbenv: put Ruby shims first and enable `rbenv shell`
 lazyload fnm node npm npx pnpm corepack nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
 lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'

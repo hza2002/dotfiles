@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # The purpose of this script is to demonstrate how to preview a file or an
 # image in the preview window of fzf.
 #
@@ -16,12 +18,12 @@ type=$(file --dereference --mime -- "$file")
 
 if [[ ! $type =~ image/ ]]; then
   if [[ $type =~ directory ]]; then
-    tree -C "$1"
+    tree -C "$file"
     exit
   fi
 
   if [[ $type =~ =binary ]]; then
-    file "$1"
+    file "$file"
     exit
   fi
 
@@ -31,7 +33,7 @@ if [[ ! $type =~ image/ ]]; then
   elif command -v bat > /dev/null; then
     batname="bat"
   else
-    cat "$1"
+    cat "$file"
     exit
   fi
 

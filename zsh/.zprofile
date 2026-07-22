@@ -15,8 +15,10 @@ if [[ "$ZSH_OS" == "Darwin" ]]; then
   elif [[ -x /usr/local/bin/brew ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
   fi
-  fpath=("${HOMEBREW_PREFIX}/share/zsh/functions" $fpath)
-  typeset -U fpath
+  if [[ -n "${HOMEBREW_PREFIX:-}" ]]; then
+    fpath=("${HOMEBREW_PREFIX}/share/zsh/functions" $fpath)
+    typeset -U fpath
+  fi
 fi
 ########################## 🔼 BREW 🔼 ##########################
 

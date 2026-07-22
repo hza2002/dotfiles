@@ -1,6 +1,3 @@
-if status is-interactive
-    # Commands to run in interactive sessions can go here
-end
 ################################################################################
 # General Settings
 ################################################################################
@@ -16,24 +13,29 @@ zoxide init fish | source # z - A smarter cd command. Supports all major shells.
 ################################################################################
 # ENV and PATH
 ################################################################################
-if test -n "$TMUX"
-    set TERM "tmux-256color"
-else
-    set TERM "xterm-256color"
-end
 set -x EDITOR 'nvim'
+if status is-interactive
+    set -gx GPG_TTY (tty) # terminal pinentry needs the tty
+    # Ask pinentry-smart for the terminal (curses) UI over SSH/tmux; gpg forwards this.
+    if test -n "$SSH_TTY"; or test -n "$SSH_CONNECTION"; or test -n "$TMUX"
+        set -gx PINENTRY_USER_DATA curses
+    end
+end
 if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
     # ysyx
-    set AM_HOME "$HOME/repo/ysyx-workbench/abstract-machine"
-    set NEMU_HOME "$HOME/repo/ysyx-workbench/nemu"
-    set NPC_HOME "$HOME/repo/ysyx-workbench/npc"
-    set NVBOARD_HOME "$HOME/repo/ysyx-workbench/nvboard"
+    set -gx AM_HOME "$HOME/repo/ysyx-workbench/abstract-machine"
+    set -gx NEMU_HOME "$HOME/repo/ysyx-workbench/nemu"
+    set -gx NPC_HOME "$HOME/repo/ysyx-workbench/npc"
+    set -gx NVBOARD_HOME "$HOME/repo/ysyx-workbench/nvboard"
     # Zephyr SDK, installed for zmk
-    source $HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux 
+    set -l zephyr_env "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux"
+    test -r $zephyr_env; and source $zephyr_env
 else if test (uname) = "Darwin" # macOS-specific environment variable settings
-    set HOMEBREW_BOTTLE_DOMAIN 'https://mirrors.ustc.edu.cn/homebrew-bottles'
-    set JAVA_HOME (command java -XshowSettings:properties -version 2>&1 | awk '/java.home/ {print $3}') # Path to Java
-    set MATLAB_ROOT '/Applications/MATLAB_R2022b_Beta.app'
+    set -gx HOMEBREW_BOTTLE_DOMAIN 'https://mirrors.ustc.edu.cn/homebrew-bottles'
+    if command -q java # guard: only query (forks a JVM) when java is installed
+        set -gx JAVA_HOME (command java -XshowSettings:properties -version 2>&1 | awk '/java.home/ {print $3}')
+    end
+    set -gx MATLAB_ROOT '/Applications/MATLAB_R2022b_Beta.app'
 end
 
 if test (uname) = "Linux" # Ubuntu/Linux-specific environment variable settings
@@ -56,7 +58,6 @@ else if test (uname) = "Darwin" # macOS-specific environment variable settings
     fish_add_path "/opt/homebrew/opt/ruby/bin"
     fish_add_path "/opt/homebrew/opt/openjdk/bin"
     fish_add_path "/opt/homebrew/opt/llvm/bin"
-    fish_add_path "/opt/homebrew/opt/ruby/bin"
     fish_add_path "/opt/homebrew/opt/openssl@3/bin"
     fish_add_path "$HOME/.emacs.d/bin"
     fish_add_path "$MATLAB_ROOT/bin"
@@ -111,7 +112,9 @@ else if test (uname) = "Darwin" # macOS-specific environment variable settings
     alias update='brew update && brew upgrade'
     alias r='radian' # let r open radian
     alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
-    alias emacs="open -a /Applications/Emacs.app/ $1"
+    function emacs # $1 is a bash-ism in fish; use $argv so args are forwarded
+        open -a /Applications/Emacs.app $argv
+    end
 end
 
 ################################################################################
