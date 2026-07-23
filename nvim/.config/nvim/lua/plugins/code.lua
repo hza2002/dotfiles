@@ -1,20 +1,22 @@
 -- Code / LSP-adjacent plugins not covered by LazyVim defaults.
 
--- nvim-ufo's close/openFoldsWith takes an absolute fold level. These wrappers
+-- nvim-ufo's closeFoldsWith takes an absolute fold level. These wrappers
 -- track the current level in a window-local var so zr/zm behave relatively
 -- (like Vim's native fold commands) with v:count1 support.
+local default_fold_level = 99
+
 local function close_more_folds()
-  local level = vim.w.ufo_fold_level or 99
+  local level = vim.w.ufo_fold_level or default_fold_level
   level = math.max(level - vim.v.count1, 0)
   vim.w.ufo_fold_level = level
   require("ufo").closeFoldsWith(level)
 end
 
 local function open_more_folds()
-  local level = vim.w.ufo_fold_level or 0
-  level = math.min(level + vim.v.count1, 99)
+  local level = vim.w.ufo_fold_level or default_fold_level
+  level = math.min(level + vim.v.count1, default_fold_level)
   vim.w.ufo_fold_level = level
-  if level >= 99 then
+  if level >= default_fold_level then
     require("ufo").openAllFolds()
   else
     require("ufo").closeFoldsWith(level)
@@ -30,7 +32,7 @@ return {
     -- stylua: ignore start
     keys = {
       { "zp", function() require("ufo").peekFoldedLinesUnderCursor() end, desc = "Preview folded lines" },
-      { "zR", function() vim.w.ufo_fold_level = 99; require("ufo").openAllFolds() end, desc = "Open all folds" },
+      { "zR", function() vim.w.ufo_fold_level = default_fold_level; require("ufo").openAllFolds() end, desc = "Open all folds" },
       { "zM", function() vim.w.ufo_fold_level = 0; require("ufo").closeAllFolds() end, desc = "Close all folds" },
       { "zr", open_more_folds, desc = "Open more folds" },
       { "zm", close_more_folds, desc = "Close more folds" },
