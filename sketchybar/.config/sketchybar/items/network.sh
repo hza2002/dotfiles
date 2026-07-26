@@ -7,11 +7,11 @@ network_up=(
   icon.highlight_color="$BLUE"
   y_offset=5
   update_freq=3
-  mach_helper="$HELPER"
   width=0
   label.width=26
   label.align=right
 )
+$HELPER_AVAILABLE && network_up+=(mach_helper="$HELPER")
 
 network_down=(
   icon=$NETWORK_DOWN

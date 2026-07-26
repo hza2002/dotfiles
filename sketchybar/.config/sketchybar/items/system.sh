@@ -15,8 +15,8 @@ add_system_widget() {
     background.corner_radius=4
     label.padding_right=7
     update_freq="$freq"
-    mach_helper="$HELPER"
   )
+  $HELPER_AVAILABLE && defaults+=(mach_helper="$HELPER")
   sketchybar --add item "$name" right --set "$name" "${defaults[@]}"
 }
 

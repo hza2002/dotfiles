@@ -43,29 +43,20 @@ struct mach_server {
 static struct mach_server g_mach_server;
 static mach_port_t g_mach_port = 0;
 
-static inline const char *helper_log_path(void) {
-  const char *path = getenv("SKETCHYBAR_HELPER_LOG");
-  if (path && path[0] != '\0') return path;
-  return "/tmp/sketchybar-helper.log";
-}
-
 static inline void helper_log(const char *fmt, ...) {
-  FILE *file = fopen(helper_log_path(), "a");
-  if (!file) return;
-
   time_t now = time(NULL);
   struct tm tm;
   localtime_r(&now, &tm);
   char stamp[32];
   strftime(stamp, sizeof(stamp), "%Y-%m-%d %H:%M:%S", &tm);
 
-  fprintf(file, "[%s] pid=%d ", stamp, getpid());
+  fprintf(stderr, "[%s] component=helper pid=%d ", stamp, getpid());
   va_list args;
   va_start(args, fmt);
-  vfprintf(file, fmt, args);
+  vfprintf(stderr, fmt, args);
   va_end(args);
-  fputc('\n', file);
-  fclose(file);
+  fputc('\n', stderr);
+  fflush(stderr);
 }
 
 static inline void helper_signal_ready(void) {

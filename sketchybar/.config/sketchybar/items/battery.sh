@@ -1,7 +1,6 @@
 #!/bin/bash
 
 battery=(
-  mach_helper="$HELPER"
   script="$PLUGIN_DIR/battery.sh"
   icon.font="$FONT_ICON:Regular:19.0"
   icon.padding_right=5
@@ -12,6 +11,7 @@ battery=(
   popup.align=center
   padding_right=$PAD_WIDE
 )
+$HELPER_AVAILABLE && battery+=(mach_helper="$HELPER")
 
 battery_status=(
   icon.drawing=off

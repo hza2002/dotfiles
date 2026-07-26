@@ -1,5 +1,9 @@
 #!/bin/bash
-export CONFIG_DIR="$HOME/.config/sketchybar"
+
+if [ -z "${CONFIG_DIR:-}" ] || [ "${BAR_NAME:-}" != sketchybar ]; then
+  printf 'sketchybar: CONFIG_DIR and BAR_NAME must be provided by SketchyBar\n' >&2
+  exit 1
+fi
 
 source "$CONFIG_DIR/colors.sh"  # Loads all defined colors
 source "$CONFIG_DIR/icons.sh"   # Loads all defined icons
@@ -16,101 +20,11 @@ export FONT_ICON="SF Pro"
 export FONT_MAIN="JetBrains Maple Mono"
 export FONT_CN="XQzhaopaiti0517"
 
-# Setting up and starting the helper process.
-#
-# Bar + helper lifecycle: the helper (launched here with &) runs in the bar's
-# process group, so whenever the launchd job exits — reload, crash, stop,
-# kickstart — launchd reaps the whole group and the helper dies with the bar; the
-# relaunched bar then starts a fresh one. So all we do here is ensure a helper is
-# running: (re)launch on a fresh bar or a rebuilt binary, and adopt the existing
-# one on `--reload` (which saves sensor re-init — smc_init / SMC open). The one
-# case launchd does NOT cover is the helper alone being SIGKILLed on wake while
-# the bar keeps running (the bar can't re-resolve a restarted helper's port, so
-# it freezes) — helper-run.sh handles that by restarting the whole service.
-HELPER=git.felix.helper
-HELPER_LOG="/tmp/sketchybar-helper.log"   # match the helper's own hardcoded default
-HELPER_READY_TIMEOUT="${SKETCHYBAR_HELPER_READY_TIMEOUT:-5}"
-
-# Keep enough recent context for immediate debugging without accumulating an
-# unbounded history. Hysteresis avoids rewriting the file on every launch.
-trim_helper_log() {
-  local line_count trim_file
-
-  line_count="$(wc -l < "$HELPER_LOG" 2>/dev/null)" || return 0
-  [ "$line_count" -gt 1000 ] || return 0
-
-  trim_file="$(mktemp "${HELPER_LOG}.trim.XXXXXX")" || return 0
-  if tail -n 500 "$HELPER_LOG" > "$trim_file"; then
-    mv -f "$trim_file" "$HELPER_LOG" || rm -f "$trim_file"
-  else
-    rm -f "$trim_file"
-  fi
-}
-
-rebuilt=false
-helper_binary="$CONFIG_DIR/helper/helper"
-helper_hash_file="/tmp/sketchybar-helper-build.sha"
-helper_sources=(
-  "$CONFIG_DIR"/helper/makefile
-  "$CONFIG_DIR"/helper/helper.c
-  "$CONFIG_DIR"/helper/*.m
-  "$CONFIG_DIR"/helper/*.h
-)
-helper_hash="$(shasum "${helper_sources[@]}" 2>> "$HELPER_LOG" | shasum | awk '{print $1}')"
-previous_helper_hash="$(cat "$helper_hash_file" 2>/dev/null || true)"
-
-# Track source content instead of make's timestamp check; this avoids stale
-# helpers from coarse mtimes while avoiding needless relinks on every reload.
-if [ ! -x "$helper_binary" ] || [ "$helper_hash" != "$previous_helper_hash" ]; then
-  if (cd "$CONFIG_DIR"/helper && make -B) >> "$HELPER_LOG" 2>&1; then
-    if [ "$helper_hash" != "$previous_helper_hash" ]; then
-      printf '%s\n' "$helper_hash" > "$helper_hash_file"
-    fi
-    rebuilt=true
-  else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] helper build failed; keeping existing helper if present" >> "$HELPER_LOG"
-  fi
-fi
-
-if [ -x "$helper_binary" ] && { $rebuilt || ! pgrep -fx "$CONFIG_DIR/helper/helper $HELPER" >/dev/null; }; then
-  pkill -fx "$CONFIG_DIR/helper/helper $HELPER" 2>/dev/null || true
-  for _ in 1 2 3 4 5 6 7 8 9 10; do
-    pgrep -fx "$CONFIG_DIR/helper/helper $HELPER" >/dev/null || break
-    sleep 0.1
-  done
-
-  # Replacing the log while an old wrapper still has it open would strand that
-  # process on the old inode. If it has not exited yet, defer trimming.
-  if ! pgrep -fx "/bin/bash $CONFIG_DIR/helper/helper-run.sh $HELPER" >/dev/null; then
-    trim_helper_log
-  fi
-
-  helper_ready_fifo="${TMPDIR:-/tmp}/sketchybar-helper-ready.$$"
-  rm -f "$helper_ready_fifo"
-
-  if mkfifo "$helper_ready_fifo"; then
-    trap 'rm -f "$helper_ready_fifo"' EXIT HUP INT TERM
-    exec 9<>"$helper_ready_fifo"
-
-    SKETCHYBAR_HELPER_LOG="$HELPER_LOG" \
-    SKETCHYBAR_HELPER_READY_FIFO="$helper_ready_fifo" \
-      "$CONFIG_DIR"/helper/helper-run.sh $HELPER >> "$HELPER_LOG" 2>&1 9<&- 9>&- &
-
-    if ! IFS= read -r -t "$HELPER_READY_TIMEOUT" _ <&9; then
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] helper bootstrap ready signal timed out" >> "$HELPER_LOG"
-    fi
-
-    exec 9<&-
-    exec 9>&-
-    rm -f "$helper_ready_fifo"
-    trap - EXIT HUP INT TERM
-  else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] helper ready fifo unavailable; launching without handshake" >> "$HELPER_LOG"
-    SKETCHYBAR_HELPER_LOG="$HELPER_LOG" \
-      "$CONFIG_DIR"/helper/helper-run.sh $HELPER >> "$HELPER_LOG" 2>&1 &
-  fi
-elif [ ! -x "$helper_binary" ]; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] helper binary missing; not launching helper" >> "$HELPER_LOG"
+export HELPER=git.felix.helper
+if "$CONFIG_DIR/helper/start.sh"; then
+  export HELPER_AVAILABLE=true
+else
+  export HELPER_AVAILABLE=false
 fi
 
 # Unload the macOS on screen indicator overlay for volume change
@@ -176,7 +90,7 @@ source "$ITEM_DIR/volume.sh"
 
 source "$ITEM_DIR/system.sh"
 
-# Hidden item: refreshes bar window on system wake (see file for context)
+# Hidden item: refreshes the bar window after system wake.
 source "$ITEM_DIR/wake_refresh.sh"
 
 sketchybar --hotload on

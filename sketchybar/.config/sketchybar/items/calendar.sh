@@ -9,8 +9,8 @@ calendar=(
   icon.padding_right=4
   padding_right=$PAD_ITEM
   update_freq=30
-  mach_helper="$HELPER"
 )
+$HELPER_AVAILABLE && calendar+=(mach_helper="$HELPER")
 
 sketchybar --add item calendar right       \
            --set calendar "${calendar[@]}"
