@@ -58,5 +58,76 @@ mouse-scroll-multiplier = discrete:1
 # 640 MB for Kitty graphics protocol, used by yazi image preview
 image-storage-limit = 640000000
 
-# translate Cmd+S to Ctrl+S; nvim maps <C-s> to save (Super modifier can't pass through tmux)
+# Translate high-frequency macOS shortcuts to tmux's C-f prefix bindings.
+# tmux remains fully usable from other terminals through the same prefix keys.
+keybind = cmd+n=text:\x06C
+keybind = cmd+t=text:\x06c
+keybind = cmd+o=text:\x06w
+keybind = cmd+shift+o=text:\x06s
+keybind = cmd+w=text:\x06x
+keybind = cmd+backquote=text:\x06`
+keybind = cmd+space=text:\x06\x20
+keybind = cmd+enter=text:\x06z
+keybind = cmd+shift+c=text:\x06[
+
+# Comma reloads configuration; Shift targets the outer Ghostty layer.
+keybind = cmd+,=text:\x06r
+
+# R renames the current tmux container; Shift targets the session.
+keybind = cmd+r=text:\x06,
+keybind = cmd+shift+r=text:\x06R
+
+# Ghostty reports number-row keys by both logical and physical names,
+# depending on the active keyboard layout.
+keybind = cmd+1=text:\x061
+keybind = cmd+digit_1=text:\x061
+keybind = cmd+2=text:\x062
+keybind = cmd+digit_2=text:\x062
+keybind = cmd+3=text:\x063
+keybind = cmd+digit_3=text:\x063
+keybind = cmd+4=text:\x064
+keybind = cmd+digit_4=text:\x064
+keybind = cmd+5=text:\x065
+keybind = cmd+digit_5=text:\x065
+keybind = cmd+6=text:\x066
+keybind = cmd+digit_6=text:\x066
+keybind = cmd+7=text:\x067
+keybind = cmd+digit_7=text:\x067
+keybind = cmd+8=text:\x068
+keybind = cmd+digit_8=text:\x068
+keybind = cmd+9=text:\x069
+keybind = cmd+digit_9=text:\x069
+
+# Shift+W closes the containing tmux window rather than only its active pane.
+keybind = cmd+shift+w=text:\x06&
+
+# tmux exclusively owns sessions, windows, and panes. Disable Ghostty's
+# overlapping tab, split, and close shortcuts to prevent a second UI layer.
+keybind = cmd+q=ignore
+keybind = cmd+shift+t=ignore
+keybind = cmd+alt+w=ignore
+keybind = cmd+alt+shift+w=ignore
+keybind = cmd+d=ignore
+keybind = cmd+shift+d=ignore
+keybind = cmd+[=ignore
+keybind = cmd+]=ignore
+keybind = cmd+shift+[=ignore
+keybind = cmd+shift+]=ignore
+keybind = cmd+alt+arrow_up=ignore
+keybind = cmd+alt+arrow_down=ignore
+keybind = cmd+alt+arrow_left=ignore
+keybind = cmd+alt+arrow_right=ignore
+keybind = cmd+ctrl+arrow_up=ignore
+keybind = cmd+ctrl+arrow_down=ignore
+keybind = cmd+ctrl+arrow_left=ignore
+keybind = cmd+ctrl+arrow_right=ignore
+keybind = cmd+ctrl+==ignore
+keybind = cmd+shift+enter=ignore
+keybind = ctrl+tab=ignore
+keybind = ctrl+shift+tab=ignore
+
+# nvim maps Ctrl+S to save.
 keybind = cmd+s=text:\x13
+
+# ZLE and GNU Readline use Ctrl+_ for command-line undo.
+keybind = cmd+z=text:\x1f
