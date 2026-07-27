@@ -26,13 +26,21 @@ device_items_exist() {
 
 toggle_devices() {
   local volume_plugin="$CONFIG_DIR/plugins/volume_click.sh"
+  local drawing
 
   command -v SwitchAudioSource >/dev/null 2>&1 || exit 0
   source "$CONFIG_DIR/colors.sh"
 
+  drawing="$(sketchybar --query "$NAME" | jq -r '.popup.drawing // "off"')"
+  if [ "$drawing" = "on" ]; then
+    sketchybar --remove '/volume.device\.*/' \
+               --set "$NAME" popup.drawing=off
+    return
+  fi
+
   args=()
   device_items_exist && args+=(--remove '/volume.device\.*/')
-  args+=(--set "$NAME" popup.drawing=toggle)
+  args+=(--set "$NAME" popup.drawing=on)
   COUNTER=0
   CURRENT="$(SwitchAudioSource -t output -c)"
   while IFS= read -r device; do
@@ -43,9 +51,7 @@ toggle_devices() {
     args+=(--add item volume.device."$COUNTER" popup."$NAME" \
            --set volume.device."$COUNTER" label="${device}" \
                                         label.color="$COLOR" \
-                                        script="$volume_plugin" \
-                 click_script="SENDER=mouse.clicked \"$volume_plugin\"" \
-           --subscribe volume.device."$COUNTER" mouse.exited.global)
+                 click_script="SENDER=mouse.clicked \"$volume_plugin\"")
     COUNTER=$((COUNTER+1))
   done <<< "$(SwitchAudioSource -a -t output)"
 
@@ -65,15 +71,6 @@ select_device() {
   sketchybar --set '/volume.device\.*/' label.color="$GRAY" \
              --set "$NAME" label.color="$WHITE" \
              --set volume_icon popup.drawing=off
-}
-
-collapse_devices() {
-  if device_items_exist; then
-    sketchybar --remove '/volume.device\.*/' \
-               --set volume_icon popup.drawing=off
-  else
-    sketchybar --set volume_icon popup.drawing=off
-  fi
 }
 
 scroll_volume() {
@@ -97,8 +94,6 @@ scroll_volume() {
 
 case "$SENDER" in
   "mouse.scrolled") scroll_volume
-  ;;
-  "mouse.exited.global") collapse_devices
   ;;
   "mouse.clicked")
     case "$NAME" in

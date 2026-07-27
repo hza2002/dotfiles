@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Battery click / popup handler. The label + icon are rendered by the
-# mach helper (IOKit, no forks). This script runs on subscribed events:
-#  - mouse.clicked on `battery` → toggle popup
-#  - mouse.exited.global on `battery` / `battery.status` → hide popup
+# Battery popup click handler. The mach helper renders the bar item, while this
+# script runs only from click_script, so routine updates never fork a shell.
 
 set_popup_info() {
   BATTERY_INFO="$(pmset -g batt)"
@@ -44,18 +42,14 @@ set_popup_info() {
 
 toggle_popup() {
   DRAWING=$(sketchybar --query battery | jq -r '.popup.drawing')
-  sketchybar --set battery popup.drawing=toggle
   if [ "$DRAWING" = "off" ]; then
     set_popup_info
+    sketchybar --set battery popup.drawing=on
+  else
+    sketchybar --set battery popup.drawing=off
   fi
 }
 
-hide_popup() {
-  sketchybar --set battery popup.drawing=off
-}
-
 case "$SENDER" in
-  "mouse.exited.global") hide_popup ;;
   "mouse.clicked") toggle_popup ;;
-  *) ;; # forced, power_source_change, system_woke → noop
 esac

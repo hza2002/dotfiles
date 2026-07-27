@@ -50,8 +50,7 @@ sketchybar --add slider volume right            \
            --add item volume_icon right         \
            --set volume_icon "${volume_icon[@]}" \
            --subscribe volume_icon mouse.clicked \
-                                    mouse.scrolled \
-                                    mouse.exited.global
+                                    mouse.scrolled
 
 sketchybar --add bracket status network_up_unit network_down_unit network_up network_down wifi battery volume volume_icon \
            --set status "${status_bracket[@]}" \

@@ -17,7 +17,6 @@ wifi_ip=(
   label.align=center
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  script="$PLUGIN_DIR/wifi.sh"
 )
 
 wifi_gateway=(
@@ -27,7 +26,6 @@ wifi_gateway=(
   label.align=center
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  script="$PLUGIN_DIR/wifi.sh"
 )
 
 wifi_public_ip=(
@@ -37,7 +35,6 @@ wifi_public_ip=(
   label.align=center
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  script="$PLUGIN_DIR/wifi.sh"
 )
 
 wifi_country=(
@@ -47,7 +44,6 @@ wifi_country=(
   label.align=center
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  script="$PLUGIN_DIR/wifi.sh"
 )
 
 sketchybar --add item wifi right                    \
@@ -55,15 +51,12 @@ sketchybar --add item wifi right                    \
            --subscribe wifi wifi_change             \
                             system_woke             \
                             mouse.clicked           \
-                            mouse.exited.global     \
                                                          \
            --add item wifi.ip popup.wifi            \
            --set wifi.ip "${wifi_ip[@]}"            \
-           --subscribe wifi.ip mouse.exited.global  \
                                                          \
            --add item wifi.gateway popup.wifi       \
            --set wifi.gateway "${wifi_gateway[@]}"  \
-           --subscribe wifi.gateway mouse.exited.global \
                                                          \
            --add item wifi.public_ip popup.wifi     \
            --set wifi.public_ip "${wifi_public_ip[@]}" \

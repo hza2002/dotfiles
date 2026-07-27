@@ -60,5 +60,4 @@ case "$SENDER" in
       toggle_popup
     fi
     ;;
-  "mouse.exited.global") hide_all_popups ;;
 esac

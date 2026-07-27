@@ -20,7 +20,6 @@ battery_status=(
   label.align=center
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  script="$PLUGIN_DIR/battery.sh"
 )
 
 sketchybar --add item battery right \
@@ -28,8 +27,6 @@ sketchybar --add item battery right \
   --set battery popup.drawing=off \
   --subscribe battery power_source_change \
   system_woke \
-  mouse.clicked \
   \
   --add item battery.status popup.battery \
-  --set battery.status "${battery_status[@]}" \
-  --subscribe battery.status mouse.exited.global
+  --set battery.status "${battery_status[@]}"

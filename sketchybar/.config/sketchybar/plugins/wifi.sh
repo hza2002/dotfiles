@@ -3,27 +3,42 @@
 CACHE_FILE="/tmp/sketchybar_wifi_public.cache"
 CACHE_TTL=300  # 5 minutes
 
+cache_is_fresh() {
+  local now cache_time
+
+  [ -f "$CACHE_FILE" ] || return 1
+  cache_time="$(stat -f %m "$CACHE_FILE" 2>/dev/null)" || return 1
+  now="$(date +%s)"
+  [ $((now - cache_time)) -lt $CACHE_TTL ]
+}
+
+fetch_public_info() {
+  local result cache_tmp
+  result="$(curl -s --connect-timeout 3 --max-time 5 'http://ip-api.com/json/?fields=query,country,countryCode' 2>/dev/null)"
+  [ -n "$result" ] || return 1
+
+  cache_tmp="$(mktemp "${CACHE_FILE}.XXXXXX")" || return 1
+  if ! printf '%s\n' "$result" > "$cache_tmp"; then
+    rm -f "$cache_tmp"
+    return 1
+  fi
+  mv -f "$cache_tmp" "$CACHE_FILE"
+  printf '%s\n' "$result"
+}
+
+refresh_public_info() {
+  cache_is_fresh && return
+  ( fetch_public_info >/dev/null 2>&1 & ) >/dev/null 2>&1
+}
+
 get_public_info() {
-  # Return cached result if still fresh
-  if [ -f "$CACHE_FILE" ] && [ "$(stat -f %m "$CACHE_FILE" 2>/dev/null)" ]; then
-    local now cache_time
-    now="$(date +%s)"
-    cache_time="$(stat -f %m "$CACHE_FILE")"
-    if [ $((now - cache_time)) -lt $CACHE_TTL ]; then
-      cat "$CACHE_FILE"
-      return
-    fi
+  if [ -f "$CACHE_FILE" ]; then
+    cat "$CACHE_FILE"
+    refresh_public_info
+    return
   fi
 
-  local result
-  result="$(curl -s --connect-timeout 3 --max-time 5 'http://ip-api.com/json/?fields=query,country,countryCode' 2>/dev/null)"
-  if [ -n "$result" ]; then
-    echo "$result" > "$CACHE_FILE"
-    echo "$result"
-  elif [ -f "$CACHE_FILE" ]; then
-    # On error, return stale cache if available
-    cat "$CACHE_FILE"
-  fi
+  fetch_public_info
 }
 
 get_wifi_info() {
@@ -47,11 +62,9 @@ update() {
 
   sketchybar --set "$NAME" icon="$ICON" icon.color="$COLOR" label="$LABEL"
 
-  # Pre-warm the public-IP cache in the background. By the time the user
-  # clicks the popup, get_public_info() inside set_details() is a cache hit
-  # and the popup can open with all four rows already populated.
+  # Pre-warm the public-IP cache without delaying the bar update.
   if [ -n "$IP" ]; then
-    ( get_public_info >/dev/null 2>&1 & ) >/dev/null 2>&1
+    refresh_public_info
   fi
 }
 
@@ -72,8 +85,8 @@ set_details() {
     ROUTER="无网关"
   fi
 
-  # Fetch public IP info (cached). Parse with a single jq call instead of
-  # spawning python3 three times — each python3 startup is ~50ms.
+  # Display cached public info immediately and refresh stale data in the
+  # background. Parse with one jq call instead of three Python processes.
   local public_info public_ip country_code country country_label
   public_info="$(get_public_info)"
   if [ -n "$public_info" ]; then
@@ -108,15 +121,9 @@ click() {
   fi
 }
 
-hide() {
-  sketchybar --set wifi popup.drawing=off
-}
-
 case "$SENDER" in
   "wifi_change"|"system_woke"|"forced"|"routine") update
   ;;
   "mouse.clicked") click
-  ;;
-  "mouse.exited.global") hide
   ;;
 esac
