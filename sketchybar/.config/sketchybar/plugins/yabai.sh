@@ -52,7 +52,7 @@ windows_on_spaces () {
   do
     icon_strip=" "
     apps=$(printf '%s' "$WINDOWS" | jq -r --argjson s "$space" \
-      '.[] | select(.space == $s and ."has-ax-reference" == true and ."is-minimized" == false and ."is-hidden" == false) | .app' 2>/dev/null)
+      '.[] | select(.space == $s and .role == "AXWindow" and ."has-ax-reference" == true and ."is-minimized" == false and ."is-hidden" == false) | .app' 2>/dev/null)
     if [ -n "$apps" ]; then
       app_args=()
       while IFS= read -r app; do

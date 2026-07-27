@@ -52,10 +52,10 @@ add_system_popup_row() {
 
 configure_system_popup() {
   local name=$1
-  sketchybar --set "$name" script="$PLUGIN_DIR/system_popup.sh" \
-                           popup.align=center                     \
-                           popup.drawing=off                      \
-             --subscribe "$name" mouse.clicked mouse.exited.global
+  sketchybar --set "$name" click_script="SENDER=mouse.clicked $PLUGIN_DIR/system_popup.sh" \
+                           popup.align=center                                      \
+                           popup.drawing=off                                       \
+             --subscribe "$name" mouse.clicked
 }
 
 add_system_popup_row mem mem.pressure   "内存压力" "未知"

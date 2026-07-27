@@ -1,7 +1,7 @@
 #!/bin/bash
 
 battery=(
-  script="$PLUGIN_DIR/battery.sh"
+  click_script="SENDER=mouse.clicked $PLUGIN_DIR/battery.sh"
   icon.font="$FONT_ICON:Regular:19.0"
   icon.padding_right=5
   label="$LOADING"
@@ -29,7 +29,6 @@ sketchybar --add item battery right \
   --subscribe battery power_source_change \
   system_woke \
   mouse.clicked \
-  mouse.exited.global \
   \
   --add item battery.status popup.battery \
   --set battery.status "${battery_status[@]}" \
