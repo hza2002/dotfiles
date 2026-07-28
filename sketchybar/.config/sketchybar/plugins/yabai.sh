@@ -7,18 +7,29 @@ window_state() {
   WINDOW="$(yabai -m query --windows --window 2>/dev/null)" || return
   [ -n "$WINDOW" ] || return
 
-  STACK_INDEX="$(printf '%s' "$WINDOW" | jq -r '.["stack-index"] // 0' 2>/dev/null)" || return
+  STATE="$(
+    printf '%s' "$WINDOW" \
+      | jq -r '[
+          .["stack-index"] // 0,
+          .["is-floating"] // false,
+          .["has-fullscreen-zoom"] // false,
+          .["has-parent-zoom"] // false
+        ] | @tsv' 2>/dev/null
+  )" || return
+  [ -n "$STATE" ] || return
+  IFS=$'\t' read -r STACK_INDEX IS_FLOATING HAS_FULLSCREEN_ZOOM HAS_PARENT_ZOOM <<< "$STATE"
 
   COLOR=$BAR_BORDER_COLOR
   ICON=""
+  LABEL=""
 
-  if [ "$(printf '%s' "$WINDOW" | jq -r '.["is-floating"] // false' 2>/dev/null)" = "true" ]; then
+  if [ "$IS_FLOATING" = "true" ]; then
     ICON+=$YABAI_FLOAT
     COLOR=$PURPLE
-  elif [ "$(printf '%s' "$WINDOW" | jq -r '.["has-fullscreen-zoom"] // false' 2>/dev/null)" = "true" ]; then
+  elif [ "$HAS_FULLSCREEN_ZOOM" = "true" ]; then
     ICON+=$YABAI_FULLSCREEN_ZOOM
     COLOR=$GREEN
-  elif [ "$(printf '%s' "$WINDOW" | jq -r '.["has-parent-zoom"] // false' 2>/dev/null)" = "true" ]; then
+  elif [ "$HAS_PARENT_ZOOM" = "true" ]; then
     ICON+=$YABAI_PARENT_ZOOM
     COLOR=$BLUE
   elif [[ $STACK_INDEX -gt 0 ]]; then
@@ -40,32 +51,42 @@ window_state() {
   sketchybar "${args[@]}"
 }
 
-windows_on_spaces () {
-  # Query all windows + spaces once, then group locally (avoids N+1 yabai IPC).
-  WINDOWS="$(yabai -m query --windows 2>/dev/null)" || return
-  SPACES="$(yabai -m query --spaces 2>/dev/null | jq -r '.[].index' 2>/dev/null)" || return
-  [ -n "$SPACES" ] || return
+space_windows_change() {
+  local space="" value icon
+  local icon_strip=" "
+  local app_args=()
 
-  args=(--animate sin 10)
-
-  for space in $SPACES
-  do
-    icon_strip=" "
-    apps=$(printf '%s' "$WINDOWS" | jq -r --argjson s "$space" \
-      '.[] | select(.space == $s and .role == "AXWindow" and ."has-ax-reference" == true and ."is-minimized" == false and ."is-hidden" == false) | .app' 2>/dev/null)
-    if [ -n "$apps" ]; then
-      app_args=()
-      while IFS= read -r app; do
-        [ -n "$app" ] && app_args+=("$app")
-      done <<< "$apps"
-      while IFS= read -r icon; do
-        icon_strip+=" $icon"
-      done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
+  while IFS= read -r value; do
+    if [ -z "$space" ]; then
+      space="$value"
+    elif [ -n "$value" ]; then
+      app_args+=("$value")
     fi
-    args+=(--set space."$space" label="$icon_strip" label.drawing=on background.drawing=on)
-  done
+  done < <(
+    printf '%s' "$INFO" \
+      | jq -r '
+          .space,
+          ((.apps // {}) | to_entries[]
+            | .key as $app
+            | range(.value)
+            | $app)
+        ' 2>/dev/null
+  )
 
-  sketchybar "${args[@]}"
+  case "$space" in
+    ''|*[!0-9]*) return ;;
+  esac
+
+  if [ "${#app_args[@]}" -gt 0 ]; then
+    while IFS= read -r icon; do
+      icon_strip+=" $icon"
+    done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
+  fi
+
+  sketchybar --set "space.$space" \
+             label="$icon_strip" \
+             label.drawing=on \
+             background.drawing=on
 }
 
 mouse_clicked() {
@@ -80,6 +101,6 @@ case "$SENDER" in
   ;;
   "window_focus") window_state 
   ;;
-  "windows_on_spaces" | "space_change") windows_on_spaces
+  "space_windows_change") space_windows_change
   ;;
 esac

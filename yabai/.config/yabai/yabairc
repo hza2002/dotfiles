@@ -84,11 +84,11 @@ forbidden_app=(
 yabai -m config external_bar all:30:0
 
 # ===== Signals ================================
-# (optional) needed for yabai window state and running application icons) yabai events:
-yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"
-yabai -m signal --add event=window_created action="sketchybar --trigger windows_on_spaces"
-yabai -m signal --add event=window_destroyed action="sketchybar --trigger windows_on_spaces"
-yabai -m signal --add event=window_moved action="sketchybar --trigger windows_on_spaces"
+# SketchyBar tracks app windows natively. Yabai only needs to report state that
+# SketchyBar does not know about: floating, zoom and stack state.
+yabai -m signal --add label=sketchybar_window_focus \
+  event=window_focused \
+  action='sketchybar --trigger window_focus'
 
 # THIS IS VERY IMPORTANT
 # It ensures that when I restart yabai, all the rules (including the manage=off rules)

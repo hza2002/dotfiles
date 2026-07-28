@@ -20,7 +20,6 @@ toggle_preview() {
 mouse_clicked() {
   if [ "$BUTTON" = "right" ]; then
     yabai -m space --destroy "$SID"
-    sketchybar --trigger windows_on_spaces --trigger space_change
   else
     if [ "$MODIFIER" = "cmd" ] || [ "$MODIFIER" = "command" ]; then
       toggle_preview
