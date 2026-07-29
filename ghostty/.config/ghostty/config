@@ -101,9 +101,10 @@ keybind = cmd+digit_9=text:\x069
 # Shift+W closes the containing tmux window rather than only its active pane.
 keybind = cmd+shift+w=text:\x06&
 
-# tmux exclusively owns sessions, windows, and panes. Disable Ghostty's
-# overlapping tab, split, and close shortcuts to prevent a second UI layer.
-keybind = cmd+q=ignore
+# tmux owns sessions, windows, and panes within each Ghostty window.
+# Command+Q closes the current Ghostty window; Shift+Command+Q quits the app.
+keybind = cmd+q=close_window
+keybind = cmd+shift+q=quit
 keybind = cmd+shift+t=ignore
 keybind = cmd+alt+w=ignore
 keybind = cmd+alt+shift+w=ignore
