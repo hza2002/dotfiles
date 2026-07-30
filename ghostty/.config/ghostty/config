@@ -60,15 +60,19 @@ image-storage-limit = 640000000
 
 # Translate high-frequency macOS shortcuts to tmux's C-f prefix bindings.
 # tmux remains fully usable from other terminals through the same prefix keys.
+# Encode Shift+Enter like Option+Enter so it survives older remote tmux versions.
+keybind = shift+enter=text:\x1b\r
 keybind = cmd+n=text:\x06C
 keybind = cmd+t=text:\x06c
 keybind = cmd+o=text:\x06w
 keybind = cmd+shift+o=text:\x06s
 keybind = cmd+w=text:\x06x
 keybind = cmd+backquote=text:\x06`
+keybind = cmd+h=text:\x06p
+keybind = cmd+l=text:\x06n
 keybind = cmd+space=text:\x06\x20
 keybind = cmd+enter=text:\x06z
-keybind = cmd+shift+c=text:\x06[
+keybind = cmd+y=text:\x06[
 
 # Comma reloads configuration; Shift targets the outer Ghostty layer.
 keybind = cmd+,=text:\x06r
