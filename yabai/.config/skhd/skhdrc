@@ -31,13 +31,21 @@ shift + fn - f13 : yabai -m window --space prev ; yabai -m space --focus prev
 shift + fn - f14 : yabai -m window --space next ; yabai -m space --focus next
 
 # Desktop focus
-cmd - tab : display_count=$(yabai -m query --displays | jq 'length') && \
-            if [ "$display_count" -gt 1 ] ; \
-            then \
-                yabai -m display --focus recent ; \
-            else \
-                yabai -m space --focus recent ; \
-            fi
+# Let Ghostty handle Command-Tab itself and disable it everywhere else.
+cmd - tab [
+    "ghostty" ~
+    *          : true
+]
+
+# Switch to the most recently focused display, or the most recently focused
+# space when only one display is connected.
+cmd - escape : display_count=$(yabai -m query --displays | jq 'length') && \
+               if [ "$display_count" -gt 1 ] ; \
+               then \
+                   yabai -m display --focus recent ; \
+               else \
+                   yabai -m space --focus recent ; \
+               fi
 fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
            current_display_maxindex="$(echo "$display_query" | jq 'map(.index)[-1]')" && \
            current_display_minindex="$(echo "$display_query" | jq 'map(.index)[0]')" && \
@@ -64,4 +72,3 @@ cmd + ctrl + alt - n : yabai -m space --create && \
                   yabai -m window --space "${index}" && \
                   yabai -m space --focus "${index}"
 shift + cmd + ctrl + alt - n : yabai -m space --destroy
-
