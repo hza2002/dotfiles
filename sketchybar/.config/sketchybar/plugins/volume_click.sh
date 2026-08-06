@@ -81,9 +81,7 @@ scroll_volume() {
     delta="$(printf '%s' "$INFO" | jq -r '.delta // empty' 2>/dev/null)"
   fi
 
-  case "$delta" in
-    ''|*[!0-9-]*) exit 0 ;;
-  esac
+  [[ "$delta" =~ ^-?([0-9]|10)$ ]] || exit 0
 
   if [ "${MODIFIER:-}" != "ctrl" ]; then
     delta=$((delta * 10))

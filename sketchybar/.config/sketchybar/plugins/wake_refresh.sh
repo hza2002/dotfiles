@@ -4,8 +4,14 @@
 # Toggling the display target forces a window destroy/recreate, replacing the
 # invalid CoreGraphics context that can survive sleep.
 
-LOCK="${SKETCHYBAR_WAKE_LOCK:-${TMPDIR:-/tmp}/sketchybar-wake-refresh.lock}"
+CACHE_DIR="$HOME/Library/Caches/sketchybar"
+LOCK="$CACHE_DIR/wake-refresh.lock"
 SKETCHYBAR_BIN="${SKETCHYBAR_BIN:-sketchybar}"
+
+umask 077
+[ ! -L "$CACHE_DIR" ] || exit 1
+mkdir -p "$CACHE_DIR" || exit 1
+chmod 700 "$CACHE_DIR" || exit 1
 
 now_ms() {
   /usr/bin/perl -MTime::HiRes=time -e 'printf "%d\n", time() * 1000' 2>/dev/null \

@@ -21,11 +21,12 @@ export FONT_MAIN="JetBrains Maple Mono"
 export FONT_CN="XQzhaopaiti0517"
 
 export HELPER=git.felix.helper
-if "$CONFIG_DIR/helper/start.sh"; then
-  export HELPER_AVAILABLE=true
-else
-  export HELPER_AVAILABLE=false
+if ! "$CONFIG_DIR/helper/start.sh"; then
+  printf 'sketchybar: helper unavailable; run make in %s/helper and restart SketchyBar\n' \
+    "$CONFIG_DIR" >&2
+  exit 1
 fi
+export HELPER_AVAILABLE=true
 
 # Unload the macOS on screen indicator overlay for volume change
 launchctl bootout gui/$(id -u) /System/Library/LaunchAgents/com.apple.OSDUIHelper.plist > /dev/null 2>&1 || true
@@ -93,7 +94,9 @@ source "$ITEM_DIR/system.sh"
 # Hidden item: refreshes the bar window after system wake.
 source "$ITEM_DIR/wake_refresh.sh"
 
-sketchybar --hotload on
+# Config and helper updates are applied explicitly. This avoids rebuilding or
+# restarting the low-frequency helper as a side effect of editing config files.
+sketchybar --hotload off
 
 # Forcing all item scripts to run (never do this outside of sketchybarrc)
 sketchybar --update

@@ -52,29 +52,45 @@ window_state() {
 }
 
 space_windows_change() {
-  local space="" value icon
+  local space="" value app count icon
   local icon_strip=" "
   local app_args=()
+  local entry_count=0 total_count=0 i
 
   while IFS= read -r value; do
     if [ -z "$space" ]; then
       space="$value"
     elif [ -n "$value" ]; then
-      app_args+=("$value")
+      entry_count=$((entry_count + 1))
+      [ "$entry_count" -le 64 ] || return 0
+
+      IFS=$'\t' read -r app count <<< "$value"
+      case "$count" in
+        0|[1-9]|1[0-6]) ;;
+        *) return 0 ;;
+      esac
+      [ -n "$app" ] && [ "${#app}" -le 256 ] || return 0
+      total_count=$((total_count + count))
+      [ "$total_count" -le 64 ] || return 0
+
+      for ((i = 0; i < count; i++)); do
+        app_args+=("$app")
+      done
     fi
   done < <(
     printf '%s' "$INFO" \
       | jq -r '
           .space,
-          ((.apps // {}) | to_entries[]
-            | .key as $app
-            | range(.value)
-            | $app)
+          ((.apps // {})
+            | if type == "object" then to_entries[] | [.key, .value] | @tsv
+              else empty
+              end)
         ' 2>/dev/null
   )
 
   case "$space" in
-    ''|*[!0-9]*) return ;;
+    [1-9]|[1-9][0-9]|1[01][0-9]|12[0-8]) ;;
+    *) return 0 ;;
   esac
 
   if [ "${#app_args[@]}" -gt 0 ]; then

@@ -15,35 +15,73 @@ HOURS_LABEL="加會兒班"
 UNTIL_LABEL="加個夜班"
 FOREVER_LABEL="不下班了"
 
-STATE_FILE="${TMPDIR:-/tmp}/sketchybar-caffeinate.state"
+CACHE_DIR="$HOME/Library/Caches/sketchybar"
+STATE_FILE="$CACHE_DIR/caffeinate.state"
+LOCK_FILE="$CACHE_DIR/caffeinate.lock"
+
+umask 077
+[ ! -L "$CACHE_DIR" ] || exit 1
+mkdir -p "$CACHE_DIR" || exit 1
+chmod 700 "$CACHE_DIR" || exit 1
+exec 8>"$LOCK_FILE" || exit 1
+/usr/bin/lockf -s -t 2 8 || exit 0
 
 read_state() {
   PID=""
   END=""
   MODE=""
-  [ -f "$STATE_FILE" ] || return
+  START=""
+  [ -f "$STATE_FILE" ] && [ ! -L "$STATE_FILE" ] \
+    && [ "$(stat -f %z "$STATE_FILE" 2>/dev/null)" -le 256 ] || return
   while IFS='=' read -r k v; do
     case "$k" in
     PID) PID=$v ;;
     END) END=$v ;;
     MODE) MODE=$v ;;
+    START) START=$v ;;
     esac
   done <"$STATE_FILE"
+
+  case "$PID" in ''|*[!0-9]*) PID=""; END=""; MODE=""; START=""; return 1 ;; esac
+  [ "${#PID}" -le 10 ] || { PID=""; END=""; MODE=""; START=""; return 1; }
+  case "$END" in
+    '') ;;
+    *[!0-9]*) PID=""; END=""; MODE=""; START=""; return 1 ;;
+    *) [ "${#END}" -le 10 ] || { PID=""; END=""; MODE=""; START=""; return 1; } ;;
+  esac
+  case "$MODE" in ''|hours|until|forever) ;; *) PID=""; END=""; MODE=""; START=""; return 1 ;; esac
+  [ -n "$START" ] && [ "${#START}" -le 64 ] \
+    || { PID=""; END=""; MODE=""; START=""; return 1; }
 }
 
 is_alive() {
-  [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null
+  local command actual_start
+  [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null || return 1
+  command="$(ps -o command= -p "$PID" 2>/dev/null)" || return 1
+  actual_start="$(ps -o lstart= -p "$PID" 2>/dev/null)" || return 1
+  [ "$actual_start" = "$START" ] || return 1
+  case "$command" in
+    '/usr/bin/caffeinate -i'|'/usr/bin/caffeinate -i -t '[0-9]*) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 write_state() {
-  {
-    echo "PID=$1"
-    echo "END=$2"
-    echo "MODE=$3"
-  } >"$STATE_FILE"
+  local state_tmp
+  [ ! -e "$STATE_FILE" ] || {
+    [ -f "$STATE_FILE" ] && [ ! -L "$STATE_FILE" ] || return 1
+  }
+  state_tmp="$(mktemp "${STATE_FILE}.XXXXXX")" || return 1
+  if ! printf 'PID=%s\nEND=%s\nMODE=%s\nSTART=%s\n' "$1" "$2" "$3" "$4" > "$state_tmp" \
+    || ! mv -f "$state_tmp" "$STATE_FILE"; then
+    rm -f "$state_tmp"
+    return 1
+  fi
 }
 
 cleanup() {
+  [ ! -e "$STATE_FILE" ] && return 0
+  [ -f "$STATE_FILE" ] && [ ! -L "$STATE_FILE" ] || return 1
   rm -f "$STATE_FILE"
 }
 
@@ -56,15 +94,27 @@ stop() {
 # Start caffeinate. Args: duration_secs (empty=forever), mode.
 # mode: hours | until | forever (empty duration always treated as forever).
 start() {
-  stop
-  local dur="${1:-}"
+  stop || return 1
+  local dur="${1:-}" pid start_identity
   local mode="${2:-hours}"
   if [ -n "$dur" ] && [ "$dur" -gt 0 ] 2>/dev/null; then
-    caffeinate -i -t "$dur" </dev/null >/dev/null 2>&1 &
-    write_state "$!" "$(($(date +%s) + dur))" "$mode"
+    /usr/bin/caffeinate -i -t "$dur" </dev/null >/dev/null 2>&1 8>&- &
+    pid=$!
+    start_identity="$(ps -o lstart= -p "$pid" 2>/dev/null)" || start_identity=
+    if [ -z "$start_identity" ] \
+      || ! write_state "$pid" "$(($(date +%s) + dur))" "$mode" "$start_identity"; then
+      kill "$pid" 2>/dev/null || true
+      return 1
+    fi
   else
-    caffeinate -i </dev/null >/dev/null 2>&1 &
-    write_state "$!" "" "forever"
+    /usr/bin/caffeinate -i </dev/null >/dev/null 2>&1 8>&- &
+    pid=$!
+    start_identity="$(ps -o lstart= -p "$pid" 2>/dev/null)" || start_identity=
+    if [ -z "$start_identity" ] \
+      || ! write_state "$pid" "" "forever" "$start_identity"; then
+      kill "$pid" 2>/dev/null || true
+      return 1
+    fi
   fi
   disown
 }
@@ -74,6 +124,7 @@ parse_duration() {
   local input="$1"
   input="${input// /}"
   input=$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')
+  [ "${#input}" -le 10 ] || return 1
   local secs=0
   if [[ "$input" =~ ^([0-9]+)h([0-9]+)m?$ ]]; then
     secs=$((${BASH_REMATCH[1]} * 3600 + ${BASH_REMATCH[2]} * 60))
@@ -86,8 +137,16 @@ parse_duration() {
   else
     return 1
   fi
-  [ "$secs" -gt 0 ] || return 1
+  [ "$secs" -gt 0 ] && [ "$secs" -le 604800 ] || return 1
   printf '%s\n' "$secs"
+}
+
+duration_arg() {
+  local value="$1" max="$2" multiplier="$3"
+  [[ "$value" =~ ^[1-9][0-9]{0,4}$ ]] || return 1
+  value=$((10#$value))
+  [ "$value" -le "$max" ] || return 1
+  printf '%s\n' "$((value * multiplier))"
 }
 
 custom() {
@@ -107,7 +166,11 @@ OSA
   if secs=$(parse_duration "$input"); then
     start "$secs" "hours"
   else
-    osascript -e "display notification \"无法识别: ${input//\"/\\\"}\" with title \"Caffeinate\"" 2>/dev/null
+    osascript - "$input" <<'OSA' 2>/dev/null
+on run argv
+  display notification ("无法识别: " & item 1 of argv) with title "Caffeinate"
+end run
+OSA
   fi
 }
 
@@ -245,11 +308,11 @@ click() {
 
 case "${1:-render}" in
 click)
-  click
+  click || exit 1
   render
   ;;
 toggle)
-  toggle
+  toggle || exit 1
   render
   ;;
 stop)
@@ -257,23 +320,25 @@ stop)
   render
   ;;
 forever)
-  start "" "forever"
+  start "" "forever" || exit 1
   render
   ;;
 custom)
-  custom
+  custom || exit 1
   render
   ;;
 until)
-  until_time "$2"
+  until_time "${2:-}" || exit 64
   render
   ;;
 hours)
-  start "$((${2:-1} * 3600))" "hours"
+  duration="$(duration_arg "${2:-1}" 168 3600)" || exit 64
+  start "$duration" "hours" || exit 1
   render
   ;;
 minutes)
-  start "$((${2:-30} * 60))" "hours"
+  duration="$(duration_arg "${2:-30}" 10080 60)" || exit 64
+  start "$duration" "hours" || exit 1
   render
   ;;
 render | *) render ;;

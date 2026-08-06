@@ -1,12 +1,19 @@
 #!/bin/bash
 
-CACHE_FILE="/tmp/sketchybar_wifi_public.cache"
+umask 077
+CACHE_DIR="$HOME/Library/Caches/sketchybar"
+CACHE_FILE="$CACHE_DIR/wifi-public.cache"
+CACHE_LOCK="${CACHE_FILE}.lock"
 CACHE_TTL=300  # 5 minutes
+
+[ ! -L "$CACHE_DIR" ] || exit 1
+mkdir -p "$CACHE_DIR" || exit 1
+chmod 700 "$CACHE_DIR" || exit 1
 
 cache_is_fresh() {
   local now cache_time
 
-  [ -f "$CACHE_FILE" ] || return 1
+  [ -f "$CACHE_FILE" ] && [ ! -L "$CACHE_FILE" ] || return 1
   cache_time="$(stat -f %m "$CACHE_FILE" 2>/dev/null)" || return 1
   now="$(date +%s)"
   [ $((now - cache_time)) -lt $CACHE_TTL ]
@@ -14,31 +21,59 @@ cache_is_fresh() {
 
 fetch_public_info() {
   local result cache_tmp
+  [ ! -e "$CACHE_FILE" ] || {
+    [ -f "$CACHE_FILE" ] && [ ! -L "$CACHE_FILE" ] || return 1
+  }
   result="$(curl -s --connect-timeout 3 --max-time 5 'http://ip-api.com/json/?fields=query,country,countryCode' 2>/dev/null)"
-  [ -n "$result" ] || return 1
+  [ -n "$result" ] && [ "${#result}" -le 4096 ] || return 1
+  printf '%s' "$result" \
+    | jq -e 'type == "object"
+      and (.query | type == "string")
+      and (.country | type == "string")
+      and (.countryCode | type == "string")' >/dev/null 2>&1 \
+    || return 1
 
   cache_tmp="$(mktemp "${CACHE_FILE}.XXXXXX")" || return 1
   if ! printf '%s\n' "$result" > "$cache_tmp"; then
     rm -f "$cache_tmp"
     return 1
   fi
-  mv -f "$cache_tmp" "$CACHE_FILE"
+  if ! mv -f "$cache_tmp" "$CACHE_FILE"; then
+    rm -f "$cache_tmp"
+    return 1
+  fi
   printf '%s\n' "$result"
 }
 
 refresh_public_info() {
   cache_is_fresh && return
-  ( fetch_public_info >/dev/null 2>&1 & ) >/dev/null 2>&1
+  exec 8>"$CACHE_LOCK" || return
+  /usr/bin/lockf -t 0 8 2>/dev/null || {
+    exec 8>&-
+    return
+  }
+  (
+    cache_is_fresh || fetch_public_info >/dev/null
+  ) >/dev/null 2>&1 &
+  exec 8>&-
 }
 
 get_public_info() {
-  if [ -f "$CACHE_FILE" ]; then
+  if [ -f "$CACHE_FILE" ] && [ ! -L "$CACHE_FILE" ]; then
     cat "$CACHE_FILE"
     refresh_public_info
     return
   fi
 
-  fetch_public_info
+  (
+    exec 8>"$CACHE_LOCK" || exit
+    /usr/bin/lockf -s -t 5 8 || exit
+    if [ -f "$CACHE_FILE" ] && [ ! -L "$CACHE_FILE" ]; then
+      cat "$CACHE_FILE"
+    else
+      fetch_public_info
+    fi
+  )
 }
 
 get_wifi_info() {
