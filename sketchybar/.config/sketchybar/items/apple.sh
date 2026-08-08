@@ -9,7 +9,15 @@ apple_logo=(
   padding_left=$PAD_ITEM
   padding_right=$PAD_WIDE
   label.drawing=off
-  click_script="$PLUGIN_DIR/apple.sh"
+  click_script="$PLUGIN_DIR/apple.sh click"
+)
+
+apple_about=(
+  icon=$APPLE
+  label="About This Mac"
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
+  click_script="$POPUP_OFF; $PLUGIN_DIR/apple.sh about"
 )
 
 apple_prefs=(
@@ -30,14 +38,17 @@ apple_activity=(
 
 apple_lock=(
   icon=$LOCK
-  label="Lock Screen"
+  label="关闭显示器"
   padding_left=$PAD_WIDE
   padding_right=$PAD_WIDE
-  click_script="pmset displaysleepnow; $POPUP_OFF"
+  click_script="$PLUGIN_DIR/caffeinate.sh display-sleep"
 )
 
 sketchybar --add item apple.logo left                  \
            --set apple.logo "${apple_logo[@]}"         \
+                                                       \
+           --add item apple.about popup.apple.logo     \
+           --set apple.about "${apple_about[@]}"       \
                                                        \
            --add item apple.prefs popup.apple.logo     \
            --set apple.prefs "${apple_prefs[@]}"       \

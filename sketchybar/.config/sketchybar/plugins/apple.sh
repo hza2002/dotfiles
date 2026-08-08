@@ -1,11 +1,8 @@
 #!/bin/bash
 
-# Apple logo click handler.
-# Left  -> swiftDialog "About This Mac" panel built from fastfetch fields.
-# Right -> toggle the popup (Preferences / Activity / Lock).
+# Apple logo click handler and About panel.
 
-case "${BUTTON:-left}" in
-left)
+about() {
   DIALOG=$(command -v dialog || echo /usr/local/bin/dialog)
   if [ ! -x "$DIALOG" ]; then
     osascript -e 'display notification "swiftDialog 未安装: brew install --cask swiftdialog" with title "About"'
@@ -82,8 +79,18 @@ ${EXT_DISK_ROWS}| Local IP | ${LOCAL_IP:-—} |
     --position "center" \
     --quitkey "w" \
     >/dev/null 2>&1
-  ;;
-right | *)
-  sketchybar --set apple.logo popup.drawing=toggle
-  ;;
+}
+
+click() {
+  case "${BUTTON:-}" in
+  left) "$CONFIG_DIR/plugins/caffeinate.sh" display-toggle ;;
+  right) sketchybar --set apple.logo popup.drawing=toggle ;;
+  *) return 0 ;;
+  esac
+}
+
+case "${1:-}" in
+click) click ;;
+about) about ;;
+*) exit 0 ;;
 esac

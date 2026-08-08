@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Caffeinate widget: idle shows ComputerName ("按点下班"),
-# active shows ∞ or HhMm countdown.
+# active shows infinity or HhMm countdown. Apple controls the display flag.
 # Left click: toggle (off <-> forever).
 # Right click: popup with duration presets + custom.
 
