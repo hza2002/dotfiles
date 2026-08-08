@@ -34,6 +34,12 @@ close_sidebar() {
     target_pane=$return_pane
   fi
 
+  pane_count=$(tmux display-message -p -t "$window_id" '#{window_panes}')
+  if [ "$pane_count" = '1' ]; then
+    pane_path=$(tmux display-message -p -t "$sidebar_pane" '#{pane_current_path}')
+    target_pane=$(tmux split-window -d -t "$sidebar_pane" -c "$pane_path" -P -F '#{pane_id}')
+  fi
+
   tmux kill-pane -t "$sidebar_pane"
   if [ -n "$saved_layout" ]; then
     tmux select-layout -t "$window_id" "$saved_layout" >/dev/null
