@@ -44,18 +44,19 @@ yabai -m config window_opacity on
 yabai -m config active_window_opacity 0.9
 yabai -m config normal_window_opacity 0.9
 no_transparent_apps=(
+  "Code"
   "Firefox"
+  "Fusion"
   "Google Chrome"
-  "Safari浏览器"
   "IINA"
   "Microsoft PowerPoint"
   "Microsoft Word"
   "PDF Expert"
-  "地图"
+  "Raycast"
+  "Safari浏览器"
   "VirtualBox VM"
   "Visual Studio Code"
-  "Code"
-  "Fusion"
+  "地图"
 )
 (
   IFS='|'
