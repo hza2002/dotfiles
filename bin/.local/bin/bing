@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly BING_REWARDS="$(command -v bing-rewards || true)"
+[[ -n "$BING_REWARDS" ]] || {
+  echo "bing: bing-rewards is not installed" >&2
+  exit 1
+}
+
+close_browser() {
+  /usr/bin/killall "Microsoft Edge" 2>/dev/null || true
+}
+
+close_browser
+
+for profile in "Default" "Profile 2"; do
+  echo "正在处理 $profile..."
+  for _ in {1..4}; do
+    for _ in {1..4}; do
+      "$BING_REWARDS" --profile "$profile" --mobile --count=1
+      sleep 2
+    done
+    close_browser
+  done
+
+  for _ in {1..4}; do
+    for _ in {1..4}; do
+      "$BING_REWARDS" --profile "$profile" --desktop --count=1
+      sleep 4
+    done
+    close_browser
+  done
+  echo "$profile 完成"
+  echo "=============================="
+done

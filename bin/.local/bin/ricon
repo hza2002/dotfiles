@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ ${EUID} -ne 0 ]]; then
+  export RICON_HOME="$HOME"
+  exec sudo --preserve-env=RICON_HOME "$0" "$@"
+fi
+
+readonly USER_HOME="${RICON_HOME:-$HOME}"
+readonly ICON_DIR="$USER_HOME/Pictures/icons"
+readonly FILEICON="/opt/homebrew/bin/fileicon"
+readonly APP_DIRS=(
+  "/Applications"
+  "/Applications/Autodesk/AutoCAD 2024"
+  "/Applications/BOSS/KATANA Gen 3"
+  "/Applications/BOSS/KATANA3 Driver"
+  "/Applications/Epson Software"
+  "/Applications/KiCad"
+  "/Applications/Razer"
+  "/Applications/Utilities"
+  "$USER_HOME/Applications"
+  "$USER_HOME/Applications/Trader Workstation"
+)
+
+[[ -d "$ICON_DIR" ]] || {
+  echo "ricon: icon directory not found: $ICON_DIR" >&2
+  exit 1
+}
+[[ -x "$FILEICON" ]] || {
+  echo "ricon: fileicon is not installed" >&2
+  exit 1
+}
+
+matched=0
+for icon in "$ICON_DIR"/*.icns; do
+  [[ -e "$icon" ]] || continue
+  name="${icon##*/}"
+  name="${name%.icns}"
+  found=false
+
+  for directory in "${APP_DIRS[@]}"; do
+    app="$directory/$name.app"
+    [[ -d "$app" ]] || continue
+    "$FILEICON" set "$app" "$icon"
+    printf '%-28s %s\n' "$name" "$app"
+    matched=$((matched + 1))
+    found=true
+    break
+  done
+
+  $found || printf 'Not installed: %s\n' "$name" >&2
+done
+
+echo "Updated $matched application icon(s)."

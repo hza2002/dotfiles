@@ -1,0 +1,69 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly SOURCE_DIR="$HOME/Pictures/unreviewed"
+readonly UVX="/opt/homebrew/bin/uvx"
+
+case "$#" in
+0)
+  ;;
+1)
+  case "$1" in
+  -h | --help)
+    echo "Usage: gruvifier"
+    echo "Convert unreviewed pictures with the Gruvbox mix palette."
+    exit 0
+    ;;
+  *)
+    echo "gruvifier: unexpected argument: $1" >&2
+    exit 2
+    ;;
+  esac
+  ;;
+*)
+  echo "gruvifier: expected no arguments" >&2
+  exit 2
+  ;;
+esac
+
+[[ -d "$SOURCE_DIR" ]] || {
+  echo "gruvifier: source directory not found: $SOURCE_DIR" >&2
+  exit 1
+}
+[[ -x "$UVX" ]] || {
+  echo "gruvifier: uv is not installed" >&2
+  exit 1
+}
+
+images=()
+while IFS= read -r -d '' image; do
+  filename="${image##*/}"
+  stem="${filename%.*}"
+  extension="${filename##*.}"
+  [[ "$filename" == gruvbox_* || "$stem" == *_gruvbox ]] && continue
+  [[ -e "$SOURCE_DIR/${stem}_gruvbox.${extension}" ]] && continue
+  images+=("$image")
+done < <(/usr/bin/find "$SOURCE_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -print0)
+
+if [[ ${#images[@]} -eq 0 ]]; then
+  echo "No unreviewed images to process."
+  exit 0
+fi
+
+"$UVX" gruvbox-factory@latest -p mix -i "${images[@]}"
+
+for image in "${images[@]}"; do
+  filename="${image##*/}"
+  stem="${filename%.*}"
+  extension="${filename##*.}"
+  generated="$SOURCE_DIR/gruvbox_${filename}"
+  destination="$SOURCE_DIR/${stem}_gruvbox.${extension}"
+  [[ -f "$generated" ]] || {
+    echo "gruvifier: expected output missing: $generated" >&2
+    exit 1
+  }
+  /bin/mv "$generated" "$destination"
+done
+
+echo "Processed ${#images[@]} image(s)."
