@@ -42,6 +42,38 @@ parent_fifo="$TEST_ROOT/parent-ready"
 mkfifo "$parent_fifo"
 exec 9<>"$parent_fifo"
 
+# A fresh checkout builds the ignored helper binary before starting it.
+fresh_helper="$TEST_ROOT/fresh-helper"
+fresh_home="$TEST_ROOT/fresh-home"
+fresh_child_pid="$TEST_ROOT/fresh-child.pid"
+mkdir -p "$fresh_helper" "$fresh_home"
+cp "$HELPER_SOURCE/helper-run.sh" "$HELPER_SOURCE/start.sh" "$fresh_helper/"
+cat > "$fresh_helper/makefile" <<'MAKEFILE'
+.PHONY: helper
+helper:
+	@cp helper.template helper.new
+	@chmod +x helper.new
+	@mv helper.new helper
+MAKEFILE
+cat > "$fresh_helper/helper.template" <<'HELPER'
+#!/bin/bash
+printf '%s\n' "$$" > "$FRESH_CHILD_PID"
+printf 'ready\n' > "$SKETCHYBAR_HELPER_READY_FIFO"
+trap 'exit 0' TERM
+while :; do sleep 0.1; done
+HELPER
+chmod +x "$fresh_helper/helper-run.sh" "$fresh_helper/start.sh"
+HOME="$fresh_home" FRESH_CHILD_PID="$fresh_child_pid" "$fresh_helper/start.sh"
+[ -x "$fresh_helper/helper" ] || fail "fresh checkout did not build the helper"
+for _ in {1..20}; do [ -s "$fresh_child_pid" ] && break; sleep 0.05; done
+[ -s "$fresh_child_pid" ] || fail "freshly built helper did not start"
+fresh_child="$(cat "$fresh_child_pid")"
+fresh_wrapper="$(ps -o ppid= -p "$fresh_child" | tr -d ' ')"
+kill -TERM "$fresh_wrapper"
+for _ in {1..20}; do kill -0 "$fresh_wrapper" 2>/dev/null || break; sleep 0.05; done
+kill -0 "$fresh_wrapper" 2>/dev/null && fail "fresh helper wrapper survived cleanup"
+printf 'ok - fresh checkout builds the helper\n'
+
 # An immediate startup failure must not create a service restart loop.
 PATH="$fake_bin:$PATH" HOME="$TEST_ROOT" LAUNCHCTL_CALLS="$launchctl_calls" \
   SKETCHYBAR_HELPER_READY_FIFO="$parent_fifo" \
@@ -186,4 +218,4 @@ if grep -v '^-U [0-9][0-9]* ' "$pgrep_calls" | grep -q .; then
 fi
 printf 'ok - detached pair forces paired restart\n'
 
-printf '1..7\n'
+printf '1..8\n'

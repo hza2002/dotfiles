@@ -22,8 +22,7 @@ export FONT_CN="XQzhaopaiti0517"
 
 export HELPER=git.felix.helper
 if ! "$CONFIG_DIR/helper/start.sh"; then
-  printf 'sketchybar: helper unavailable; run make in %s/helper and restart SketchyBar\n' \
-    "$CONFIG_DIR" >&2
+  printf 'sketchybar: helper unavailable; fix the preceding error and restart SketchyBar\n' >&2
   exit 1
 fi
 export HELPER_AVAILABLE=true

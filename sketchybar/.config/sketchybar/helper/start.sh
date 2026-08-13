@@ -16,8 +16,11 @@ if [ "$#" -ne 0 ]; then
 fi
 
 if [ ! -x "$BINARY" ]; then
-  printf 'sketchybar helper is missing; run make in %s\n' "$SCRIPT_DIR" >&2
-  exit 1
+  printf 'sketchybar helper is missing; building it in %s\n' "$SCRIPT_DIR" >&2
+  if ! /usr/bin/make -C "$SCRIPT_DIR" helper; then
+    printf 'sketchybar helper build failed in %s\n' "$SCRIPT_DIR" >&2
+    exit 1
+  fi
 fi
 
 umask 077

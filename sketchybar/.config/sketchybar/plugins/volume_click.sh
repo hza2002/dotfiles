@@ -59,7 +59,7 @@ toggle_devices() {
 }
 
 select_device() {
-  local device
+  local device volume
 
   device="$(sketchybar --query "$NAME" 2>/dev/null \
     | jq -r '.label.value // empty')" || return 0
@@ -71,6 +71,9 @@ select_device() {
   sketchybar --set '/volume.device\.*/' label.color="$GRAY" \
              --set "$NAME" label.color="$WHITE" \
              --set volume_icon popup.drawing=off
+
+  volume="$(osascript -e 'output volume of (get volume settings)' 2>/dev/null)"
+  sketchybar --trigger volume_change INFO="${volume:-0}"
 }
 
 scroll_volume() {

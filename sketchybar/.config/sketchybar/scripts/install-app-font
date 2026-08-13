@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly RELEASE_URL="${SKETCHYBAR_APP_FONT_RELEASE_URL:-https://github.com/kvndrsslr/sketchybar-app-font/releases/latest/download}"
+readonly FONT_DESTINATION="$HOME/Library/Fonts/sketchybar-app-font.ttf"
+readonly MAP_DESTINATION="$HOME/.config/sketchybar/plugins/icon_map.sh"
+readonly FILTER_SCRIPT="$HOME/.config/sketchybar/scripts/filter_icon_map.py"
+readonly SKETCHYBAR_BIN="${SKETCHYBAR_BIN:-/opt/homebrew/bin/sketchybar}"
+readonly CACHE_DIR="$HOME/Library/Caches/sketchybar"
+
+if [ -L "$CACHE_DIR" ]; then
+  printf 'Refusing to use symlinked cache directory: %s\n' "$CACHE_DIR" >&2
+  exit 1
+fi
+/usr/bin/install -d -m 0700 "$CACHE_DIR"
+exec 8>"$CACHE_DIR/app-font-install.lock"
+if ! /usr/bin/lockf -s -t 5 8; then
+  printf 'Another app font installation is still running.\n' >&2
+  exit 1
+fi
+
+work_dir="$(mktemp -d)"
+font_staging="$FONT_DESTINATION.new.$$"
+map_staging="$MAP_DESTINATION.new.$$"
+cleanup() {
+  /bin/rm -f "$work_dir/sketchybar-app-font.ttf" \
+    "$work_dir/icon_map.sh" "$work_dir/icon_map.filtered.sh" \
+    "$font_staging" "$map_staging"
+  /bin/rmdir "$work_dir" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+/usr/bin/curl --fail --location --silent --show-error \
+  --connect-timeout 10 --max-time 120 \
+  "$RELEASE_URL/sketchybar-app-font.ttf" \
+  --output "$work_dir/sketchybar-app-font.ttf"
+/usr/bin/curl --fail --location --silent --show-error \
+  --connect-timeout 10 --max-time 120 \
+  "$RELEASE_URL/icon_map.sh" \
+  --output "$work_dir/icon_map.sh"
+
+if [ "$(/usr/bin/file --brief --mime-type "$work_dir/sketchybar-app-font.ttf")" != "font/sfnt" ]; then
+  printf 'Downloaded app font is not a valid SFNT font.\n' >&2
+  exit 1
+fi
+if ! /usr/bin/swift -e '
+  import CoreGraphics
+  import Foundation
+  let url = URL(fileURLWithPath: CommandLine.arguments[1]) as CFURL
+  guard let provider = CGDataProvider(url: url),
+        let font = CGFont(provider),
+        font.fullName as String? == "sketchybar-app-font" else { exit(1) }
+' "$work_dir/sketchybar-app-font.ttf"; then
+  printf 'Downloaded font is not sketchybar-app-font.\n' >&2
+  exit 1
+fi
+
+/usr/bin/install -d "$HOME/Library/Fonts" "$(dirname "$MAP_DESTINATION")"
+/usr/bin/python3 "$FILTER_SCRIPT" \
+  --input "$work_dir/icon_map.sh" \
+  --output "$work_dir/icon_map.filtered.sh"
+/bin/bash -n "$work_dir/icon_map.filtered.sh"
+
+/usr/bin/install -m 0644 "$work_dir/sketchybar-app-font.ttf" "$font_staging"
+/usr/bin/install -m 0755 "$work_dir/icon_map.filtered.sh" "$map_staging"
+/bin/mv -f "$font_staging" "$FONT_DESTINATION"
+/bin/mv -f "$map_staging" "$MAP_DESTINATION"
+"$SKETCHYBAR_BIN" --reload
+
+echo "Installed the latest sketchybar-app-font release."
