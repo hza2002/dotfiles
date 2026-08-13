@@ -1,0 +1,44 @@
+{
+  "_comment": [
+    "Example configuration for the Raycast Service extension.",
+    "Copy this structure to ~/.config/service/config.json.",
+    "Keep machine-specific URLs, paths, and service definitions out of this public repository."
+  ],
+  "services": [
+    {
+      "id": "example-local",
+      "title": "Local App",
+      "group": "local",
+      "url": "http://127.0.0.1:3000/",
+      "healthUrl": "http://127.0.0.1:3000/health",
+      "icon": "terminal",
+      "projectPath": "~/repo/example",
+      "start": {
+        "type": "background",
+        "cwd": "~/repo/example",
+        "executable": "make",
+        "args": ["start"],
+        "logPath": "~/.local/var/log/service/example.log"
+      },
+      "stop": {
+        "type": "listener",
+        "host": "127.0.0.1",
+        "port": 3000,
+        "process": "example-server"
+      },
+      "restart": {
+        "type": "command",
+        "cwd": "~/repo/example",
+        "executable": "make",
+        "args": ["restart"]
+      }
+    },
+    {
+      "id": "example-remote",
+      "title": "Remote Dashboard",
+      "group": "remote",
+      "url": "https://example.com/dashboard",
+      "icon": "dashboard"
+    }
+  ]
+}
