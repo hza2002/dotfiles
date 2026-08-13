@@ -34,10 +34,10 @@ quit-after-last-window-closed = true
 # updates are managed by brew; disable the built-in update checker
 auto-update = off
 
-# open Ghostty → attach the main tmux session, create it if absent.
+# open Ghostty → attach the Main tmux session, create it if absent.
 # new-session -A is the canonical attach-or-create form and lets
 # tmux-continuum's auto-restore run on a fresh server.
-command = /opt/homebrew/bin/zsh --login -c "tmux new-session -A -s main"
+command = /opt/homebrew/bin/zsh --login -c "tmux new-session -A -s Main"
 # ssh-terminfo pushes terminfo to remote hosts, fixing garbled output over SSH
 shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 
@@ -49,6 +49,9 @@ notify-on-command-finish = unfocused
 notify-on-command-finish-action = no-bell,notify
 # only notify if the command ran longer than 10 seconds
 notify-on-command-finish-after = 10s
+# block terminal applications from reading or replacing the system clipboard via OSC 52
+clipboard-read = deny
+clipboard-write = deny
 # strip trailing whitespace on copy for cleaner pastes
 clipboard-trim-trailing-spaces = true
 # 100 MB scrollback; default is 10 MB
