@@ -26,23 +26,26 @@ fi
 [[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env" # Rust
 
 if [[ "$ZSH_OS" == "Linux" ]]; then
-  export PATH="$PATH:$HOME/bin:/usr/local/bin"
-  export PATH="$PATH:$HOME/.local/bin"
-  export PATH="$PATH:/usr/local/go/bin"
-  export PATH="$PATH:$HOME/julia-1.9.2/bin"
-  export PATH="$PATH:$HOME/.fnm"
-  export PATH="$PATH:$HOME/.jenv/bin"
-  export PATH="$PATH:/snap/bin"
+  for bin_dir in \
+    "$HOME/bin" \
+    "$HOME/.local/bin" \
+    /usr/local/bin \
+    /usr/local/go/bin \
+    "$HOME/julia-1.9.2/bin" \
+    "$HOME/.fnm" \
+    "$HOME/.jenv/bin" \
+    /snap/bin; do
+    [[ -d "$bin_dir" ]] && path+=("$bin_dir")
+  done
   # cuda
-  export PATH=${PATH}:/usr/local/cuda/bin
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/cuda/lib64
+  [[ -d /usr/local/cuda/bin ]] && path+=(/usr/local/cuda/bin)
+  [[ -d /usr/local/cuda/lib64 ]] && export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/local/cuda/lib64"
   # Zephyr SDK (installed for zmk)
   [[ -r "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" ]] && \
     source "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux"
 elif [[ "$ZSH_OS" == "Darwin" ]]; then
   export PATH="$PATH:$HOME/.local/bin"
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
-  export PATH="$PATH:$HOME/repo/scripts" # my custom scripts
 fi
 typeset -U path
 ########################## 🔼 PATH 🔼 ##########################

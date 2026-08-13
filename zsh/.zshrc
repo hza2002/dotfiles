@@ -87,10 +87,19 @@ if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then e
 (( $+commands[jj] )) && source <(COMPLETE=zsh jj) # Jujutsu
 (( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
 (( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
+function _init_jenv() {
+  eval "$(command jenv init -)"
+  functions[_jenv_original]=$functions[jenv]
+  function jenv() {
+    _jenv_original "$@"
+    local exit_code=$?
+    [[ "$1" == shell && $exit_code -eq 0 ]] && _jenv_export_hook
+    return $exit_code
+  }
+}
 # eval "$(fnm env --use-on-cd --shell zsh)"
-(( $+commands[rbenv] )) && eval "$(rbenv init - zsh)" # rbenv: put Ruby shims first and enable `rbenv shell`
 lazyload fnm node npm npx pnpm corepack nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
-lazyload jenv java javac javadoc -- 'eval "$(jenv init -)"' # jenv: Manage your Java environment
+lazyload jenv java javac jar javadoc jshell gradle mvn ant -- '_init_jenv' # jenv: Manage the Java toolchain on demand.
 lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
@@ -115,7 +124,7 @@ if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  alias update='brew update && brew upgrade && brew cu -a -y && brew cleanup'
+  alias update='brew update && brew upgrade && brew cleanup'
   alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
   alias cdx='open "codex://new?path=$(pwd)"' # open codex app
 fi
