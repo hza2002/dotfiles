@@ -1,6 +1,5 @@
 **/.DS_Store
 nvim/.config/nvim/plugin
-fish/.config/fish/fish_variables
 yazi/.config/yazi/flavors/gruvbox-dark.yazi
 yazi/.config/yazi/plugins
 .nvimlog
