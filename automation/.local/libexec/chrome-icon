@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+readonly APP="/Applications/Google Chrome.app"
+readonly ICON="$HOME/.local/share/icons/Google Chrome.icns"
+readonly FILEICON="/opt/homebrew/bin/fileicon"
+
+[ -d "$APP" ] && [ -f "$ICON" ] && [ -x "$FILEICON" ] || exit 0
+
+if ! "$FILEICON" test "$APP" >/dev/null 2>&1; then
+  "$FILEICON" set "$APP" "$ICON"
+  /usr/bin/logger -t chrome-custom-icon "Restored the Google Chrome custom icon"
+fi
