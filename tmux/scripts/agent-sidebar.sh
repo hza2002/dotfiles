@@ -42,7 +42,7 @@ close_sidebar() {
 
   tmux kill-pane -t "$sidebar_pane"
   if [ -n "$saved_layout" ]; then
-    tmux select-layout -t "$window_id" "$saved_layout" >/dev/null
+    tmux select-layout -t "$window_id" "$saved_layout" >/dev/null 2>&1 || true
   fi
   clear_saved_layout "$window_id"
 
