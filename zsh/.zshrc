@@ -13,6 +13,8 @@ fi
 export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
 ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$ZSH/cache}"
 export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST"
+typeset -U fpath
+typeset +x FPATH # Function lookup is shell-local; do not duplicate it in nested shells.
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
   colored-man-pages command-not-found shell-proxy
@@ -21,17 +23,16 @@ plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Disabled commands: copypath perms qrcode
   # Shortcut
   fancy-ctrl-z sudo thefuck tldr
-  # Aliases
-  common-aliases
-  # Disabled aliases: aliases
+  # Disabled aliases: aliases common-aliases
   git rust zoxide
   # Custom
-  autoupdate fzf-tab you-should-use iterm2-shell-integration
+  autoupdate fzf-tab you-should-use
   zsh-lazyload zsh-vi-mode zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
 )
 fpath+="${ZSH_CUSTOM:-"$ZSH/custom"}/plugins/zsh-completions/src" # https://github.com/zsh-users/zsh-completions/issues/603
 zvm_after_init_commands+=("source $HOME/.config/fzf/fzfrc.sh") # zvm and fzf conflict
 source $ZSH/oh-my-zsh.sh
+typeset -U fpath
 ########################## 🔼 OH MY ZSH 🔼 #####################
 
 ########################## 🔽 BIND KEY 🔽 ######################
@@ -45,23 +46,16 @@ bindkey_zsh_vim "\em" tldr-command-line # tldr: alt-m
 ########################## 🔼 BIND KEY 🔼 ######################
 
 ########################## 🔽 NET 🔽 ###########################
-# export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890
-#if [[ $(grep -i Microsoft /proc/version) ]]; then
-#  HOST_IP=$(cat /etc/resolv.conf | grep "nameserver" | cut -f 2 -d " ")
-#fi
+# Clash TUN handles traffic by default. Run `proxy enable` only as a manual fallback.
 HOST_IP="http://127.0.0.1"
 SHELLPROXY_URL="$HOST_IP:7890"
 SHELLPROXY_NO_PROXY="localhost,127.0.0.1"
-if [[ "$ZSH_OS" == "Darwin" ]]; then
-  proxy enable
-fi
 ########################## 🔼 NET 🔼 ###########################
 
 ########################## 🔽 LOAD OTHER CONFIGS 🔽 ############
 setopt HIST_IGNORE_ALL_DUPS # Remove duplicate older commands
 setopt HIST_IGNORE_SPACE    # Remove commands with leading space
 setopt EXTENDED_HISTORY     # Record timestamps in .zsh_history
-setopt INC_APPEND_HISTORY_TIME  # Record command execution duration
 function _ignore_unknown_command_history() {
   emulate -L zsh
   setopt extended_glob
@@ -83,10 +77,7 @@ function _ignore_unknown_command_history() {
 }
 autoload -Uz add-zsh-hook # Load zsh hook registration helper.
 add-zsh-hook zshaddhistory _ignore_unknown_command_history # Filter history before saving.
-if (( $+commands[mole] )) && output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi # Mole shell completion
-(( $+commands[jj] )) && source <(COMPLETE=zsh jj) # Jujutsu
 (( $+commands[starship] )) && eval "$(starship init zsh)" # Customizable prompt for any shell
-(( $+commands[codex] )) && eval "$(codex completion zsh)" # OpenAI Codex Completion
 function _init_jenv() {
   eval "$(command jenv init -)"
   functions[_jenv_original]=$functions[jenv]
@@ -97,10 +88,16 @@ function _init_jenv() {
     return $exit_code
   }
 }
-# eval "$(fnm env --use-on-cd --shell zsh)"
-lazyload fnm node npm npx pnpm corepack nvim -- 'eval "$(fnm env --use-on-cd --shell zsh)"' # fnm: Fast and simple Node.js version manager
+# Direct non-login shells do not read .zprofile, so restore the uv default Python path.
+export UV_PYTHON_BIN_DIR="${UV_PYTHON_BIN_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/uv/bin}"
+[[ -d "$UV_PYTHON_BIN_DIR" ]] && path=("$UV_PYTHON_BIN_DIR" $path)
+typeset -U path
+# .zprofile initializes fnm for login shells; nested interactive shells need their own chpwd hook.
+if (( $+commands[fnm] && ! $+functions[_fnm_autoload_hook] )); then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
 lazyload jenv java javac jar javadoc jshell gradle mvn ant -- '_init_jenv' # jenv: Manage the Java toolchain on demand.
-lazyload conda python3 pip3 python pip -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
+lazyload conda -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
 ########################## 🔽 ALIAS 🔽 ##########################
@@ -116,17 +113,13 @@ alias make='make -j10' # 并行make
 alias mkdir='mkdir -pv'
 alias nn='nvim'
 alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
-alias pip='pip3'
 alias ps='procs' # A modern replacement for ps written in Rust.
-alias python='python3'
-alias mysudo='sudo -E env "PATH=$PATH"'
 if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   alias update='brew update && brew upgrade && brew cleanup'
-  alias rm='trash' # Don't ask. Asking is a lesson learned in blood and tears.
-  alias cdx='open "codex://new?path=$(pwd)"' # open codex app
+  alias rm="$HOMEBREW_PREFIX/opt/macos-trash/bin/trash" # Don't ask. Asking is a lesson learned in blood and tears.
 fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
@@ -171,7 +164,7 @@ function y() {
   if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
     builtin cd -- "$cwd"
   fi
-  rm -f -- "$tmp"
+  /bin/rm -f -- "$tmp"
 }
 
 if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
