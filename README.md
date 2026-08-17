@@ -45,7 +45,12 @@ contains the configuration, while
 amount of local behavior layered on the upstream sidebar plugin. Read those
 files for the current bindings and plugin settings.
 
+Copy mode targets the clipboard of the attached terminal client through OSC 52,
+including through SSH and nested tmux sessions. Unsupported terminal clients
+still retain the selection in tmux's paste buffer.
+
 The bootstrap installation contract for this package is to install tmux, TPM,
 the plugins declared in `tmux.conf`, sesh, and fzf, then configure sidebar hooks
-for installed agents. Macism is required only on macOS; Linux desktop clipboard
-tools are optional, and WSL uses `clip.exe`.
+for installed agents. Macism is required only on macOS. Clipboard integration
+does not require platform-specific packages; terminal clients must permit OSC 52
+writes.

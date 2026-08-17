@@ -49,9 +49,9 @@ notify-on-command-finish = unfocused
 notify-on-command-finish-action = no-bell,notify
 # only notify if the command ran longer than 10 seconds
 notify-on-command-finish-after = 10s
-# block terminal applications from reading or replacing the system clipboard via OSC 52
+# let tmux write selections through OSC 52, but never expose clipboard contents
 clipboard-read = deny
-clipboard-write = deny
+clipboard-write = allow
 # strip trailing whitespace on copy for cleaner pastes
 clipboard-trim-trailing-spaces = true
 # 100 MB scrollback; default is 10 MB
