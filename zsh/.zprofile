@@ -17,6 +17,8 @@ fi
 ########################## 🔼 BREW 🔼 ##########################
 
 ########################## 🔽 PATH 🔽 ##########################
+path=("$HOME/.local/bin" $path)
+
 [[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env" # Rust
 
 if (( $+commands[uv] )); then
@@ -31,10 +33,8 @@ fi
 if [[ "$ZSH_OS" == "Linux" ]]; then
   for bin_dir in \
     "$HOME/bin" \
-    "$HOME/.local/bin" \
     /usr/local/bin \
     /usr/local/go/bin \
-    "$HOME/julia-1.9.2/bin" \
     "$HOME/.fnm" \
     "$HOME/.jenv/bin" \
     /snap/bin; do
@@ -43,11 +43,7 @@ if [[ "$ZSH_OS" == "Linux" ]]; then
   # cuda
   [[ -d /usr/local/cuda/bin ]] && path+=(/usr/local/cuda/bin)
   [[ -d /usr/local/cuda/lib64 ]] && export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/local/cuda/lib64"
-  # Zephyr SDK (installed for zmk)
-  [[ -r "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux" ]] && \
-    source "$HOME/zephyr-sdk-0.15.0/environment-setup-x86_64-pokysdk-linux"
 elif [[ "$ZSH_OS" == "Darwin" ]]; then
-  export PATH="$PATH:$HOME/.local/bin"
   [[ -d "$HOME/miniconda3/condabin" ]] && path+=("$HOME/miniconda3/condabin")
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
 fi

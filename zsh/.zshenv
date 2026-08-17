@@ -11,14 +11,3 @@ if [[ -z "${ZSH_OS:-}" ]]; then
   esac
 fi
 export ZSH_OS
-
-# Project paths used by build scripts (must be visible to non-interactive shells)
-if [[ -n "${WSL_DISTRO_NAME:-}" || -n "${WSL_INTEROP:-}" ]]; then # WSL
-  export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
-  export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-elif [[ "$ZSH_OS" == "Linux" ]]; then
-  export AM_HOME="$HOME/repo/ysyx-workbench/abstract-machine"
-  export NEMU_HOME="$HOME/repo/ysyx-workbench/nemu"
-  export NPC_HOME="$HOME/repo/ysyx-workbench/npc"
-  export NVBOARD_HOME="$HOME/repo/ysyx-workbench/nvboard"
-fi
