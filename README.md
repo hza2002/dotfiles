@@ -6,7 +6,8 @@ continuous multi-host synchronization system.
 
 Configuration packages are laid out for GNU Stow. An idempotent bootstrap
 program will install their dependencies, check for conflicts, and link the
-selected packages.
+selected packages. Stow runs from the repository root, where `.stowrc` disables
+tree folding so tools cannot write runtime data back through a linked directory.
 
 ## Zsh
 
@@ -35,3 +36,16 @@ The bootstrap installation contract for this package is:
 The future bootstrap catalog will be the source of truth for package providers,
 versions, release assets, and checksums. The macOS sandbox helpers remain
 configuration-only and are not part of the bootstrap contract.
+
+## tmux
+
+The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
+contains the configuration, while
+[`agent-sidebar.sh`](tmux/.config/tmux/scripts/agent-sidebar.sh) contains the small
+amount of local behavior layered on the upstream sidebar plugin. Read those
+files for the current bindings and plugin settings.
+
+The bootstrap installation contract for this package is to install tmux, TPM,
+the plugins declared in `tmux.conf`, sesh, and fzf, then configure sidebar hooks
+for installed agents. Macism is required only on macOS; Linux desktop clipboard
+tools are optional, and WSL uses `clip.exe`.
