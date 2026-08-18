@@ -1,11 +1,5 @@
 -- Dart/Flutter development with FVM-managed SDKs.
--- flutter-tools owns dartls; `fvm = true` makes it use <workspace>/.fvm/flutter_sdk.
-local function dart_executable(_, ctx)
-  local root = vim.fs.root(ctx.dirname, ".fvmrc")
-  local executable = root and (root .. "/.fvm/flutter_sdk/bin/dart")
-  return executable and vim.uv.fs_stat(executable) and executable or "dart"
-end
-
+-- flutter-tools owns dartls; its official `fvm` integration resolves .fvm from Neovim's cwd.
 return {
   {
     "nvim-flutter/flutter-tools.nvim",
@@ -40,14 +34,12 @@ return {
     },
   },
 
-  -- Use the project's FVM SDK directly to avoid the slow FVM CLI startup.
+  -- Prefer formatting through the FVM-backed dartls, with `dart format` as fallback.
   {
     "stevearc/conform.nvim",
     opts = {
-      formatters = {
-        dart_format = {
-          command = dart_executable,
-        },
+      formatters_by_ft = {
+        dart = { "dart_format", lsp_format = "prefer" },
       },
     },
   },

@@ -9,7 +9,6 @@ opt.whichwrap = "bs<>[]hl" -- let these keys cross line boundaries
 opt.more = false -- don't pause long listings
 opt.timeoutlen = 300 -- LazyVim default; bump later once chord muscle memory builds
 opt.updatetime = 100 -- faster CursorHold (LazyVim default: 200)
-opt.swapfile = false -- no swapfile
 opt.writebackup = false -- no backup while a file is being edited
 
 -- Folding: keep buffers unfolded on start (nvim-ufo, see plugins/code.lua)

@@ -70,6 +70,20 @@ After Stow links the package, run `ya pkg install` to install the revisions and
 hashes pinned in [`package.toml`](yazi/.config/yazi/package.toml). Linux desktop
 systems additionally need a supported clipboard helper; headless hosts do not.
 
+## Neovim
+
+The Neovim package targets Neovim 0.12 or newer. Use Homebrew on macOS and
+Neovim's official stable release archive under `~/.local` on Linux or WSL; do
+not use the Ubuntu or Debian package. [`lazyvim.json`](nvim/.config/nvim/lazyvim.json)
+and the files under [`lua/plugins`](nvim/.config/nvim/lua/plugins) are the source
+of truth for enabled language support and external toolchains.
+
+The bootstrap installation contract is to install the base command-line
+dependencies, link the package, synchronize the revisions pinned in
+[`lazy-lock.json`](nvim/.config/nvim/lazy-lock.json), and wait for all Mason
+packages to finish installing. Plugin and tool installation must complete before
+the module is reported as installed rather than being deferred to first launch.
+
 ## Ghostty and Raycast
 
 Ghostty is the macOS terminal client and starts the `Main` tmux session directly.

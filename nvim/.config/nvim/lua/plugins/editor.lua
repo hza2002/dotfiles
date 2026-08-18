@@ -3,6 +3,8 @@ return {
   -- Auto-switch macOS input method back to ABC on leaving insert mode
   {
     "keaising/im-select.nvim",
+    enabled = vim.fn.has("macunix") == 1,
+    vscode = true,
     event = "InsertEnter",
     opts = {
       default_im_select = "com.apple.keylayout.ABC",

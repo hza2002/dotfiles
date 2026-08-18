@@ -2,13 +2,6 @@
 local vscode = require("vscode")
 local map = vim.keymap.set
 
-vim.api.nvim_create_autocmd("InsertLeave", {
-  group = vim.api.nvim_create_augroup("user_vscode_im_select", { clear = true }),
-  callback = function()
-    vim.fn.system("macism com.apple.keylayout.ABC")
-  end,
-})
-
 local function action(command)
   return function()
     vscode.call(command)

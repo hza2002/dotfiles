@@ -20,7 +20,8 @@ return {
       table.insert(clangd.cmd, "--fallback-style=Google")
       opts.servers.clangd = clangd
 
-      -- Dart/Flutter is configured in plugins/flutter.lua.
+      -- flutter-tools owns dartls and its FVM-aware startup.
+      opts.servers.dartls = { enabled = false }
     end,
   },
 
