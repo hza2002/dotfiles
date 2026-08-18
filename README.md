@@ -55,6 +55,21 @@ for installed agents. Macism is required only on macOS. Clipboard integration
 does not require platform-specific packages; terminal clients must permit OSC 52
 writes.
 
+## Yazi
+
+The Yazi package targets Yazi 26.5.6 or newer on macOS and Linux. The five
+tracked files under [`yazi/.config/yazi`](yazi/.config/yazi) are configuration
+source; plugins and flavors are generated runtime data and must not be stored in
+the repository.
+
+The bootstrap installation contract is to use Homebrew on macOS and Yazi's
+official signed stable APT repository on Ubuntu or Debian. Install the complete
+integration set: file, Git, Starship, Lazygit, Ouch, FFmpeg, 7-Zip, jq, Poppler,
+fd, ripgrep, fzf 0.53 or newer, zoxide, resvg, and ImageMagick 7.1.1 or newer.
+After Stow links the package, run `ya pkg install` to install the revisions and
+hashes pinned in [`package.toml`](yazi/.config/yazi/package.toml). Linux desktop
+systems additionally need a supported clipboard helper; headless hosts do not.
+
 ## Ghostty and Raycast
 
 Ghostty is the macOS terminal client and starts the `Main` tmux session directly.

@@ -8,11 +8,11 @@ prepend_keymap = [
   { on = [ "c", "m" ], run = "plugin chmod",                   desc = "Chmod on selected files" }, # chmod
   { on = [ "c", "p" ], run = "plugin command",                 desc = "Yazi command prompt" }, # command
 
-  { on = [ "g", "r" ], run = "shell 'ya emit cd \"$(git rev-parse --show-toplevel)\"'", desc = "Goto git repo root" }, # goto root of the current Git repo
+  { on = [ "g", "r" ], run = "shell 'root=\"$(git rev-parse --show-toplevel 2>/dev/null)\" || exit 0; ya emit cd \"$root\"'", desc = "Goto git repo root" }, # goto root of the current Git repo
   { on = [ "g", "y" ], run = "cd ~/.config/yazi", desc = "Goto yazi config" }, # goto yazi config
 
   { on = "<C-g>", run = "shell --confirm --block lazygit", desc = "Lazygit" }, # lazygit
-  { on = "<C-p>", run = "shell 'qlmanage -p \"$@\"'",      desc = "Preview with Quick Look"}, # quick look
+  { on = "<C-p>", run = "shell 'command -v qlmanage >/dev/null 2>&1 || exit 0; qlmanage -p \"$@\"'", desc = "Preview with Quick Look"}, # quick look
 ]
 
 [input]
