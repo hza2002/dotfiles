@@ -12,6 +12,6 @@ npm run dev
 npm run build
 ```
 
-The TypeScript source lives here. Raycast's build command installs the compiled
-extension under `~/.config/raycast/extensions/service`; Stow does not manage
-that generated runtime copy.
+The TypeScript source lives here. `npm run dev` registers or refreshes the local
+extension under `~/.config/raycast/extensions/service`; `npm run build` verifies
+the production bundle. Stow does not manage that generated runtime copy.

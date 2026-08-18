@@ -54,3 +54,16 @@ the plugins declared in `tmux.conf`, sesh, and fzf, then configure sidebar hooks
 for installed agents. Macism is required only on macOS. Clipboard integration
 does not require platform-specific packages; terminal clients must permit OSC 52
 writes.
+
+## Ghostty and Raycast
+
+Ghostty is the macOS terminal client and starts the `Main` tmux session directly.
+Its bootstrap contract is Ghostty 1.3 or newer and the Homebrew cask
+`font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
+the current terminal behavior and tmux key translations.
+
+Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
+The Servers extension reads SSH aliases from the private inventory at
+`~/.config/server/config.json` and attaches each selected host to its `main` tmux
+session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are
+not owned by this repository.

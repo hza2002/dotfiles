@@ -1,0 +1,13 @@
+{
+  "_comment": [
+    "Example configuration for the Raycast Servers extension.",
+    "Create ~/.config/server/config.json with this structure.",
+    "Each host is an alias resolved by ~/.ssh/config."
+  ],
+  "servers": [
+    {
+      "title": "Ubuntu Server",
+      "host": "gpt"
+    }
+  ]
+}

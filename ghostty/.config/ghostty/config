@@ -7,7 +7,7 @@ font-thicken = true
 
 theme = "Gruvbox Dark"
 # Gruvbox expects bold text to use bright color variants (classic terminal behavior)
-bold-is-bright = true
+bold-color = bright
 
 # hide the titlebar but keep the native macOS window frame (preserves rounded corners for borders/yabai)
 macos-titlebar-style = hidden
