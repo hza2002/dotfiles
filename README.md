@@ -37,6 +37,17 @@ The future bootstrap catalog will be the source of truth for package providers,
 versions, release assets, and checksums. The macOS sandbox helpers remain
 configuration-only and are not part of the bootstrap contract.
 
+## Bat
+
+The Bat package keeps the custom Gruvbox Material theme used by the shell and
+file previews. Use Homebrew on macOS and apt on Ubuntu 24.04 or newer. Ubuntu's
+package may expose only `batcat`; when `bat` is absent, the bootstrap must link
+`~/.local/bin/bat` to the installed `batcat` executable.
+
+After linking the package, run `bat cache --build` and verify that
+`gruvbox-material-dark` appears in `bat --list-themes`. The generated cache is
+runtime data and must not be stored in this repository.
+
 ## tmux
 
 The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
