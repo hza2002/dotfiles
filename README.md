@@ -4,10 +4,26 @@ Personal configuration for initializing a new Apple Silicon Mac, Ubuntu or
 Debian host, or WSL2 environment. The repository is an initializer, not a
 continuous multi-host synchronization system.
 
-Configuration packages are laid out for GNU Stow. An idempotent bootstrap
-program will install their dependencies, check for conflicts, and link the
-selected packages. Stow runs from the repository root, where `.stowrc` disables
+Configuration packages are laid out for GNU Stow. Complete machine setup
+currently uses the tracked `deploy-dotfiles` skill, which follows the installation
+contracts in this README. A standalone idempotent bootstrap is planned but not
+yet implemented. Stow runs from the repository root, where `.stowrc` disables
 tree folding so tools cannot write runtime data back through a linked directory.
+
+## Getting Started
+
+Clone the repository, enter it, and start an agent that supports repository
+skills:
+
+```bash
+git clone https://github.com/hza2002/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+```
+
+Ask the agent to use `$deploy-dotfiles`. It audits the current machine, presents
+the applicable installation contract, and waits for approval before changing
+the system. Git and the agent are the only prerequisites for this entry point;
+the skill handles platform-specific requirements and resumable deployment.
 
 ## Zsh
 
@@ -31,13 +47,29 @@ The bootstrap installation contract for this package is:
   Debian;
 - install incompatible or unavailable Linux tools from pinned upstream releases
   under `~/.local`, with commands exposed through `~/.local/bin`;
-- install Oh My Zsh and its custom plugins from their upstream Git repositories;
+- install [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh) and the custom plugins
+  below from their upstream Git repositories;
 - install Jenv, a default JDK, Gradle, Maven, Ant, and Miniconda;
 - stop for user input instead of replacing an unknown existing installation.
 
+| Plugin | Upstream repository |
+| --- | --- |
+| `autoupdate` | `https://github.com/TamCore/autoupdate-oh-my-zsh-plugins` |
+| `fzf-tab` | `https://github.com/Aloxaf/fzf-tab` |
+| `you-should-use` | `https://github.com/MichaelAquilina/zsh-you-should-use` |
+| `zsh-autosuggestions` | `https://github.com/zsh-users/zsh-autosuggestions` |
+| `zsh-completions` | `https://github.com/zsh-users/zsh-completions` |
+| `zsh-history-substring-search` | `https://github.com/zsh-users/zsh-history-substring-search` |
+| `zsh-lazyload` | `https://github.com/qoomon/zsh-lazyload` |
+| `zsh-syntax-highlighting` | `https://github.com/zsh-users/zsh-syntax-highlighting` |
+| `zsh-vi-mode` | `https://github.com/jeffreytse/zsh-vi-mode` |
+
+These repositories currently follow their upstream default branches; the
+dotfiles do not pin their commits. [`.zshrc`](zsh/.zshrc) remains the source of
+truth for which plugins are enabled.
+
 The future bootstrap catalog will be the source of truth for package providers,
-versions, release assets, and checksums. The macOS sandbox helpers remain
-configuration-only and are not part of the bootstrap contract.
+versions, release assets, and checksums.
 
 ## Bat
 
@@ -124,11 +156,13 @@ select Edge as its browser. The directories `~/Pictures/icons` and
 `~/Pictures/unreviewed` are also user-owned machine state. Bootstrap must not
 create, populate, or store any of these files in Git.
 
-After linking Automation, register
-`~/Library/LaunchAgents/com.ghot.chrome-custom-icon.plist` in the current GUI
-domain and verify the LaunchAgent. After installing the selected JetBrains IDEs,
-install the `IdeaVIM` and `IdeaVimExtension` plugins in each IDE, link IdeaVim,
-and reload `.ideavimrc`.
+After linking Automation, run
+`~/.local/libexec/install-chrome-icon-agent` to render the current home directory
+into `~/Library/LaunchAgents/com.ghot.chrome-custom-icon.plist`. Register that
+generated plist in the current GUI domain and verify the LaunchAgent. The
+generated plist is machine state and is not stored in Git. After installing the
+selected JetBrains IDEs, install the `IdeaVIM` and `IdeaVimExtension` plugins in
+each IDE, link IdeaVim, and reload `.ideavimrc`.
 
 Bootstrap installs these commands but never runs `bing`, `gruvifier`, or
 `ricon`. They respectively control Edge, modify images, and request elevated
@@ -189,3 +223,10 @@ The Servers extension reads SSH aliases from the private inventory at
 `~/.config/server/config.json` and attaches each selected host to its `main` tmux
 session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are
 not owned by this repository.
+
+## Validation
+
+Run `./check` from the repository root after changing the dotfiles. It performs
+read-only Stow, syntax, configuration, and module test gates. Platform-specific
+runtime checks run only on their supported operating system. The command does
+not install dependencies, update plugins, or rewrite tracked configuration.

@@ -1,0 +1,141 @@
+#!/bin/bash
+
+set -euo pipefail
+
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+CHECK_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-check.XXXXXX")
+TMUX_SOCKET="dotfiles-check-$$"
+
+cleanup() {
+  tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
+  rm -rf "$CHECK_ROOT"
+}
+trap cleanup EXIT
+
+cd "$REPO_ROOT"
+
+require() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "missing required command: $1" >&2
+    exit 1
+  }
+}
+
+run() {
+  local name=$1
+  shift
+  printf '\n==> %s\n' "$name"
+  "$@"
+  printf 'ok - %s\n' "$name"
+}
+
+check_shell_syntax() {
+  local file first
+
+  zsh -n zsh/.zshenv zsh/.zprofile zsh/.zshrc zsh/.config/fzf/fzfrc.sh
+
+  while IFS= read -r file; do
+    IFS= read -r first < "$file" || true
+    case "$first" in
+      *bash*) /bin/bash -n "$file" ;;
+      *'/sh') /bin/sh -n "$file" ;;
+    esac
+  done < <(rg --hidden -l '^#!.*(ba)?sh$' --glob '!.git/**' --glob '!**/node_modules/**')
+}
+
+check_python_syntax() {
+  python3 - <<'PY'
+import ast
+from pathlib import Path
+
+for path in Path(".").rglob("*.py"):
+    if ".git" in path.parts or "node_modules" in path.parts:
+        continue
+    ast.parse(path.read_text(), filename=str(path))
+PY
+}
+
+check_json() {
+  local file
+  while IFS= read -r file; do
+    jq empty "$file"
+  done < <(git ls-files '*.json')
+}
+
+check_agent_skills() {
+  local skill name link
+
+  for skill in .agents/skills/*; do
+    [[ -f "$skill/SKILL.md" && -f "$skill/agents/openai.yaml" ]]
+    name=$(sed -n 's/^name: //p' "$skill/SKILL.md" | head -n 1)
+    [[ "$name" == "$(basename "$skill")" ]]
+    rg -q '^description: .+' "$skill/SKILL.md"
+  done
+
+  for link in .claude/skills/*; do
+    [[ -L "$link" && -e "$link/SKILL.md" ]]
+  done
+}
+
+check_tmux() {
+  local test_home="$CHECK_ROOT/tmux-home"
+  mkdir -p "$test_home"
+  stow --target "$test_home" tmux
+  HOME="$test_home" tmux -L "$TMUX_SOCKET" \
+    -f "$test_home/.config/tmux/tmux.conf" new-session -d
+  HOME="$test_home" tmux -L "$TMUX_SOCKET" kill-server
+}
+
+check_raycast_extension() {
+  local extension=$1
+  (
+    cd "raycast/extensions/$extension"
+    npm test
+    npm run lint
+  )
+}
+
+require git
+require stow
+require rg
+require zsh
+require python3
+require jq
+require tmux
+
+mkdir -p "$CHECK_ROOT/stow-macos" "$CHECK_ROOT/stow-linux"
+run "macOS Stow profile" stow --simulate --target "$CHECK_ROOT/stow-macos" \
+  automation bat bin ghostty gnupg ideavim nvim raycast sketchybar tmux yabai yazi zsh
+run "Linux Stow profile" stow --simulate --target "$CHECK_ROOT/stow-linux" \
+  bat gnupg nvim tmux yazi zsh
+run "shell syntax" check_shell_syntax
+run "Python syntax" check_python_syntax
+run "JSON syntax" check_json
+run "agent skill layout" check_agent_skills
+run "tmux clean-home startup" check_tmux
+
+if [[ $(uname -s) == Darwin ]]; then
+  require plutil
+  require ghostty
+  require npm
+
+  run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
+  run "Automation plist template" plutil -lint \
+    automation/.local/share/automation/com.ghot.chrome-custom-icon.plist.template
+  run "Ghostty config" ghostty +validate-config --config-file=ghostty/.config/ghostty/config
+
+  for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do
+    run "SketchyBar $(basename "$test_file")" /bin/bash "$test_file"
+  done
+
+  for extension in network-control server service; do
+    run "Raycast $extension" check_raycast_extension "$extension"
+  done
+else
+  printf '\nSKIP - macOS-only runtime checks\n'
+fi
+
+run "whitespace errors" git diff --check
+run "staged whitespace errors" git diff --cached --check
+
+printf '\nAll checks passed.\n'

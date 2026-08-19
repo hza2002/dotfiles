@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Dotfiles"
+  short_description: "Deploy this dotfiles setup to macOS or Linux"
+  default_prompt: "Use $deploy-dotfiles to plan and deploy this dotfiles environment to a new macOS or Linux machine."

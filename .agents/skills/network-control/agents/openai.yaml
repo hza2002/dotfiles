@@ -1,0 +1,4 @@
+interface:
+  display_name: "Network Control"
+  short_description: "Maintain Clash, local VPNs, and Raycast routing"
+  default_prompt: "Use $network-control to maintain or troubleshoot the local Clash, VPN, and Raycast network-control stack."

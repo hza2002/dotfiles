@@ -123,40 +123,6 @@ elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
 fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
-########################## 🔽 AGENT SANDBOX 🔽 ##################
-if [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  export SANDBOX_AGENT_PROFILE="$HOME/.config/sandbox-exec/agent.sb"
-
-  function safe() {
-    "$HOME/.config/sandbox-exec/run-sandboxed.sh" "$@"
-  }
-
-  function claude() {
-    local workdir_arg=()
-    if [[ "${1:-}" == --workdir=* ]]; then
-      workdir_arg=("$1")
-      shift
-    elif [[ "${1:-}" == --workdir && -n "${2:-}" ]]; then
-      workdir_arg=("$1" "$2")
-      shift 2
-    fi
-    safe "${workdir_arg[@]}" claude --dangerously-skip-permissions "$@"
-  }
-
-  function codex() {
-    local workdir_arg=()
-    if [[ "${1:-}" == --workdir=* ]]; then
-      workdir_arg=("$1")
-      shift
-    elif [[ "${1:-}" == --workdir && -n "${2:-}" ]]; then
-      workdir_arg=("$1" "$2")
-      shift 2
-    fi
-    safe "${workdir_arg[@]}" codex --dangerously-bypass-approvals-and-sandbox "$@"
-  }
-fi
-########################## 🔼 AGENT SANDBOX 🔼 ##################
-
 ########################## 🔽 FUNCTION 🔽 #######################
 function y() {
   local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd

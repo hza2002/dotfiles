@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -eu
+
+readonly LABEL="com.ghot.chrome-custom-icon"
+readonly TEMPLATE="$HOME/.local/share/automation/$LABEL.plist.template"
+readonly PROGRAM="$HOME/.local/libexec/chrome-icon"
+readonly DESTINATION="$HOME/Library/LaunchAgents/$LABEL.plist"
+
+[ -r "$TEMPLATE" ] || {
+  echo "chrome icon agent template not found: $TEMPLATE" >&2
+  exit 1
+}
+[ -x "$PROGRAM" ] || {
+  echo "chrome icon program not found: $PROGRAM" >&2
+  exit 1
+}
+
+/usr/bin/install -d "$(dirname "$DESTINATION")"
+temporary=$(mktemp "$DESTINATION.tmp.XXXXXX")
+trap 'rm -f "$temporary"' EXIT HUP INT TERM
+
+/bin/cp "$TEMPLATE" "$temporary"
+/usr/bin/plutil -replace ProgramArguments.0 -string "$PROGRAM" "$temporary"
+/usr/bin/plutil -lint "$temporary" >/dev/null
+/bin/chmod 0644 "$temporary"
+/bin/mv -f "$temporary" "$DESTINATION"
+trap - EXIT HUP INT TERM
+
+echo "Installed $DESTINATION"

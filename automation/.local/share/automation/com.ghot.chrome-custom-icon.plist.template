@@ -8,7 +8,7 @@
   <string>Background</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/ghot/.local/libexec/chrome-icon</string>
+    <string>CHROME_ICON_PROGRAM</string>
   </array>
   <key>RunAtLoad</key>
   <true/>

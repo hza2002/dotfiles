@@ -1,0 +1,31 @@
+protocol = "easyconnect"
+server_address = "vpn.example.com"
+server_port = 443
+
+username = "YOUR_USERNAME"
+password = "YOUR_PASSWORD"
+
+# Disable assumptions specific to Zhejiang University servers.
+disable_zju_config = true
+
+# Keep the local proxy endpoints on loopback.
+socks_bind = "127.0.0.1:1080"
+http_bind = "127.0.0.1:1081"
+
+# SOCKS5 mode avoids host route and DNS changes.
+tun_mode = false
+add_route = false
+dns_hijack = false
+fake_ip = false
+
+# Prefer DNS supplied by the VPN server.
+zju_dns_server = "auto"
+secondary_dns_server = "1.1.1.1"
+
+# Fill only when the VPN requires TOTP.
+totp_secret = ""
+
+# Force private suffixes through the VPN when its resource list is incomplete.
+custom_proxy_domain = [
+    "example.internal",
+]

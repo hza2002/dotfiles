@@ -3,8 +3,7 @@ nvim/.config/nvim/plugin
 yazi/.config/yazi/flavors/gruvbox-dark.yazi
 yazi/.config/yazi/plugins
 .nvimlog
-CLAUDE.md
-/AGENTS.md
+/.claude/settings.local.json
 /nvim/.config/nvim/CHEATSHEET.md
 HANDOFF.md
 sketchybar/.config/sketchybar/helper/helper
