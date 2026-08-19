@@ -1,6 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "service",
+  "type": "module",
   "title": "Service",
   "description": "Check, open, and manage personal web services",
   "icon": "service.png",

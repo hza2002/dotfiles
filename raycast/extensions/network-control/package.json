@@ -1,6 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "network-control",
+  "type": "module",
   "title": "VPN",
   "description": "Manage Work and School VPNs with Clash routing policies",
   "icon": "vpn.png",
