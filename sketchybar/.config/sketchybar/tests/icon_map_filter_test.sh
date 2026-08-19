@@ -76,20 +76,35 @@ printf 'ok - duplicate icon patterns are rejected\n'
 
 install_home="$TEST_ROOT/install-home"
 release_dir="$TEST_ROOT/release"
-fake_bin="$TEST_ROOT/sketchybar"
-reload_calls="$TEST_ROOT/reload.calls"
-valid_font="$HOME/Library/Fonts/sketchybar-app-font.ttf"
-[ -f "$valid_font" ] || fail "installed sketchybar-app-font fixture is missing"
+valid_font="$TEST_ROOT/sketchybar-app-font.ttf"
+# Minimal CC0-1.0 subset of sketchybar-app-font containing the :code: ligature.
+/usr/bin/base64 -D > "$valid_font" <<'FONT'
+AAEAAAALAIAAAwAwR1NVQiCpJXMAAAHIAAAAXk9TLzJXOWhSAAACKAAAAGBjbWFwAIIBhgAAAXwA
+AABKZ2x5ZgBU6UIAAAKIAAAAjGhlYWQwU4eaAAABRAAAADZoaGVhB9cFhwAAASAAAAAkaG10eAWD
+//8AAADMAAAAFGxvY2EA0gDSAAAAvAAAABBtYXhwAZ8JFwAAAOAAAAAgbmFtZRY7NLgAAAMUAAAB
+LHBvc3QADQAAAAABAAAAACAAAAAAAEYARgBGAEYARgBGAAAAAAWD//8AAAAAAAAAAAAAAAAAAQAA
+AAcJCwCOAAAAAAACAAAACgAKAAAA/wAAAAAAAAADAAAAAAAAAAoAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAEAAAPoAAAAAAWD/yQAAATKAAEAAAAAAAAAAAAAAAAAAAADAAEAAAABAADAAbrrXw889QAL
+A+gAAAAA5qMhNQAAAADmoyE1/yT/IgTKBSkAAAAIAAIAAAAAAAAAAAACAAAAAwAAABQAAwABAAAA
+FAAEADYAAAAIAAgAAgAAADoAZQBv//8AAAA6AGMAb////8gAAP+VAAEAAAAGAAAAAAAFAAYAAwAA
+AAEAAAAKACQAMgACREZMVAAObGF0bgAOAAQAAAAAAAAAAQAAAAFsaWdhAAgAAAABAAAAAQAEAAQA
+AAABAAgAAQAaAAEACAABAAQAAQAGAAUABAAGAAMAAgABAAEAAgAAAAQFPAGQAAUAAAN/ArwAAACM
+A38CvAAAAeAAMQECAAACAAUDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFBmRWQAwAA6AG8D6AAAAFoF
+KQDeAAAAAQAAAAAAAAAAAAAAAAAhAAP//wAAA+kD6AAiACUAJgAAAScmBgcBJyYGDwEGFB8BBwYU
+HwEeAT8BAR4BPwE+ATURNCYDLQERA8TNEicO/nasDB4LNw4OlJQODjcLHgysAYoOJxLOEBMT5/7V
+ASsDfGMJBw7+mYIJAQozDCUMiIgMJQwzCgEJg/6YDgcJYwgeEgKgEh79nePj/joAAAAIAGYAAwAB
+BAkAAQAmAKAAAwABBAkAAgAOAJIAAwABBAkAAwAmAKAAAwABBAkABAAmAKAAAwABBAkABQAWAHwA
+AwABBAkABgAmAKAAAwABBAkACgBWACYAAwABBAkACwAmAAAAaAB0AHQAcAA6AC8ALwBmAG8AbgB0
+AGUAbABsAG8ALgBjAG8AbQBHAGUAbgBlAHIAYQB0AGUAZAAgAGIAeQAgAHMAdgBnADIAdAB0AGYA
+IABmAHIAbwBtACAARgBvAG4AdABlAGwAbABvACAAcAByAG8AagBlAGMAdAAuAFYAZQByAHMAaQBv
+AG4AIAAxAC4AMABSAGUAZwB1AGwAYQByAHMAawBlAHQAYwBoAHkAYgBhAHIALQBhAHAAcAAtAGYA
+bwBuAHQ=
+FONT
 mkdir -p "$install_home/.config/sketchybar/scripts" "$install_home/.config/sketchybar/plugins" "$release_dir"
 cp "$FILTER" "$install_home/.config/sketchybar/scripts/filter_icon_map.py"
 cp "$input" "$release_dir/icon_map.sh"
 cp "$valid_font" "$release_dir/sketchybar-app-font.ttf"
 printf 'old-map\n' > "$install_home/.config/sketchybar/plugins/icon_map.sh"
-cat > "$fake_bin" <<'SKETCHYBAR'
-#!/bin/bash
-printf '%s\n' "$*" >> "$RELOAD_CALLS"
-SKETCHYBAR
-chmod +x "$fake_bin"
 
 # Restore the valid fixture after the malformed-input check above.
 cat > "$release_dir/icon_map.sh" <<'MAP'
@@ -104,14 +119,12 @@ function __icon_map() {
 ### END-OF-ICON-MAP
 MAP
 HOME="$install_home" SKETCHYBAR_APP_FONT_RELEASE_URL="file://$release_dir" \
-  SKETCHYBAR_BIN="$fake_bin" RELOAD_CALLS="$reload_calls" \
   "$CONFIG_ROOT/scripts/install-app-font" >/dev/null
 [ "$($install_home/.config/sketchybar/plugins/icon_map.sh Code)" = :code: ] \
   || fail "installer did not publish the filtered map"
 /usr/bin/cmp -s "$valid_font" \
   "$install_home/Library/Fonts/sketchybar-app-font.ttf" \
   || fail "installer did not publish the font"
-[ "$(cat "$reload_calls")" = --reload ] || fail "installer did not reload SketchyBar"
 printf 'ok - installer publishes validated artifacts\n'
 
 map_hash="$(shasum -a 256 "$install_home/.config/sketchybar/plugins/icon_map.sh" | awk '{print $1}')"
@@ -131,7 +144,6 @@ function __icon_map() {
 ### END-OF-ICON-MAP
 MAP
 HOME="$install_home" SKETCHYBAR_APP_FONT_RELEASE_URL="file://$release_dir" \
-  SKETCHYBAR_BIN="$fake_bin" RELOAD_CALLS="$reload_calls" \
   "$CONFIG_ROOT/scripts/install-app-font" >/dev/null
 [ ! -e "$side_effect" ] || fail "installer executed upstream shell content"
 ! grep -q 'upstream-side-effect' "$install_home/.config/sketchybar/plugins/icon_map.sh" \
@@ -143,7 +155,6 @@ printf 'ok - installer strips upstream shell content without executing it\n'
 printf 'invalid upstream\n' > "$release_dir/icon_map.sh"
 cp "$valid_font" "$release_dir/sketchybar-app-font.ttf"
 if HOME="$install_home" SKETCHYBAR_APP_FONT_RELEASE_URL="file://$release_dir" \
-  SKETCHYBAR_BIN="$fake_bin" RELOAD_CALLS="$reload_calls" \
   "$CONFIG_ROOT/scripts/install-app-font" >/dev/null 2>&1; then
   fail "installer accepted an invalid upstream map"
 fi
@@ -166,7 +177,6 @@ function __icon_map() {
 ### END-OF-ICON-MAP
 MAP
 if HOME="$install_home" SKETCHYBAR_APP_FONT_RELEASE_URL="file://$release_dir" \
-  SKETCHYBAR_BIN="$fake_bin" RELOAD_CALLS="$reload_calls" \
   "$CONFIG_ROOT/scripts/install-app-font" >/dev/null 2>&1; then
   fail "installer accepted an unrelated SFNT font"
 fi
@@ -189,7 +199,6 @@ function __icon_map() {
 ### END-OF-ICON-MAP
 MAP
 if HOME="$install_home" SKETCHYBAR_APP_FONT_RELEASE_URL="file://$release_dir" \
-  SKETCHYBAR_BIN="$fake_bin" RELOAD_CALLS="$reload_calls" \
   "$CONFIG_ROOT/scripts/install-app-font" >/dev/null 2>&1; then
   fail "installer accepted a map with an incompatible lookup contract"
 fi

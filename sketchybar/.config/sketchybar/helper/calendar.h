@@ -1,11 +1,6 @@
 #pragma once
-#include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <time.h>
-
-#define CALENDAR_STATE_PATH "/tmp/sketchybar-calendar-precision"
 
 struct calendar {
   char command[256];
@@ -16,15 +11,6 @@ static inline void calendar_init(struct calendar *c) {
 }
 
 static inline void calendar_update(struct calendar *c) {
-  bool seconds = false;
-  FILE *f = fopen(CALENDAR_STATE_PATH, "r");
-  if (f) {
-    char buf[8] = {0};
-    if (fgets(buf, sizeof(buf), f) && strcmp(buf, "second\n") == 0)
-      seconds = true;
-    fclose(f);
-  }
-
   time_t now = time(NULL);
   struct tm *tm = localtime(&now);
 
@@ -36,7 +22,7 @@ static inline void calendar_update(struct calendar *c) {
            weekday, tm->tm_mon + 1, tm->tm_mday);
 
   char time_str[16];
-  strftime(time_str, sizeof(time_str), seconds ? "%H:%M:%S" : "%H:%M", tm);
+  strftime(time_str, sizeof(time_str), "%H:%M", tm);
 
   snprintf(c->command, sizeof(c->command),
            "--set calendar icon=\"%s\" label=\"%s\"",

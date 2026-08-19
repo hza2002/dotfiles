@@ -34,6 +34,26 @@ PATH="$fake_bin:$PATH" OSASCRIPT_CALLS="$volume_calls" \
   || fail "valid volume delta was rejected"
 printf 'ok - bounded volume input\n'
 
+# Slider percentages become AppleScript source and must be canonical integers.
+slider_calls="$TEST_ROOT/volume-slider.calls"
+: > "$slider_calls"
+for percentage in "" -1 1.5 101 00 01 999999999999999999999 \
+  $'0\ndo shell script "false"'; do
+  PATH="$fake_bin:$PATH" OSASCRIPT_CALLS="$slider_calls" \
+    SENDER=mouse.clicked PERCENTAGE="$percentage" \
+    "$CONFIG_ROOT/plugins/volume.sh"
+done
+[ ! -s "$slider_calls" ] || fail "invalid slider percentage reached osascript"
+
+for percentage in 0 42 100; do
+  PATH="$fake_bin:$PATH" OSASCRIPT_CALLS="$slider_calls" \
+    SENDER=mouse.clicked PERCENTAGE="$percentage" \
+    "$CONFIG_ROOT/plugins/volume.sh"
+done
+[ "$(cat "$slider_calls")" = $'-e set volume output volume 0\n-e set volume output volume 42\n-e set volume output volume 100' ] \
+  || fail "valid slider percentage was rejected or altered"
+printf 'ok - bounded volume slider input\n'
+
 # App counts come from yabai events. Reject one oversized count before invoking
 # either icon_map or SketchyBar.
 printf '#!/bin/bash\n[ -n "${SKETCHYBAR_CALLS:-}" ] && printf "%%s\\n" "$*" >> "$SKETCHYBAR_CALLS"\nexit 0\n' \
@@ -65,9 +85,9 @@ printf 'ok - bounded yabai input\n'
 # A burst of stale Wi-Fi events may start at most one public-IP request.
 printf '%s\n' \
   '#!/bin/bash' \
-  'printf "call\n" >> "$CURL_CALLS"' \
+  'printf "%s\n" "$*" >> "$CURL_CALLS"' \
   'sleep 0.2' \
-  'printf "%s\n" "${CURL_RESPONSE:-{\"query\":\"203.0.113.1\",\"country\":\"Test\",\"countryCode\":\"TT\"}}"' \
+  'printf "%s\n" "${CURL_RESPONSE:-{\"success\":true,\"ip\":\"203.0.113.1\",\"country\":\"Test\",\"country_code\":\"TT\"}}"' \
   > "$fake_bin/curl"
 printf '#!/bin/bash\nprintf "IP address: 192.0.2.1\\nRouter: 192.0.2.254\\n"\n' \
   > "$fake_bin/networksetup"
@@ -87,11 +107,26 @@ wait
 sleep 1
 [ "$(wc -l < "$wifi_calls" | tr -d ' ')" = 1 ] \
   || fail "Wi-Fi refresh spawned multiple curl requests"
+grep -Fq 'https://ipwho.is/?fields=success,ip,country,country_code' "$wifi_calls" \
+  || fail "Wi-Fi public-IP request did not use the HTTPS endpoint"
+! grep -Fq 'http://' "$wifi_calls" \
+  || fail "Wi-Fi public-IP request used plaintext HTTP"
 
 cache_file="$wifi_root/Library/Caches/sketchybar/wifi-public.cache"
-jq -e '.query == "203.0.113.1" and .countryCode == "TT"' \
+jq -e '.query == "203.0.113.1" and .country == "Test" and .countryCode == "TT"' \
   "$cache_file" >/dev/null || fail "valid Wi-Fi response was not cached"
 printf 'ok - serialized Wi-Fi refresh\n'
+
+error_home="$TEST_ROOT/error-home"
+mkdir "$error_home"
+PATH="$fake_bin:$PATH" HOME="$error_home" CURL_CALLS="$wifi_calls" \
+  CURL_RESPONSE='{"success":false,"message":"Rate limit exceeded"}' \
+  CONFIG_DIR="$CONFIG_ROOT" NAME=wifi SENDER=routine INFO=test \
+  "$CONFIG_ROOT/plugins/wifi.sh"
+sleep 0.5
+[ ! -e "$error_home/Library/Caches/sketchybar/wifi-public.cache" ] \
+  || fail "Wi-Fi API error response was cached"
+printf 'ok - Wi-Fi API errors are rejected\n'
 
 unsafe_home="$TEST_ROOT/unsafe-home"
 mkdir -p "$unsafe_home/Library/Caches" "$TEST_ROOT/cache-target"
@@ -114,4 +149,4 @@ calls_after="$(wc -l < "$wifi_calls" | tr -d ' ')"
   || fail "invalid cache path accumulated temporary files"
 printf 'ok - invalid Wi-Fi cache fails closed\n'
 
-printf '1..5\n'
+printf '1..7\n'

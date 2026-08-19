@@ -15,7 +15,6 @@ PIPELINE (invoked by ~/.config/sketchybar/scripts/install-app-font)
   1. Download latest release       →  private temporary files
   2. This script                   →  filters the temporary icon_map.sh
   3. Validate and install          →  atomically replaces the live files
-  4. sketchybar --reload           →  picks up the filtered file
 
 INPUT
   The FULL upstream icon_map.sh passed with --input. The script filters the
@@ -78,7 +77,6 @@ TROUBLESHOOTING: "Why does app X show :default: icon?"
     Option C: If an SVG exists upstream but has no mapping file, create one:
               Submit the missing mapping upstream, then rerun:
               ~/.config/sketchybar/scripts/install-app-font
-              (See NOTE in PIPELINE section about node/fnm.)
     After any option, re-run install-app-font. A filtered map is not a complete
     source and must not be filtered again.
 
@@ -208,10 +206,6 @@ def parse_pattern_specs(pattern_lines: list[str]) -> list[tuple[str, bool]]:
     ]
 
 
-def parse_patterns(pattern_lines: list[str]) -> list[str]:
-    return [pattern for pattern, _ in parse_pattern_specs(pattern_lines)]
-
-
 def is_version_suffix(installed: str, pattern: str) -> bool:
     """Check if 'installed' is 'pattern' + a version/edition suffix."""
     remaining = installed[len(pattern):]
@@ -248,23 +242,6 @@ def _is_pattern_line(line: str) -> bool:
     if stripped == ";;":
         return False
     return stripped.startswith('"')
-
-
-def _should_keep(pattern_lines: list[str], installed: set[str]) -> bool:
-    # Collect all patterns for this entry
-    all_patterns: list[str] = []
-    all_patterns.extend(parse_patterns(pattern_lines))
-
-    # Always keep CLI/dev tool entries
-    if is_cli_entry(all_patterns):
-        return True
-
-    # Keep if any pattern matches an installed app
-    for name in all_patterns:
-        if matches_installed(name, installed):
-            return True
-
-    return False
 
 
 def _shell_case_pattern(value: str) -> str:

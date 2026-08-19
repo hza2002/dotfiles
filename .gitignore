@@ -8,3 +8,4 @@ CLAUDE.md
 /nvim/.config/nvim/CHEATSHEET.md
 HANDOFF.md
 sketchybar/.config/sketchybar/helper/helper
+sketchybar/.config/sketchybar/plugins/icon_map.sh

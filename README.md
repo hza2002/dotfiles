@@ -48,6 +48,18 @@ After linking the package, run `bat cache --build` and verify that
 `gruvbox-material-dark` appears in `bat --list-themes`. The generated cache is
 runtime data and must not be stored in this repository.
 
+## GnuPG
+
+The GnuPG package configures pinentry for signed Git commits. It uses the native
+macOS prompt in a regular local shell and the terminal prompt in tmux, over SSH,
+and on Linux or WSL. Install GnuPG plus `pinentry-mac` on macOS, or GnuPG plus
+`pinentry-curses` on Ubuntu or Debian.
+
+Before linking the package, create `~/.gnupg` with mode `0700`. After linking,
+restart the agent with `gpgconf --kill gpg-agent` and verify a signed commit or
+equivalent signing operation. Private keys, trust data, and the selected Git
+signing key are machine state and must not be stored in this repository.
+
 ## tmux
 
 The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
@@ -94,6 +106,26 @@ dependencies, link the package, synchronize the revisions pinned in
 [`lazy-lock.json`](nvim/.config/nvim/lazy-lock.json), and wait for all Mason
 packages to finish installing. Plugin and tool installation must complete before
 the module is reported as installed rather than being deferred to first launch.
+
+## SketchyBar
+
+The SketchyBar package is a macOS-only desktop module built around yabai and
+SketchyBar. Read the files under [`sketchybar/.config/sketchybar`](sketchybar/.config/sketchybar)
+for its current behavior.
+
+Bootstrap requires Xcode Command Line Tools; the Homebrew formulas
+`felixkratz/formulae/sketchybar`, `asmvik/formulae/yabai`, `jq`,
+`switchaudio-osx`, and `fastfetch`; and the casks `font-jetbrains-maple-mono`
+and `swiftdialog`. The two qualified formulas come from non-core upstream
+maintainer taps; bootstrap must show their sources and ask before adding them.
+The private `XQzhaopaiti0517` font must be installed manually. Bootstrap pauses
+when it is missing.
+
+After installing dependencies and fonts, link the package with Stow, run
+[`scripts/install-app-font`](sketchybar/.config/sketchybar/scripts/install-app-font),
+start SketchyBar, and verify the bar and helper processes. The installer fetches
+`sketchybar-app-font` and generates `plugins/icon_map.sh`. The compiled helper
+and generated icon map are runtime files and are not stored in Git.
 
 ## Ghostty and Raycast
 

@@ -80,27 +80,26 @@ assert_no_arg_matching() {
   fi
 }
 
-run_plugin "Code" $'"CFBundleIdentifier"="com.microsoft.VSCode"\n"LSDisplayName"="Visual Studio Code"' "ignored.bundle.id"
+run_plugin "Code" $'"CFBundleIdentifier"="com.microsoft.VSCode"\n"LSDisplayName"="Visual Studio Code"\n"LSBundlePath"="/Applications/Visual Studio Code.app"' "ignored.bundle.id"
 assert_arg "icon.background.image=app.com.microsoft.VSCode"
 assert_arg "label=Visual Studio Code"
 assert_arg "icon.background.drawing=on"
 assert_no_arg_matching "sketchybar-app-font"
 
-run_plugin "Ghostty" '"CFBundleIdentifier"="com.mitchellh.ghostty"' "ignored.bundle.id"
+run_plugin "Ghostty" $'"CFBundleIdentifier"="com.mitchellh.ghostty"\n"LSBundlePath"="/Applications/Ghostty.app"' "ignored.bundle.id"
 assert_arg "icon.background.image=app.com.mitchellh.ghostty"
 assert_arg "label=Ghostty"
 assert_arg "icon.background.drawing=on"
 assert_no_arg_matching "sketchybar-app-font"
 
-run_plugin "Preview" '"LSDisplayName"="Stale App Name"' "com.apple.Preview"
+run_plugin "Preview" $'"CFBundleIdentifier"="com.apple.Preview"\n"LSDisplayName"="Stale App Name"\n"LSBundlePath"="/System/Applications/Preview.app"' "com.apple.Preview"
 assert_arg "icon.background.image=app.com.apple.Preview"
-assert_arg "label=Preview"
+assert_arg "label=Stale App Name"
 assert_arg "icon.background.drawing=on"
-assert_no_arg_matching "Stale App Name"
 assert_no_arg_matching "sketchybar-app-font"
 
 run_plugin "Safari" "" "com.apple.Safari" "1"
-assert_arg "icon.background.image=app.com.apple.Safari"
+assert_arg "icon.background.image=$GENERIC_ICON"
 assert_arg "label=Safari"
 assert_arg "icon.background.drawing=on"
 assert_no_arg_matching "sketchybar-app-font"
@@ -110,6 +109,14 @@ assert_arg "icon.background.image=$GENERIC_ICON"
 assert_arg "label=Broken"
 assert_arg "icon.background.drawing=on"
 assert_no_arg_matching "sketchybar-app-font"
+
+run_plugin "SecurityAgent" $'"CFBundleIdentifier"="com.apple.SecurityAgent"\n"LSDisplayName"="SecurityAgent"\n"LSBundlePath"="/System/Library/Frameworks/Security.framework/Versions/A/MachServices/SecurityAgent.bundle"'
+assert_arg "icon.background.image=$GENERIC_ICON"
+assert_arg "label=SecurityAgent"
+
+run_plugin "Unknown Agent" $'"CFBundleIdentifier"="com.apple.unknown"\n"LSDisplayName"="Unknown Agent"'
+assert_arg "icon.background.image=$GENERIC_ICON"
+assert_arg "label=Unknown Agent"
 
 run_plugin "" "" "" "1" "1"
 assert_arg "icon.background.image=$GENERIC_ICON"

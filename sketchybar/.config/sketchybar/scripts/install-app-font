@@ -6,7 +6,6 @@ readonly RELEASE_URL="${SKETCHYBAR_APP_FONT_RELEASE_URL:-https://github.com/kvnd
 readonly FONT_DESTINATION="$HOME/Library/Fonts/sketchybar-app-font.ttf"
 readonly MAP_DESTINATION="$HOME/.config/sketchybar/plugins/icon_map.sh"
 readonly FILTER_SCRIPT="$HOME/.config/sketchybar/scripts/filter_icon_map.py"
-readonly SKETCHYBAR_BIN="${SKETCHYBAR_BIN:-/opt/homebrew/bin/sketchybar}"
 readonly CACHE_DIR="$HOME/Library/Caches/sketchybar"
 
 if [ -L "$CACHE_DIR" ]; then
@@ -66,6 +65,5 @@ fi
 /usr/bin/install -m 0755 "$work_dir/icon_map.filtered.sh" "$map_staging"
 /bin/mv -f "$font_staging" "$FONT_DESTINATION"
 /bin/mv -f "$map_staging" "$MAP_DESTINATION"
-"$SKETCHYBAR_BIN" --reload
 
 echo "Installed the latest sketchybar-app-font release."

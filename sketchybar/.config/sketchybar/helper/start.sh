@@ -15,13 +15,15 @@ if [ "$#" -ne 0 ]; then
   exit 64
 fi
 
-if [ ! -x "$BINARY" ]; then
-  printf 'sketchybar helper is missing; building it in %s\n' "$SCRIPT_DIR" >&2
-  if ! /usr/bin/make -C "$SCRIPT_DIR" helper; then
-    printf 'sketchybar helper build failed in %s\n' "$SCRIPT_DIR" >&2
-    exit 1
+build_helper() {
+  if [ -x "$BINARY" ]; then
+    /usr/bin/make -s -C "$SCRIPT_DIR"
+    return
   fi
-fi
+
+  printf 'sketchybar helper is missing; building it in %s\n' "$SCRIPT_DIR" >&2
+  /usr/bin/make -s -B -C "$SCRIPT_DIR"
+}
 
 umask 077
 [ ! -L "$CACHE_DIR" ] || exit 1
@@ -30,6 +32,11 @@ chmod 700 "$CACHE_DIR" || exit 1
 
 exec 8>"$CACHE_DIR/helper-start.lock" || exit 1
 /usr/bin/lockf -s -t 5 8 || exit 1
+
+if ! build_helper; then
+  printf 'sketchybar helper build failed in %s\n' "$SCRIPT_DIR" >&2
+  exit 1
+fi
 
 helper_pair_running() {
   local bar_pids helper_pids wrapper_pids bar_pid helper_pid wrapper_pid bar_pgid

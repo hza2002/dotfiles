@@ -164,6 +164,7 @@ volume_change() {
 }
 
 mouse_clicked() {
+  [[ "${PERCENTAGE:-}" =~ ^([0-9]|[1-9][0-9]|100)$ ]] || return 0
   osascript -e "set volume output volume $PERCENTAGE"
 }
 

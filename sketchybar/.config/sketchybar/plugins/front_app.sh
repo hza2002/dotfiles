@@ -8,6 +8,7 @@ LSAPPINFO_BIN="${LSAPPINFO_BIN:-/usr/bin/lsappinfo}"
 GENERIC_APP_ICON="/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns"
 FRONT_APP_NAME=""
 FRONT_APP_BUNDLE_ID=""
+FRONT_APP_PATH=""
 
 read_front_app_from_lsappinfo() {
   local front_app app_info
@@ -15,29 +16,21 @@ read_front_app_from_lsappinfo() {
   front_app="$("$LSAPPINFO_BIN" front 2>/dev/null)" || return 1
   [ -n "$front_app" ] || return 1
 
-  app_info="$("$LSAPPINFO_BIN" info -only bundleID,name "$front_app" 2>/dev/null)" || return 1
+  app_info="$("$LSAPPINFO_BIN" info -only bundleID,name,LSBundlePath "$front_app" 2>/dev/null)" || return 1
   FRONT_APP_BUNDLE_ID="$(printf '%s\n' "$app_info" | sed -n 's/^"CFBundleIdentifier"="\(.*\)"$/\1/p' | head -n 1)"
   [ -n "$FRONT_APP_BUNDLE_ID" ] || return 1
 
   FRONT_APP_NAME="$(printf '%s\n' "$app_info" | sed -n 's/^"LSDisplayName"="\(.*\)"$/\1/p' | head -n 1)"
-}
-
-read_bundle_id_from_osascript() {
-  osascript -e 'id of application (path to frontmost application as text)' 2>/dev/null
+  FRONT_APP_PATH="$(printf '%s\n' "$app_info" | sed -n 's/^"LSBundlePath"="\(.*\)"$/\1/p' | head -n 1)"
 }
 
 resolve_app_image() {
-  if [ -n "$FRONT_APP_BUNDLE_ID" ]; then
+  case "$FRONT_APP_PATH" in
+    *.app)
     printf 'app.%s\n' "$FRONT_APP_BUNDLE_ID"
     return
-  fi
-
-  local bundle_id
-  bundle_id="$(read_bundle_id_from_osascript)"
-  if [ -n "$bundle_id" ]; then
-    printf 'app.%s\n' "$bundle_id"
-    return
-  fi
+    ;;
+  esac
 
   printf '%s\n' "$GENERIC_APP_ICON"
 }

@@ -32,6 +32,7 @@ printf '%s\n' \
   'fi' \
   'exit 137' \
   > "$fake_helper/helper"
+printf '.PHONY: all\nall:\n' > "$fake_helper/makefile"
 chmod +x "$fake_helper/helper" "$fake_helper/helper-run.sh" "$fake_helper/start.sh"
 
 printf '#!/bin/bash\nprintf "%%s\\n" "$*" >> "$LAUNCHCTL_CALLS"\n' > "$fake_bin/launchctl"
@@ -49,8 +50,10 @@ fresh_child_pid="$TEST_ROOT/fresh-child.pid"
 mkdir -p "$fresh_helper" "$fresh_home"
 cp "$HELPER_SOURCE/helper-run.sh" "$HELPER_SOURCE/start.sh" "$fresh_helper/"
 cat > "$fresh_helper/makefile" <<'MAKEFILE'
-.PHONY: helper
-helper:
+.PHONY: all
+all: helper
+
+helper: helper.template
 	@cp helper.template helper.new
 	@chmod +x helper.new
 	@mv helper.new helper
@@ -73,6 +76,22 @@ kill -TERM "$fresh_wrapper"
 for _ in {1..20}; do kill -0 "$fresh_wrapper" 2>/dev/null || break; sleep 0.05; done
 kill -0 "$fresh_wrapper" 2>/dev/null && fail "fresh helper wrapper survived cleanup"
 printf 'ok - fresh checkout builds the helper\n'
+
+printf '# rebuilt\n' >> "$fresh_helper/helper.template"
+touch -r "$fresh_helper/helper" "$fresh_helper/helper.template"
+touch -A 000001 "$fresh_helper/helper.template"
+: > "$fresh_child_pid"
+HOME="$fresh_home" FRESH_CHILD_PID="$fresh_child_pid" "$fresh_helper/start.sh"
+[ "$(tail -n 1 "$fresh_helper/helper")" = '# rebuilt' ] \
+  || fail "newer helper source did not rebuild the binary"
+for _ in {1..20}; do [ -s "$fresh_child_pid" ] && break; sleep 0.05; done
+[ -s "$fresh_child_pid" ] || fail "rebuilt helper did not start"
+fresh_child="$(cat "$fresh_child_pid")"
+fresh_wrapper="$(ps -o ppid= -p "$fresh_child" | tr -d ' ')"
+kill -TERM "$fresh_wrapper"
+for _ in {1..20}; do kill -0 "$fresh_wrapper" 2>/dev/null || break; sleep 0.05; done
+kill -0 "$fresh_wrapper" 2>/dev/null && fail "rebuilt helper wrapper survived cleanup"
+printf 'ok - newer helper source rebuilds the binary\n'
 
 # An immediate startup failure must not create a service restart loop.
 PATH="$fake_bin:$PATH" HOME="$TEST_ROOT" LAUNCHCTL_CALLS="$launchctl_calls" \
@@ -218,4 +237,4 @@ if grep -v '^-U [0-9][0-9]* ' "$pgrep_calls" | grep -q .; then
 fi
 printf 'ok - detached pair forces paired restart\n'
 
-printf '1..8\n'
+printf '1..9\n'

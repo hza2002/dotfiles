@@ -23,7 +23,8 @@ static inline bool network_skip_interface(const char *name) {
       || strncmp(name, "llw", 3) == 0
       || strncmp(name, "bridge", 6) == 0
       || strncmp(name, "gif", 3) == 0
-      || strncmp(name, "stf", 3) == 0;
+      || strncmp(name, "stf", 3) == 0
+      || strncmp(name, "utun", 4) == 0;
 }
 
 static inline bool network_collect_counters(uint64_t *in, uint64_t *out) {

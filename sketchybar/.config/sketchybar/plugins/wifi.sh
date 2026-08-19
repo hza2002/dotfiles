@@ -24,14 +24,18 @@ fetch_public_info() {
   [ ! -e "$CACHE_FILE" ] || {
     [ -f "$CACHE_FILE" ] && [ ! -L "$CACHE_FILE" ] || return 1
   }
-  result="$(curl -s --connect-timeout 3 --max-time 5 'http://ip-api.com/json/?fields=query,country,countryCode' 2>/dev/null)"
+  result="$(curl -fsS --connect-timeout 3 --max-time 5 \
+    'https://ipwho.is/?fields=success,ip,country,country_code' 2>/dev/null)"
   [ -n "$result" ] && [ "${#result}" -le 4096 ] || return 1
-  printf '%s' "$result" \
-    | jq -e 'type == "object"
-      and (.query | type == "string")
-      and (.country | type == "string")
-      and (.countryCode | type == "string")' >/dev/null 2>&1 \
-    || return 1
+  result="$(printf '%s' "$result" \
+    | jq -ce 'if type == "object" and .success == true
+        and (.ip | type == "string")
+        and (.country | type == "string")
+        and (.country_code | type == "string")
+      then {query: .ip, country: .country, countryCode: .country_code}
+      else empty
+      end' 2>/dev/null)" || return 1
+  [ -n "$result" ] || return 1
 
   cache_tmp="$(mktemp "${CACHE_FILE}.XXXXXX")" || return 1
   if ! printf '%s\n' "$result" > "$cache_tmp"; then
