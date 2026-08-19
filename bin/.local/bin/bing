@@ -2,6 +2,28 @@
 
 set -euo pipefail
 
+case "$#" in
+0)
+  ;;
+1)
+  case "$1" in
+  -h | --help)
+    echo "Usage: bing"
+    echo "Run Bing Rewards searches for the configured Edge profiles."
+    exit 0
+    ;;
+  *)
+    echo "bing: unexpected argument: $1" >&2
+    exit 2
+    ;;
+  esac
+  ;;
+*)
+  echo "bing: expected no arguments" >&2
+  exit 2
+  ;;
+esac
+
 readonly BING_REWARDS="$(command -v bing-rewards || true)"
 [[ -n "$BING_REWARDS" ]] || {
   echo "bing: bing-rewards is not installed" >&2
