@@ -18,7 +18,7 @@ function errorMessage(error: unknown): string {
     : "The server could not be opened.";
 }
 
-export default function Servers() {
+export default function Server() {
   const { data, isLoading, error } = useCachedPromise(loadConfig);
 
   async function connect(server: ServerConfig): Promise<void> {

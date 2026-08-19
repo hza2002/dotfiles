@@ -2,9 +2,9 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "server",
   "type": "module",
-  "title": "Servers",
+  "title": "Server",
   "description": "Open SSH servers in Ghostty and attach to tmux",
-  "icon": "ghostty.png",
+  "icon": "server.png",
   "author": "hza2002",
   "categories": [
     "Developer Tools",
@@ -17,7 +17,7 @@
   "commands": [
     {
       "name": "index",
-      "title": "Servers",
+      "title": "Server",
       "subtitle": "SSH and tmux",
       "description": "Open an SSH server in Ghostty and attach to tmux",
       "keywords": [

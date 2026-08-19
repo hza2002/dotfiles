@@ -219,7 +219,7 @@ Its bootstrap contract is Ghostty 1.3 or newer and the Homebrew cask
 the current terminal behavior and tmux key translations.
 
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
-The Servers extension reads SSH aliases from the private inventory at
+The Server extension reads SSH aliases from the private inventory at
 `~/.config/server/config.json` and attaches each selected host to its `main` tmux
 session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are
 not owned by this repository.

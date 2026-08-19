@@ -1,4 +1,4 @@
-# Servers
+# Server
 
 Personal Raycast extension for opening SSH servers in Ghostty and attaching to
 the `main` tmux session.

@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Example configuration for the Raycast Servers extension.",
+    "Example configuration for the Raycast Server extension.",
     "Create ~/.config/server/config.json with this structure.",
     "Each host is an alias resolved by ~/.ssh/config."
   ],
