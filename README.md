@@ -11,7 +11,8 @@ tree folding so tools cannot write runtime data back through a linked directory.
 
 ## Zsh
 
-The Zsh package targets Zsh 5.9 or newer on macOS and Linux.
+The Zsh package targets Zsh 5.9 or newer on macOS and Linux. macOS uses the
+system `/bin/zsh`; installing a second Homebrew Zsh is unnecessary.
 
 - [`.zshenv`](zsh/.zshenv) contains the small environment shared by every Zsh
   invocation.
@@ -26,7 +27,8 @@ and optional tool paths are intentionally not duplicated here.
 
 The bootstrap installation contract for this package is:
 
-- use Homebrew on macOS and apt on Ubuntu or Debian;
+- use the system Zsh and Homebrew dependencies on macOS, and apt on Ubuntu or
+  Debian;
 - install incompatible or unavailable Linux tools from pinned upstream releases
   under `~/.local`, with commands exposed through `~/.local/bin`;
 - install Oh My Zsh and its custom plugins from their upstream Git repositories;
@@ -107,19 +109,42 @@ dependencies, link the package, synchronize the revisions pinned in
 packages to finish installing. Plugin and tool installation must complete before
 the module is reported as installed rather than being deferred to first launch.
 
+## Yabai
+
+The Yabai package configures the macOS window-management stack. Bootstrap
+requires the Homebrew formulas `asmvik/formulae/yabai`,
+`asmvik/formulae/skhd`, `felixkratz/formulae/borders`, and `jq`. The qualified
+formulas come from two non-core upstream maintainer taps; bootstrap must show
+their sources and ask before adding them.
+
+Grant Accessibility access to yabai and skhd, and Screen Recording access to
+yabai. The scripting addition also requires manually configuring the partial
+SIP mode documented for the installed yabai release from macOS Recovery.
+Bootstrap must pause for this step and must not attempt to change SIP.
+
+After linking the Yabai package, run `suyabai` to install the validated,
+hash-bound sudoers rule and load the scripting addition. Run it again whenever
+Homebrew upgrades yabai; no shell update command calls it automatically. Start
+the daemons with `yabai --start-service`, `skhd --start-service`, and
+`brew services start borders`.
+Apply later configuration changes with
+`yabai --restart-service`, `skhd --restart-service`, and
+`brew services restart borders` rather than executing `yabairc` directly, which
+would append duplicate rules and signals to the running process.
+
 ## SketchyBar
 
-The SketchyBar package is a macOS-only desktop module built around yabai and
-SketchyBar. Read the files under [`sketchybar/.config/sketchybar`](sketchybar/.config/sketchybar)
-for its current behavior.
+The SketchyBar package is a macOS-only desktop module built around the configured
+Yabai module and SketchyBar. Read the files under
+[`sketchybar/.config/sketchybar`](sketchybar/.config/sketchybar) for its current
+behavior.
 
 Bootstrap requires Xcode Command Line Tools; the Homebrew formulas
-`felixkratz/formulae/sketchybar`, `asmvik/formulae/yabai`, `jq`,
-`switchaudio-osx`, and `fastfetch`; and the casks `font-jetbrains-maple-mono`
-and `swiftdialog`. The two qualified formulas come from non-core upstream
-maintainer taps; bootstrap must show their sources and ask before adding them.
-The private `XQzhaopaiti0517` font must be installed manually. Bootstrap pauses
-when it is missing.
+`felixkratz/formulae/sketchybar`, `jq`, `switchaudio-osx`, and `fastfetch`; and
+the casks `font-jetbrains-maple-mono` and `swiftdialog`. The qualified formula
+comes from a non-core upstream maintainer tap; bootstrap must show its source
+and ask before adding it. The private `XQzhaopaiti0517` font must be installed
+manually. Bootstrap pauses when it is missing.
 
 After installing dependencies and fonts, link the package with Stow, run
 [`scripts/install-app-font`](sketchybar/.config/sketchybar/scripts/install-app-font),

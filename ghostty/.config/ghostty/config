@@ -37,7 +37,7 @@ auto-update = off
 # open Ghostty → attach the Main tmux session, create it if absent.
 # new-session -A is the canonical attach-or-create form and lets
 # tmux-continuum's auto-restore run on a fresh server.
-command = /opt/homebrew/bin/zsh --login -c "tmux new-session -A -s Main"
+command = /bin/zsh --login -c "tmux new-session -A -s Main"
 # ssh-terminfo pushes terminfo to remote hosts, fixing garbled output over SSH
 shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 

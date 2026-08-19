@@ -27,8 +27,8 @@ shift + cmd + ctrl + alt - f : yabai -m window --toggle native-fullscreen
 #                         Desktop                                 #
 # ############################################################### #
 # Send window to desktop
-shift + fn - f13 : yabai -m window --space prev ; yabai -m space --focus prev
-shift + fn - f14 : yabai -m window --space next ; yabai -m space --focus next
+shift + fn - f13 : yabai -m window --space prev && yabai -m space --focus prev
+shift + fn - f14 : yabai -m window --space next && yabai -m space --focus next
 
 # Desktop focus
 # Let Ghostty handle Command-Tab itself and disable it everywhere else.

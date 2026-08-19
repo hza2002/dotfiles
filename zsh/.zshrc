@@ -12,7 +12,7 @@ fi
 ########################## 🔽 OH MY ZSH 🔽 #####################
 export ZSH="$HOME/.oh-my-zsh" # Path to oh-my-zsh installation.
 ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$ZSH/cache}"
-export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST"
+export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST-$ZSH_VERSION"
 typeset -U fpath
 typeset +x FPATH # Function lookup is shell-local; do not duplicate it in nested shells.
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
@@ -167,37 +167,4 @@ function y() {
   /bin/rm -f -- "$tmp"
 }
 
-if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
-elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  # Add yabai to sudoers
-  function suyabai () {
-    SHA256=$(shasum -a 256 $(brew --prefix)/bin/yabai | awk "{print \$1;}")
-    if [ -f "/private/etc/sudoers.d/yabai" ]; then
-      sudo sed -i '' -e 's/sha256:[[:alnum:]]*/sha256:'${SHA256}'/' /private/etc/sudoers.d/yabai
-    else
-      echo "sudoers file does not exist yet"
-    fi
-  }
-
-  # 通用的 ssh 命令选择函数
-  function ssh_connect() {
-    local target=$1
-    local current_network_name=$(networksetup -getairportnetwork en0 | awk -F' ' '{print $4}' | tr -d '\n')
-    local local_network_name="CU_2613-5G" # 局域网网络名称
-
-    local local_host="l${target}" # 本地目标
-    local remote_host="r${target}" # 远程目标
-
-    # 判断当前网络，并执行相应的命令
-    if [ "$current_network_name" = "$local_network_name" ]; then
-      ssh "$local_host"
-    else
-      ssh "$remote_host"
-    fi
-  }
-
-  # 具体的快捷方式
-  function ubt() { ssh_connect "ubt"; }
-  function wsl() { ssh_connect "wsl"; }
-fi
 ########################## 🔼 FUNCTION 🔼 #######################

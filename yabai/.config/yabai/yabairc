@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
 # ===== Loading Scripting Additions ============
-# Requires the official passwordless sudoers rule; update its hash after upgrades:
-# https://github.com/koekeishiya/yabai/wiki/Installing-yabai-(latest-release)#configure-scripting-addition
-sudo yabai --load-sa
+# Requires a passwordless, hash-bound sudoers rule; run suyabai after upgrades:
+# https://github.com/asmvik/yabai/wiki/Installing-yabai-(latest-release)#configure-scripting-addition
+YABAI_BIN="$(command -v yabai)"
+if ! /usr/bin/sudo -n "$YABAI_BIN" --load-sa; then
+  /usr/bin/logger -t yabai "Scripting addition failed to load; run suyabai"
+fi
 # Reload the scripting addition whenever Dock restarts.
-yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+yabai -m signal --add event=dock_did_restart \
+  action="/usr/bin/sudo -n '$YABAI_BIN' --load-sa || /usr/bin/logger -t yabai 'Scripting addition failed to load; run suyabai'"
 
 # ===== Tiling setting =========================
 yabai -m config layout bsp       # 布局设置为二叉分割(bsp or float)
