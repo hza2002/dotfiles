@@ -109,6 +109,31 @@ dependencies, link the package, synchronize the revisions pinned in
 packages to finish installing. Plugin and tool installation must complete before
 the module is reported as installed rather than being deferred to first launch.
 
+## macOS Personal Utilities
+
+The Automation, Bin, and IdeaVim packages are installed only on a personal
+macOS workstation. Bootstrap must skip them on Linux, WSL, and headless hosts.
+They require the Homebrew formulas `uv` and `fileicon`; the casks
+`google-chrome`, `microsoft-edge`, and `jetbrains-toolbox`; and the
+`bing-rewards` uv tool. `gruvifier` resolves `gruvbox-factory@latest` through
+`uvx` when explicitly run.
+
+Before `bing` can run, the Edge profiles `Default` and `Profile 2` must exist,
+be signed in to Bing, and the private `~/.config/bing-rewards/config.json` must
+select Edge as its browser. The directories `~/Pictures/icons` and
+`~/Pictures/unreviewed` are also user-owned machine state. Bootstrap must not
+create, populate, or store any of these files in Git.
+
+After linking Automation, register
+`~/Library/LaunchAgents/com.ghot.chrome-custom-icon.plist` in the current GUI
+domain and verify the LaunchAgent. After installing the selected JetBrains IDEs,
+install the `IdeaVIM` and `IdeaVimExtension` plugins in each IDE, link IdeaVim,
+and reload `.ideavimrc`.
+
+Bootstrap installs these commands but never runs `bing`, `gruvifier`, or
+`ricon`. They respectively control Edge, modify images, and request elevated
+access to change application icons, so each remains an explicit user action.
+
 ## Yabai
 
 The Yabai package configures the macOS window-management stack. Bootstrap
