@@ -1,7 +1,10 @@
 # Server
 
 Personal Raycast extension for opening SSH servers in Ghostty and attaching to
-the `main` tmux session.
+the `main` tmux session. Item actions resolve an SSH alias to its hostname and
+port, check the complete non-interactive SSH connection, and query public DNS
+for a resolved domain. Every probe is explicit, and its result lasts only until
+the Raycast command closes.
 
 The extension reads its private inventory from `~/.config/server/config.json`.
 Each `host` is an alias resolved by `~/.ssh/config`; addresses, users, ports, and
