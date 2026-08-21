@@ -1,14 +1,21 @@
 # Dotfiles
 
 Personal configuration for initializing a new Apple Silicon Mac, Ubuntu or
-Debian host, or WSL2 environment. The repository is an initializer, not a
-continuous multi-host synchronization system.
+Debian host, or WSL2 environment. The repository initializes machines; it is not
+a continuous multi-host synchronization system.
 
-Configuration packages are laid out for GNU Stow. Complete machine setup
-currently uses the tracked `deploy-dotfiles` skill, which follows the installation
-contracts in this README. A standalone idempotent bootstrap is planned but not
-yet implemented. Stow runs from the repository root, where `.stowrc` disables
-tree folding so tools cannot write runtime data back through a linked directory.
+## Deployment Model
+
+Complete machine setup is agent-assisted. The tracked `deploy-dotfiles` skill
+audits the target, follows the installation contracts in this README, links
+explicit GNU Stow packages, and verifies the result. The repository deliberately
+does not provide or maintain a standalone bootstrap program.
+
+Tracked dotfiles remain configuration source. Module-owned installers handle
+the few operations that need deterministic local behavior, while `./check`
+provides the repository-wide validation gate. Stow runs from the repository
+root, where `.stowrc` disables tree folding so tools cannot write runtime data
+back through a linked directory.
 
 ## Getting Started
 
@@ -20,10 +27,11 @@ git clone https://github.com/hza2002/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ```
 
-Ask the agent to use `$deploy-dotfiles`. It audits the current machine, presents
-the applicable installation contract, and waits for approval before changing
-the system. Git and the agent are the only prerequisites for this entry point;
-the skill handles platform-specific requirements and resumable deployment.
+Ask the agent to use `$deploy-dotfiles` to initialize the machine. It presents
+the applicable deployment contract and waits for approval before changing the
+system. Git and a repository-skill-aware agent are the only entry-point
+requirements; the skill handles platform-specific requirements and resumable
+deployment.
 
 ## Zsh
 
@@ -41,7 +49,7 @@ system `/bin/zsh`; installing a second Homebrew Zsh is unnecessary.
 Read these files for the current behavior. Plugin names, aliases, key bindings,
 and optional tool paths are intentionally not duplicated here.
 
-The bootstrap installation contract for this package is:
+The deployment contract for this package is:
 
 - use the system Zsh and Homebrew dependencies on macOS, and apt on Ubuntu or
   Debian;
@@ -68,14 +76,11 @@ These repositories currently follow their upstream default branches; the
 dotfiles do not pin their commits. [`.zshrc`](zsh/.zshrc) remains the source of
 truth for which plugins are enabled.
 
-The future bootstrap catalog will be the source of truth for package providers,
-versions, release assets, and checksums.
-
 ## Bat
 
 The Bat package keeps the custom Gruvbox Material theme used by the shell and
 file previews. Use Homebrew on macOS and apt on Ubuntu 24.04 or newer. Ubuntu's
-package may expose only `batcat`; when `bat` is absent, the bootstrap must link
+package may expose only `batcat`; when `bat` is absent, deployment must link
 `~/.local/bin/bat` to the installed `batcat` executable.
 
 After linking the package, run `bat cache --build` and verify that
@@ -106,7 +111,7 @@ Copy mode targets the clipboard of the attached terminal client through OSC 52,
 including through SSH and nested tmux sessions. Unsupported terminal clients
 still retain the selection in tmux's paste buffer.
 
-The bootstrap installation contract for this package is to install tmux, TPM,
+The deployment contract for this package is to install tmux, TPM,
 the plugins declared in `tmux.conf`, sesh, and fzf, then configure sidebar hooks
 for installed agents. Macism is required only on macOS. Clipboard integration
 does not require platform-specific packages; terminal clients must permit OSC 52
@@ -119,7 +124,7 @@ tracked files under [`yazi/.config/yazi`](yazi/.config/yazi) are configuration
 source; plugins and flavors are generated runtime data and must not be stored in
 the repository.
 
-The bootstrap installation contract is to use Homebrew on macOS and Yazi's
+The deployment contract is to use Homebrew on macOS and Yazi's
 official signed stable APT repository on Ubuntu or Debian. Install the complete
 integration set: file, Git, Starship, Lazygit, Ouch, FFmpeg, 7-Zip, jq, Poppler,
 fd, ripgrep, fzf 0.53 or newer, zoxide, resvg, and ImageMagick 7.1.1 or newer.
@@ -135,7 +140,7 @@ not use the Ubuntu or Debian package. [`lazyvim.json`](nvim/.config/nvim/lazyvim
 and the files under [`lua/plugins`](nvim/.config/nvim/lua/plugins) are the source
 of truth for enabled language support and external toolchains.
 
-The bootstrap installation contract is to install the base command-line
+The deployment contract is to install the base command-line
 dependencies, link the package, synchronize the revisions pinned in
 [`lazy-lock.json`](nvim/.config/nvim/lazy-lock.json), and wait for all Mason
 packages to finish installing. Plugin and tool installation must complete before
@@ -144,7 +149,7 @@ the module is reported as installed rather than being deferred to first launch.
 ## macOS Personal Utilities
 
 The Automation, Bin, and IdeaVim packages are installed only on a personal
-macOS workstation. Bootstrap must skip them on Linux, WSL, and headless hosts.
+macOS workstation. Deployment must skip them on Linux, WSL, and headless hosts.
 They require the Homebrew formulas `uv` and `fileicon`; the casks
 `google-chrome`, `microsoft-edge`, and `jetbrains-toolbox`; and the
 `bing-rewards` uv tool. `gruvifier` resolves `gruvbox-factory@latest` through
@@ -153,7 +158,7 @@ They require the Homebrew formulas `uv` and `fileicon`; the casks
 Before `bing` can run, the Edge profiles `Default` and `Profile 2` must exist,
 be signed in to Bing, and the private `~/.config/bing-rewards/config.json` must
 select Edge as its browser. The directories `~/Pictures/icons` and
-`~/Pictures/unreviewed` are also user-owned machine state. Bootstrap must not
+`~/Pictures/unreviewed` are also user-owned machine state. Deployment must not
 create, populate, or store any of these files in Git.
 
 After linking Automation, run
@@ -164,22 +169,22 @@ generated plist is machine state and is not stored in Git. After installing the
 selected JetBrains IDEs, install the `IdeaVIM` and `IdeaVimExtension` plugins in
 each IDE, link IdeaVim, and reload `.ideavimrc`.
 
-Bootstrap installs these commands but never runs `bing`, `gruvifier`, or
+Deployment installs these commands but never runs `bing`, `gruvifier`, or
 `ricon`. They respectively control Edge, modify images, and request elevated
 access to change application icons, so each remains an explicit user action.
 
 ## Yabai
 
-The Yabai package configures the macOS window-management stack. Bootstrap
+The Yabai package configures the macOS window-management stack. Deployment
 requires the Homebrew formulas `asmvik/formulae/yabai`,
 `asmvik/formulae/skhd`, `felixkratz/formulae/borders`, and `jq`. The qualified
-formulas come from two non-core upstream maintainer taps; bootstrap must show
+formulas come from two non-core upstream maintainer taps; the agent must show
 their sources and ask before adding them.
 
 Grant Accessibility access to yabai and skhd, and Screen Recording access to
 yabai. The scripting addition also requires manually configuring the partial
 SIP mode documented for the installed yabai release from macOS Recovery.
-Bootstrap must pause for this step and must not attempt to change SIP.
+Deployment must pause for this step and must not attempt to change SIP.
 
 After linking the Yabai package, run `suyabai` to install the validated,
 hash-bound sudoers rule and load the scripting addition. Run it again whenever
@@ -198,12 +203,12 @@ Yabai module and SketchyBar. Read the files under
 [`sketchybar/.config/sketchybar`](sketchybar/.config/sketchybar) for its current
 behavior.
 
-Bootstrap requires Xcode Command Line Tools; the Homebrew formulas
+Deployment requires Xcode Command Line Tools; the Homebrew formulas
 `felixkratz/formulae/sketchybar`, `jq`, `switchaudio-osx`, and `fastfetch`; and
 the casks `font-jetbrains-maple-mono` and `swiftdialog`. The qualified formula
-comes from a non-core upstream maintainer tap; bootstrap must show its source
+comes from a non-core upstream maintainer tap; the agent must show its source
 and ask before adding it. The private `XQzhaopaiti0517` font must be installed
-manually. Bootstrap pauses when it is missing.
+manually. Deployment pauses when it is missing.
 
 After installing dependencies and fonts, link the package with Stow, run
 [`scripts/install-app-font`](sketchybar/.config/sketchybar/scripts/install-app-font),
@@ -214,7 +219,7 @@ and generated icon map are runtime files and are not stored in Git.
 ## Ghostty and Raycast
 
 Ghostty is the macOS terminal client and starts the `Main` tmux session directly.
-Its bootstrap contract is Ghostty 1.3 or newer and the Homebrew cask
+Its deployment contract is Ghostty 1.3 or newer and the Homebrew cask
 `font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
 the current terminal behavior and tmux key translations.
 

@@ -65,6 +65,8 @@ check_json() {
 check_agent_skills() {
   local skill name link
 
+  [[ -L CLAUDE.md && -e CLAUDE.md && $(readlink CLAUDE.md) == AGENTS.md ]]
+
   for skill in .agents/skills/*; do
     [[ -f "$skill/SKILL.md" && -f "$skill/agents/openai.yaml" ]]
     name=$(sed -n 's/^name: //p' "$skill/SKILL.md" | head -n 1)

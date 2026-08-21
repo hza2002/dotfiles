@@ -23,7 +23,7 @@ selected Stow packages, perform approved machine setup, and verify the result.
 
 ## Preserve the Boundary
 
-- Treat tracked dotfiles as configuration source, not bootstrap output.
+- Treat tracked dotfiles as configuration source, not deployment output.
 - Never rewrite tracked configuration to make one machine pass. Keep necessary
   host-specific changes as explicit machine state or a reviewable downstream
   patch.

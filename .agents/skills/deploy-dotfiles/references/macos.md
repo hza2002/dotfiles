@@ -56,7 +56,7 @@ For selected modules, preserve this order:
    test and build from repository source, and treat Raycast's installed copy as
    generated output.
 
-Do not run `bing`, `gruvifier`, or `ricon` during bootstrap. Do not create browser
+Do not run `bing`, `gruvifier`, or `ricon` during deployment. Do not create browser
 profiles, private Raycast inventories, VPN credentials, icon input directories,
 GnuPG keys, or SSH inventories on the user's behalf.
 
