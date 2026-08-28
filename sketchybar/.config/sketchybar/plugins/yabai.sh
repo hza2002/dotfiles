@@ -52,9 +52,9 @@ window_state() {
 }
 
 space_windows_change() {
-  local space="" value app count icon
+  local space="" value app count icon windows apps icons
   local icon_strip=" "
-  local app_args=()
+  local app_args=() mapped_icons=()
   local entry_count=0 total_count=0 i
 
   while IFS= read -r value; do
@@ -93,10 +93,47 @@ space_windows_change() {
     *) return 0 ;;
   esac
 
+  if [ "${#app_args[@]}" -eq 0 ]; then
+    windows="$(yabai -m query --windows --space "$space" 2>/dev/null)" || return 0
+    apps="$(
+      printf '%s' "$windows" \
+        | jq -r '
+            if type == "array" then
+              .[]
+              | select(.role == "AXWindow"
+                  and .["has-ax-reference"] == true
+                  and .["is-minimized"] == false
+                  and .["is-hidden"] == false)
+              | .app
+              | if type == "string" and length > 0 then .
+                else error("invalid app name")
+                end
+            else error("windows must be an array")
+            end
+          ' 2>/dev/null
+    )" || return 0
+
+    if [ -n "$apps" ]; then
+      while IFS= read -r app; do
+        total_count=$((total_count + 1))
+        [ "$total_count" -le 64 ] || return 0
+        [ "${#app}" -le 256 ] || return 0
+        app_args+=("$app")
+      done <<< "$apps"
+    fi
+  fi
+
   if [ "${#app_args[@]}" -gt 0 ]; then
+    icons="$("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")" || return 0
     while IFS= read -r icon; do
+      [ -n "$icon" ] || return 0
+      mapped_icons+=("$icon")
+    done <<< "$icons"
+    [ "${#mapped_icons[@]}" -eq "${#app_args[@]}" ] || return 0
+
+    for icon in "${mapped_icons[@]}"; do
       icon_strip+=" $icon"
-    done < <("$CONFIG_DIR"/plugins/icon_map.sh --batch "${app_args[@]}")
+    done
   fi
 
   sketchybar --set "space.$space" \

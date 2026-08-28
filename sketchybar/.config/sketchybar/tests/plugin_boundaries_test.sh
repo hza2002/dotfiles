@@ -54,8 +54,8 @@ done
   || fail "valid slider percentage was rejected or altered"
 printf 'ok - bounded volume slider input\n'
 
-# App counts come from yabai events. Reject one oversized count before invoking
-# either icon_map or SketchyBar.
+# App counts come from SketchyBar events. Reject one oversized count before
+# invoking either icon_map or SketchyBar.
 printf '#!/bin/bash\n[ -n "${SKETCHYBAR_CALLS:-}" ] && printf "%%s\\n" "$*" >> "$SKETCHYBAR_CALLS"\nexit 0\n' \
   > "$fake_bin/sketchybar"
 chmod +x "$fake_bin/sketchybar"
@@ -81,6 +81,62 @@ PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" \
   "$CONFIG_ROOT/plugins/yabai.sh"
 [ ! -s "$yabai_calls" ] || fail "oversized yabai space reached sketchybar"
 printf 'ok - bounded yabai input\n'
+
+space_config="$TEST_ROOT/space-config"
+mkdir -p "$space_config/plugins"
+printf '%s\n' \
+  '#!/bin/bash' \
+  '[ "${ICON_MAP_FAIL:-0}" = 0 ] || exit 1' \
+  '[ "${1:-}" = --batch ] || exit 1' \
+  'shift' \
+  'for app in "$@"; do printf ":%s:\n" "$app"; done' \
+  > "$space_config/plugins/icon_map.sh"
+printf '%s\n' \
+  '#!/bin/bash' \
+  '[ "${YABAI_FAIL:-0}" = 0 ] || exit 1' \
+  '[ "$*" = "-m query --windows --space 1" ] || exit 1' \
+  'printf "%s\n" "${YABAI_WINDOWS:-[]}"' \
+  > "$fake_bin/yabai"
+chmod +x "$space_config/plugins/icon_map.sh" "$fake_bin/yabai"
+
+window_json='[{"app":"Ghostty","role":"AXWindow","has-ax-reference":true,"is-minimized":false,"is-hidden":false}]'
+: > "$yabai_calls"
+PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" \
+  YABAI_WINDOWS="$window_json" CONFIG_DIR="$space_config" NAME=yabai \
+  SENDER=space_windows_change INFO='{"space":1,"apps":{}}' \
+  "$CONFIG_ROOT/plugins/yabai.sh"
+grep -Fq -- '--set space.1 label=  :Ghostty:' "$yabai_calls" \
+  || fail "empty native snapshot erased a live yabai window"
+
+: > "$yabai_calls"
+PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" \
+  YABAI_WINDOWS='[]' CONFIG_DIR="$space_config" NAME=yabai \
+  SENDER=space_windows_change INFO='{"space":1,"apps":{}}' \
+  "$CONFIG_ROOT/plugins/yabai.sh"
+grep -Fq -- '--set space.1 label=  label.drawing=on' "$yabai_calls" \
+  || fail "valid empty yabai space did not clear its label"
+
+for failure in command malformed; do
+  : > "$yabai_calls"
+  if [ "$failure" = command ]; then
+    PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" YABAI_FAIL=1 \
+      CONFIG_DIR="$space_config" NAME=yabai SENDER=space_windows_change \
+      INFO='{"space":1,"apps":{}}' "$CONFIG_ROOT/plugins/yabai.sh"
+  else
+    PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" \
+      YABAI_WINDOWS='{}' CONFIG_DIR="$space_config" NAME=yabai \
+      SENDER=space_windows_change INFO='{"space":1,"apps":{}}' \
+      "$CONFIG_ROOT/plugins/yabai.sh"
+  fi
+  [ ! -s "$yabai_calls" ] || fail "$failure yabai result cleared the label"
+done
+
+: > "$yabai_calls"
+PATH="$fake_bin:$PATH" SKETCHYBAR_CALLS="$yabai_calls" ICON_MAP_FAIL=1 \
+  CONFIG_DIR="$space_config" NAME=yabai SENDER=space_windows_change \
+  INFO='{"space":1,"apps":{"Ghostty":1}}' "$CONFIG_ROOT/plugins/yabai.sh"
+[ ! -s "$yabai_calls" ] || fail "icon map failure wrote a partial label"
+printf 'ok - empty space snapshots are verified\n'
 
 # A burst of stale Wi-Fi events may start at most one public-IP request.
 printf '%s\n' \
@@ -149,4 +205,4 @@ calls_after="$(wc -l < "$wifi_calls" | tr -d ' ')"
   || fail "invalid cache path accumulated temporary files"
 printf 'ok - invalid Wi-Fi cache fails closed\n'
 
-printf '1..7\n'
+printf '1..8\n'
