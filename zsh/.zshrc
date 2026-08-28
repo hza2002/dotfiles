@@ -27,10 +27,14 @@ plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   git rust zoxide
   # Custom
   autoupdate fzf-tab you-should-use
-  zsh-lazyload zsh-vi-mode zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
+  zsh-lazyload zsh-vi-mode zsh-abbr zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
 )
 fpath+="${ZSH_CUSTOM:-"$ZSH/custom"}/plugins/zsh-completions/src" # https://github.com/zsh-users/zsh-completions/issues/603
-zvm_after_init_commands+=("source $HOME/.config/fzf/fzfrc.sh") # zvm and fzf conflict
+zvm_after_init_commands+=( # zvm resets plugin bindings during deferred initialization.
+  "source $HOME/.config/fzf/fzfrc.sh"
+  'zvm_bindkey viins " " abbr-expand-and-insert'
+  'zvm_bindkey viins "^ " magic-space'
+)
 source $ZSH/oh-my-zsh.sh
 typeset -U fpath
 ########################## 🔼 OH MY ZSH 🔼 #####################
@@ -100,25 +104,36 @@ lazyload jenv java javac jar javadoc jshell gradle mvn ant -- '_init_jenv' # jen
 lazyload conda -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'
 ########################## 🔼 LOAD OTHER CONFIGS 🔼 #############
 
+########################## 🔽 ABBREVIATION 🔽 ###################
+# Dotfile-owned abbreviations are session-only and silent at startup.
+abbr -S -f --quieter cat='bat' # Syntax highlighting and Git integration.
+abbr -S -f --quieter df='duf'
+abbr -S -f --quieter du='dust'
+abbr -S -f --quieter find='fd .' # Search recursively; fd still honors ignore rules.
+unalias l la ll ls lsa 2>/dev/null # Remove Oh My Zsh list aliases.
+abbr -S -f --quieter ls='eza --git --group-directories-first --icons=auto'
+abbr -S --quieter ll='eza --long --git --group-directories-first --icons=auto'
+abbr -S --quieter la='eza --long --all --git --group-directories-first --icons=auto'
+abbr -S --quieter lg='lazygit'
+abbr -S --quieter lzd='lazydocker'
+abbr -S -f --quieter make='make -j10' # Run up to 10 jobs in parallel.
+unalias md 2>/dev/null # Remove Oh My Zsh's mkdir shortcut.
+abbr -S --quieter md='mkdir -pv'
+abbr -S -f --quieter mkdir='mkdir -pv'
+abbr -S --quieter nn='nvim'
+abbr -S -f --quieter ping='ping -c 5' # Stop after five replies.
+if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
+  abbr -S --quieter update='sudo apt update && sudo apt upgrade -y'
+elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
+  abbr -S --quieter update='brew update && brew upgrade && brew cleanup'
+fi
+########################## 🔼 ABBREVIATION 🔼 ###################
+
 ########################## 🔽 ALIAS 🔽 ##########################
 alias c='printf "\e[H\e[2J"' # Sends control characters Esc-C to the console which resets the terminal
-alias cat='bat' # A cat(1) clone with syntax highlighting and Git integration.
-alias df='duf'
-alias du='dust'
-alias find='fd' # A simple, fast and user-friendly alternative to find.
-alias ls='lsd' # The next gen file listing command. Backwards compatible with ls.
-alias lg='lazygit'
-alias ld='lazydocker'
-alias make='make -j10' # 并行make
-alias mkdir='mkdir -pv'
-alias nn='nvim'
-alias ping='ping -c 5' # Stop after sending count ECHO_REQUEST packets #
-alias ps='procs' # A modern replacement for ps written in Rust.
 if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
-  alias update='sudo apt update && sudo apt upgrade -y'
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
-  alias update='brew update && brew upgrade && brew cleanup'
   alias rm="$HOMEBREW_PREFIX/opt/macos-trash/bin/trash" # Don't ask. Asking is a lesson learned in blood and tears.
 fi
 ########################## 🔼 ALIAS 🔼 ##########################

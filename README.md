@@ -53,10 +53,12 @@ The deployment contract for this package is:
 
 - use the system Zsh and Homebrew dependencies on macOS, and apt on Ubuntu or
   Debian;
+- install Eza as the interactive `ls` replacement;
 - install incompatible or unavailable Linux tools from pinned upstream releases
   under `~/.local`, with commands exposed through `~/.local/bin`;
 - install [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh) and the custom plugins
-  below from their upstream Git repositories;
+  below by following each upstream repository's current installation and update
+  instructions;
 - install Jenv, a default JDK, Gradle, Maven, Ant, and Miniconda;
 - stop for user input instead of replacing an unknown existing installation.
 
@@ -65,6 +67,7 @@ The deployment contract for this package is:
 | `autoupdate` | `https://github.com/TamCore/autoupdate-oh-my-zsh-plugins` |
 | `fzf-tab` | `https://github.com/Aloxaf/fzf-tab` |
 | `you-should-use` | `https://github.com/MichaelAquilina/zsh-you-should-use` |
+| `zsh-abbr` | `https://github.com/olets/zsh-abbr` |
 | `zsh-autosuggestions` | `https://github.com/zsh-users/zsh-autosuggestions` |
 | `zsh-completions` | `https://github.com/zsh-users/zsh-completions` |
 | `zsh-history-substring-search` | `https://github.com/zsh-users/zsh-history-substring-search` |
