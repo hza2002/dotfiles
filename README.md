@@ -107,6 +107,10 @@ contains the configuration, while
 amount of local behavior layered on the upstream sidebar plugin. Read those
 files for the current bindings and plugin settings.
 
+The sidebar uses `hza2002/tmux-agent-sidebar`, a focused fork that keeps the
+localized desktop notification behavior and syncs upstream daily. Conflict-free
+updates are tested and released automatically; conflicts require manual review.
+
 Copy mode targets the clipboard of the attached terminal client through OSC 52,
 including through SSH and nested tmux sessions. Unsupported terminal clients
 still retain the selection in tmux's paste buffer.
@@ -218,7 +222,8 @@ and generated icon map are runtime files and are not stored in Git.
 
 ## Ghostty and Raycast
 
-Ghostty is the macOS terminal client and starts the `Main` tmux session directly.
+Ghostty is the macOS terminal client and starts the `main` tmux session in
+`~/repo/scratch`, leaving `~/repo` as the project overview.
 Its deployment contract is Ghostty 1.3 or newer and the Homebrew cask
 `font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
 the current terminal behavior and tmux key translations.

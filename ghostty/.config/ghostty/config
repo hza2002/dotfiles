@@ -34,10 +34,10 @@ quit-after-last-window-closed = true
 # updates are managed by brew; disable the built-in update checker
 auto-update = off
 
-# open Ghostty → attach the Main tmux session, create it if absent.
+# open Ghostty → attach the main tmux session, create it in the scratch workspace if absent.
 # new-session -A is the canonical attach-or-create form and lets
 # tmux-continuum's auto-restore run on a fresh server.
-command = /bin/zsh --login -c "tmux new-session -A -s Main"
+command = /bin/zsh --login -c "tmux new-session -A -s main -c ~/repo/scratch"
 # ssh-terminfo pushes terminfo to remote hosts, fixing garbled output over SSH
 shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 
@@ -68,12 +68,13 @@ keybind = shift+enter=text:\x1b\r
 keybind = cmd+n=text:\x06C
 keybind = cmd+t=text:\x06c
 keybind = cmd+o=text:\x06O
-keybind = cmd+/=text:\x06F
+keybind = cmd+/=text:\x06P
+keybind = cmd+shift+/=text:\x06W
+keybind = cmd+ctrl+/=text:\x06F
 keybind = cmd+a=text:\x06A
 keybind = cmd+shift+a=text:\x06\x1bA
 keybind = cmd+shift+o=text:\x06s
 keybind = cmd+w=text:\x06x
-keybind = cmd+tab=text:\x06`
 keybind = alt+tab=text:\x06\x09
 keybind = cmd+h=text:\x06p
 keybind = cmd+l=text:\x06n

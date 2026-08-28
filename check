@@ -81,6 +81,17 @@ check_agent_skills() {
 
 check_tmux() {
   local test_home="$CHECK_ROOT/tmux-home"
+  local expected_session_binding="bind C run-shell 'sesh connect #{q:pane_current_path}'"
+
+  if ! rg -Fq "$expected_session_binding" tmux/.config/tmux/tmux.conf; then
+    echo "tmux session creation must shell-escape the expanded pane path" >&2
+    return 1
+  fi
+  if rg -q '^bind C run-shell -c .*pane_current_path' tmux/.config/tmux/tmux.conf; then
+    echo "tmux run-shell -c does not expand pane_current_path" >&2
+    return 1
+  fi
+
   mkdir -p "$test_home"
   stow --target "$test_home" tmux
   HOME="$test_home" tmux -L "$TMUX_SOCKET" \

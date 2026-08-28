@@ -31,11 +31,27 @@ shift + fn - f13 : yabai -m window --space prev && yabai -m space --focus prev
 shift + fn - f14 : yabai -m window --space next && yabai -m space --focus next
 
 # Desktop focus
-# Let Ghostty handle Command-Tab itself and disable it everywhere else.
+# Switch to the last tmux window in Ghostty. Elsewhere, switch to the most
+# recently focused display, or the most recently focused space on one display.
 cmd - tab [
-    "ghostty" ~
-    *          : true
+    "ghostty" : skhd -k "ctrl - f" && skhd -k "0x32"
+    *          : display_count=$(yabai -m query --displays | jq 'length') && \
+                 if [ "$display_count" -gt 1 ] ; \
+                 then \
+                     yabai -m display --focus recent ; \
+                 else \
+                     yabai -m space --focus recent ; \
+                 fi
 ]
+
+# Use the same display/space switching behavior in every application.
+cmd + shift - tab : display_count=$(yabai -m query --displays | jq 'length') && \
+                    if [ "$display_count" -gt 1 ] ; \
+                    then \
+                        yabai -m display --focus recent ; \
+                    else \
+                        yabai -m space --focus recent ; \
+                    fi
 
 # Switch to the most recently focused display, or the most recently focused
 # space when only one display is connected.
