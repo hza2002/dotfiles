@@ -34,9 +34,30 @@ proxies:
     udp: false
 ```
 
-4. Add only verified private hosts to the active rules enhancement. `sis.cuhk.edu.cn` and `myportal.cuhk.edu.cn` use private DNS. CUHK hosts with public DNS and public HTTP responses must remain on normal Clash routing.
-5. Keep `vpn.cuhk.edu.cn` and its current public IP direct, exclude the IP from Clash TUN, and put the hostname in `fake-ip-filter`. Re-resolve the IP before assuming the existing exception is current.
-6. Re-apply the active profile, validate and reload Mihomo, then test with the school VPN both off and on.
+4. Clash Verge Rev adds proxies-enhancement entries to the first selector group.
+Bind a per-profile script that removes `school-vpn` from explicit groups while
+leaving the top-level outbound intact:
+
+```javascript
+function main(config) {
+  for (const group of config["proxy-groups"] ?? []) {
+    if (Array.isArray(group.proxies)) {
+      group.proxies = group.proxies.filter(
+        (name) => name !== "school-vpn",
+      );
+    }
+  }
+  return config;
+}
+```
+
+Keep the native proxies and rules enhancements as the functional source of
+truth. The script owns presentation only, so a script failure makes the outbound
+visible again without removing School VPN routing.
+
+5. Add only verified private hosts to the active rules enhancement. `sis.cuhk.edu.cn` and `myportal.cuhk.edu.cn` use private DNS. CUHK hosts with public DNS and public HTTP responses must remain on normal Clash routing.
+6. Keep `vpn.cuhk.edu.cn` and its current public IP direct, exclude the IP from Clash TUN, and put the hostname in `fake-ip-filter`. Re-resolve the IP before assuming the existing exception is current.
+7. Re-apply the active profile, validate and reload Mihomo, then test with the school VPN both off and on. Confirm that the top-level outbound exists exactly once, no explicit proxy group contains it, and the private-host rules still target it.
 
 `via` must use the `CUHK(SZ)` auth group and `--no-xmlpost`. OpenConnect runs in native background mode with a PID file and launches `ocproxy` through `--script-tun`.
 
