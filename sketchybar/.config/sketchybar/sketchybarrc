@@ -33,6 +33,7 @@ launchctl bootout gui/$(id -u) /System/Library/LaunchAgents/com.apple.OSDUIHelpe
 # Setting up the general bar appearance of the bar
 bar=(
   height=32
+  display=all
   color="$BAR_COLOR"
   border_width=0
   border_color="$TRANSPARENT"
@@ -89,9 +90,6 @@ source "$ITEM_DIR/battery.sh"
 source "$ITEM_DIR/volume.sh"
 
 source "$ITEM_DIR/system.sh"
-
-# Hidden item: refreshes the bar window after system wake.
-source "$ITEM_DIR/wake_refresh.sh"
 
 # Config and helper updates are applied explicitly. This avoids rebuilding or
 # restarting the low-frequency helper as a side effect of editing config files.
