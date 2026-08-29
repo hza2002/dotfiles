@@ -105,10 +105,10 @@ signing key are machine state and must not be stored in this repository.
 ## tmux
 
 The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
-contains the configuration, while
-[`agent-sidebar.sh`](tmux/.config/tmux/scripts/agent-sidebar.sh) contains the small
-amount of local behavior layered on the upstream sidebar plugin. Read those
-files for the current bindings and plugin settings.
+contains the configuration. The scripts directory contains the local behavior
+layered on the upstream sidebar plugin and the Ghostty-only cursor reveal used
+when selecting panes whose applications hide the cursor. Read those files for
+the current bindings and plugin settings.
 
 The sidebar uses `hza2002/tmux-agent-sidebar`, a focused fork that keeps the
 localized desktop notification behavior and syncs upstream daily. Conflict-free
@@ -229,7 +229,9 @@ Ghostty is the macOS terminal client and starts the `main` tmux session in
 `~/repo/scratch`, leaving `~/repo` as the project overview.
 Its deployment contract is Ghostty 1.3 or newer and the Homebrew cask
 `font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
-the current terminal behavior and tmux key translations.
+the current terminal behavior and tmux key translations. The tracked cursor
+shaders are configuration source; the derived smear shader retains its upstream
+source revision and MIT notice in the file header.
 
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
 The Server extension reads SSH aliases from the private inventory at

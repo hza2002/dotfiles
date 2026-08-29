@@ -25,6 +25,12 @@ window-save-state = never
 
 # bar cursor avoids confusion with vim normal mode (block)
 cursor-style = bar
+# A softened midpoint between Gruvbox blue and Manga Slash's bright cursor blue.
+cursor-color = #9cc9eb
+# Smear visible cursor movement, then overlay the static and shape-change effects.
+custom-shader = shaders/local/cursor_smear_gradient.glsl
+custom-shader = shaders/local/cursor_shape_echo.glsl
+custom-shader-animation = true
 
 # treats Option as Alt, required for nvim and zsh Alt-key bindings
 macos-option-as-alt = true
