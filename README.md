@@ -17,6 +17,19 @@ provides the repository-wide validation gate. Stow runs from the repository
 root, where `.stowrc` disables tree folding so tools cannot write runtime data
 back through a linked directory.
 
+## Color Policy
+
+Terminal applications use their native Gruvbox themes or plugins rather than a
+generated shared theme. Prefer colors from the original Gruvbox palette; use
+Gruvbox Material only for roles the original palette does not provide or when a
+softer Material variant is intentional. Non-palette colors require a documented
+functional reason.
+
+The tmux package keeps tmux-native snapshots of both palettes under
+`.config/tmux/palettes`. Each snapshot pins its upstream source revision. Review
+the upstream diff before updating a snapshot; palette updates are never applied
+automatically.
+
 ## Getting Started
 
 Clone the repository, enter it, and start an agent that supports repository
@@ -106,13 +119,13 @@ signing key are machine state and must not be stored in this repository.
 
 The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
 contains the configuration. The scripts directory contains the local behavior
-layered on the upstream sidebar plugin and the Ghostty-only cursor reveal used
-when selecting panes whose applications hide the cursor. Read those files for
-the current bindings and plugin settings.
+for the Ghostty-only cursor reveal used when selecting panes whose applications
+hide the cursor. Read that script and `tmux.conf` for the current behavior.
 
 The sidebar uses `hza2002/tmux-agent-sidebar`, a focused fork that keeps the
-localized desktop notification behavior and syncs upstream daily. Conflict-free
-updates are tested and released automatically; conflicts require manual review.
+Gruvbox UI, pane lifecycle, key bindings, and localized desktop notifications
+together. It syncs upstream daily; conflict-free updates are tested and released
+automatically, while conflicts require manual review.
 
 Copy mode targets the clipboard of the attached terminal client through OSC 52,
 including through SSH and nested tmux sessions. Unsupported terminal clients
