@@ -122,20 +122,22 @@ contains the configuration. The scripts directory contains the local behavior
 for the Ghostty-only cursor reveal used when selecting panes whose applications
 hide the cursor. Read that script and `tmux.conf` for the current behavior.
 
-The sidebar uses `hza2002/tmux-agent-sidebar`, a focused fork that keeps the
-Gruvbox UI, pane lifecycle, key bindings, and localized desktop notifications
-together. It syncs upstream daily; conflict-free updates are tested and released
-automatically, while conflicts require manual review.
+The sidebar runs directly from the local `hza2002/tmux-agent-sidebar` working
+copy linked at `~/.config/tmux/plugins/tmux-agent-sidebar`. TPM does not manage
+or update it. Local source changes and reviewed upstream merges take effect only
+after `cargo build --release`; the runtime never checks or downloads GitHub
+Releases.
 
 Copy mode targets the clipboard of the attached terminal client through OSC 52,
 including through SSH and nested tmux sessions. Unsupported terminal clients
 still retain the selection in tmux's paste buffer.
 
-The deployment contract for this package is to install tmux, TPM,
-the plugins declared in `tmux.conf`, sesh, and fzf, then configure sidebar hooks
-for installed agents. Macism is required only on macOS. Clipboard integration
-does not require platform-specific packages; terminal clients must permit OSC 52
-writes.
+The deployment contract for this package is to install tmux, TPM, the TPM
+plugins declared in `tmux.conf`, sesh, and fzf; link the maintained sidebar
+working copy at its local plugin path; build its release binary with Cargo; then
+configure sidebar hooks for installed agents. Macism is required only on macOS.
+Clipboard integration does not require platform-specific packages; terminal
+clients must permit OSC 52 writes.
 
 ## Yazi
 
