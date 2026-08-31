@@ -8,10 +8,11 @@
 #define TP_CACHE_PATH "/tmp/sketchybar-smc-tp-keys"
 #define TP_MAX_KEYS   64
 
-// CPU temperature widget. Reports the average of all SMC Tp* sensors
-// (performance-core thermal readings) — matches the convention used by
-// iStat Menus and stats. Tp key names are cached in /tmp so we only
-// enumerate the full SMC key set (~2k entries) once per boot.
+// Reports the average of all readable SMC Tp* sensors. Apple does not publish
+// the meaning of every Tp* key, so this is a machine-specific temperature
+// aggregate, not a package temperature or hottest-core reading. Key names are
+// cached in /tmp so we only enumerate the full SMC key set (~2k entries) once
+// per boot.
 struct temperature {
   char tp_keys[TP_MAX_KEYS][5];
   int  tp_count;
@@ -82,6 +83,31 @@ static inline int temperature_read(const struct temperature *t, int *maximum) {
   return n > 0 ? (int)(sum / n + 0.5) : -1;
 }
 
+static inline const char *temperature_color_for(int temp) {
+  const char *name;
+  if      (temp <  0) name = "GRAY_HARD";
+  else if (temp >= 90) name = "PURPLE_HARD";
+  else if (temp >= 80) name = "RED_HARD";
+  else if (temp >= 70) name = "ORANGE_HARD";
+  else if (temp >= 55) name = "YELLOW_HARD";
+  else if (temp >= 40) name = "GREEN_HARD";
+  else if (temp >= 30) name = "AQUA_HARD";
+  else                 name = "BLUE_HARD";
+
+  const char *color = getenv(name);
+  return color && color[0] != '\0' ? color : "0xffffffff";
+}
+
+static inline const char *temperature_icon_for(int temp) {
+  const char *name;
+  if      (temp >= 80) name = "SYS_TEMP_HIGH";
+  else if (temp >= 55) name = "SYS_TEMP_MEDIUM";
+  else                 name = "SYS_TEMP_LOW";
+
+  const char *icon = getenv(name);
+  return icon && icon[0] != '\0' ? icon : "";
+}
+
 static inline void temperature_update(struct temperature *t) {
   int maximum = -1;
   int temp = temperature_read(t, &maximum);
@@ -95,24 +121,8 @@ static inline void temperature_update(struct temperature *t) {
     }
   }
 
-  // 7-tier HARD-only gradient tuned for M1 Max thermals.
-  const char *color;
-  if      (temp >= 85) color = getenv("PURPLE_HARD");
-  else if (temp >= 75) color = getenv("RED_HARD");
-  else if (temp >= 60) color = getenv("ORANGE_HARD");
-  else if (temp >= 50) color = getenv("YELLOW_HARD");
-  else if (temp >= 40) color = getenv("GREEN_HARD");
-  else if (temp >= 25) color = getenv("AQUA_HARD");
-  else                 color = getenv("BLUE_HARD");
-  if (!color || color[0] == '\0') color = "0xffffffff";
-
-  // 3-tier icon: collapse the 7 color tiers onto LOW (<50) / MEDIUM
-  // (50–74) / HIGH (≥75) to match SYS_TEMP_LOW/MEDIUM/HIGH glyphs.
-  const char *icon;
-  if      (temp >= 75) icon = getenv("SYS_TEMP_HIGH");
-  else if (temp >= 50) icon = getenv("SYS_TEMP_MEDIUM");
-  else                 icon = getenv("SYS_TEMP_LOW");
-  if (!icon || icon[0] == '\0') icon = "";
+  const char *color = temperature_color_for(temp);
+  const char *icon = temperature_icon_for(temp);
 
   if (temp >= 0) {
     snprintf(t->command, sizeof(t->command),
