@@ -8,6 +8,10 @@ font-thicken = true
 theme = "Gruvbox Dark"
 # Gruvbox expects bold text to use bright color variants (classic terminal behavior)
 bold-color = bright
+# Keep terminal chrome and explicitly colored TUI cells opaque; only the
+# default terminal background participates in transparency.
+background-opacity = 0.9
+background-opacity-cells = false
 
 # hide the titlebar but keep the native macOS window frame (preserves rounded corners for borders/yabai)
 macos-titlebar-style = hidden
@@ -28,10 +32,6 @@ window-save-state = never
 cursor-style = bar
 # A softened midpoint between Gruvbox blue and Manga Slash's bright cursor blue.
 cursor-color = #9cc9eb
-# The sidebar integration is optional so a freshly deployed machine can start
-# Ghostty before the maintained fork is cloned. Config fragments load in order:
-# detect sidebar markers first, then apply local cursor effects.
-config-file = ?~/.config/tmux/plugins/tmux-agent-sidebar/integrations/ghostty/ghostty.conf
 config-file = shaders/local/cursor-effects.conf
 custom-shader-animation = true
 

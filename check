@@ -61,14 +61,13 @@ check_ghostty_config() {
   local clean_config="$clean_home/config"
   local cursor_config="$PWD/ghostty/.config/ghostty/shaders/local/cursor-effects.conf"
   local cursor_include='config-file = shaders/local/cursor-effects.conf'
-  local sidebar_include='config-file = ?~/.config/tmux/plugins/tmux-agent-sidebar/integrations/ghostty/ghostty.conf'
-
-  if ! rg -Fq "$sidebar_include" "$config"; then
-    echo "Ghostty must load the sidebar integration through an optional config-file" >&2
-    return 1
-  fi
   if ! rg -Fq "$cursor_include" "$config"; then
     echo "Ghostty must load the maintained cursor effects config" >&2
+    return 1
+  fi
+  if ! rg -Fxq 'background-opacity = 0.9' "$config" || \
+    ! rg -Fxq 'background-opacity-cells = false' "$config"; then
+    echo "Ghostty must own background-only transparency" >&2
     return 1
   fi
 
@@ -76,10 +75,20 @@ check_ghostty_config() {
 
   mkdir -p "$clean_home"
   sed \
-    -e "s|^${sidebar_include}$|config-file = ?$clean_home/missing-sidebar.conf|" \
     -e "s|^${cursor_include}$|config-file = $cursor_config|" \
     "$config" >"$clean_config"
   ghostty +validate-config --config-file="$clean_config"
+}
+
+check_btop_config() {
+  local config=btop/.config/btop/btop.conf
+
+  if ! rg -Fxq 'color_theme = "gruvbox_dark_v2"' "$config" || \
+    ! rg -Fxq 'theme_background = false' "$config" || \
+    ! rg -Fxq 'save_config_on_exit = false' "$config"; then
+    echo "btop must use transparent Gruvbox without rewriting tracked config" >&2
+    return 1
+  fi
 }
 
 check_json() {
@@ -145,9 +154,10 @@ require tmux
 
 mkdir -p "$CHECK_ROOT/stow-macos" "$CHECK_ROOT/stow-linux"
 run "macOS Stow profile" stow --simulate --target "$CHECK_ROOT/stow-macos" \
-  automation bat bin ghostty gnupg ideavim nvim raycast sketchybar tmux yabai yazi zsh
+  automation bat bin btop ghostty gnupg ideavim nvim raycast sketchybar starship tmux yabai yazi zsh
 run "Linux Stow profile" stow --simulate --target "$CHECK_ROOT/stow-linux" \
-  bat gnupg nvim tmux yazi zsh
+  bat btop gnupg nvim starship tmux yazi zsh
+run "btop config" check_btop_config
 run "shell syntax" check_shell_syntax
 run "Python syntax" check_python_syntax
 run "JSON syntax" check_json
@@ -162,6 +172,10 @@ if [[ $(uname -s) == Darwin ]]; then
   run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
   run "Automation plist template" plutil -lint \
     automation/.local/share/automation/com.ghot.chrome-custom-icon.plist.template
+  run "Yabai Ghostty opacity" rg -Fqx '  "Ghostty"' \
+    yabai/.config/yabai/yabairc
+  run "Neovim transparent Gruvbox" rg -Fq 'transparent_mode = true' \
+    nvim/.config/nvim/lua/plugins/colorscheme.lua
   run "Ghostty config" check_ghostty_config
 
   for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do

@@ -65,8 +65,9 @@ GnuPG keys, or SSH inventories on the user's behalf.
 Open a fresh terminal and verify:
 
 - `/bin/zsh` is the login shell and starts without cache/version errors;
-- Homebrew PATH ordering, linked packages, Bat cache/theme, GnuPG pinentry, tmux,
-  Neovim, Yazi, Ghostty, and selected personal utilities;
+- Homebrew PATH ordering, linked packages, Bat cache/theme, btop transparency,
+  Starship, GnuPG pinentry, tmux, Neovim, Yazi, Ghostty, and selected personal
+  utilities;
 - the generated Chrome-icon LaunchAgent contains the current home path and is
   registered in the current GUI domain;
 - Yabai, skhd, borders, scripting addition, permissions, rules, signals, and

@@ -59,6 +59,9 @@ system `/bin/zsh`; installing a second Homebrew Zsh is unnecessary.
 - [`.config/fzf`](zsh/.config/fzf) contains the fzf shell integration and
   preview script.
 
+The shell initializes Starship when it is installed. Starship configuration is
+owned by its separate package because Yazi consumes it too.
+
 Read these files for the current behavior. Plugin names, aliases, key bindings,
 and optional tool paths are intentionally not duplicated here.
 
@@ -91,6 +94,20 @@ The deployment contract for this package is:
 These repositories currently follow their upstream default branches; the
 dotfiles do not pin their commits. [`.zshrc`](zsh/.zshrc) remains the source of
 truth for which plugins are enabled.
+
+## Starship
+
+The Starship package provides the shared Gruvbox prompt configuration used by
+Zsh and Yazi. Install Starship before linking the package on macOS, Ubuntu,
+Debian, or WSL.
+
+## btop
+
+The btop package selects its built-in `gruvbox_dark_v2` theme and disables the
+theme background so terminal transparency remains visible. Its tracked config
+also disables automatic saves; persistent changes must be made in the dotfiles
+instead of through btop's options menu. Install btop with Homebrew on macOS or
+apt on Ubuntu or Debian.
 
 ## Bat
 
@@ -246,12 +263,7 @@ Its deployment contract is Ghostty 1.3 or newer and the Homebrew cask
 `font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
 the current terminal behavior and tmux key translations. The tracked cursor
 shader is configuration source; the combined shader retains the smear shader's
-upstream revision and MIT notice in its file header. The main Ghostty config
-optionally includes the maintained sidebar fork's Ghostty integration from its
-canonical plugin path. A missing fork is ignored during initial deployment;
-after the tmux deployment contract links and builds the fork, reload Ghostty to
-activate the status shader. The shader itself remains owned and distributed by
-the sidebar repository rather than being copied into dotfiles.
+upstream revision and MIT notice in its file header.
 
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
 The Server extension reads SSH aliases from the private inventory at

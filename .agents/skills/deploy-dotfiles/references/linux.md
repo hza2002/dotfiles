@@ -38,9 +38,9 @@ Do not default to unrestricted passwordless sudo on a shared server.
 ## Install the Linux Profile
 
 Read the current README contracts before selecting providers. The normal
-headless profile is `bat gnupg nvim tmux yazi zsh`; do not deploy macOS-only,
-GUI-only, Automation, Bin, IdeaVim, Raycast, Yabai, SketchyBar, or Ghostty
-packages to a server.
+headless profile is `bat btop gnupg nvim starship tmux yazi zsh`; do not deploy
+macOS-only, GUI-only, Automation, Bin, IdeaVim, Raycast, Yabai, SketchyBar, or
+Ghostty packages to a server.
 
 - Use `apt` for approved stable system dependencies.
 - Use the official signed Yazi APT repository described by the current upstream.
@@ -76,7 +76,8 @@ Use a fresh SSH login or WSL session and verify:
 - PATH ordering and actual command resolution;
 - Stow targets and any server-local diff;
 - GnuPG terminal pinentry, tmux start/detach/reattach, Neovim plugin/tool
-  completion, Yazi plugins, Bat theme/cache, and trash behavior;
+  completion, Yazi plugins, Bat theme/cache, Starship, btop transparency, and
+  trash behavior;
 - proxy name resolution and an end-to-end request when proxying is included;
 - a second SSH connection remains possible.
 

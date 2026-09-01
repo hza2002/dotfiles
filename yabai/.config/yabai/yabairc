@@ -13,11 +13,11 @@ yabai -m signal --add event=dock_did_restart \
 
 # ===== Tiling setting =========================
 yabai -m config layout bsp       # 布局设置为二叉分割(bsp or float)
-yabai -m config top_padding 8    # 顶部填充
-yabai -m config bottom_padding 8 # 底部填充
-yabai -m config left_padding 8   # 左侧填充
-yabai -m config right_padding 8  # 右侧填充
-yabai -m config window_gap 10    # 窗口间隙
+yabai -m config top_padding 6    # 顶部填充
+yabai -m config bottom_padding 6 # 底部填充
+yabai -m config left_padding 6   # 左侧填充
+yabai -m config right_padding 6  # 右侧填充
+yabai -m config window_gap 8     # 窗口间隙
 
 yabai -m config auto_balance off                      # 自动平衡
 yabai -m config split_ratio 0.50                      # 分屏比例 between 0 and 1 (default: 0.5)
@@ -52,6 +52,7 @@ no_transparent_apps=(
   "Firefox"
   "Fusion"
   "Google Chrome"
+  "Ghostty"
   "IINA"
   "Microsoft PowerPoint"
   "Microsoft Word"
@@ -85,8 +86,8 @@ forbidden_app=(
 )
 
 # ===== Status bar =============================
-# add padding to the top and bottom
-yabai -m config external_bar all:30:0
+# Match SketchyBar's 32pt height; space padding owns the outer gutter.
+yabai -m config external_bar all:32:0
 
 # ===== Signals ================================
 # SketchyBar tracks app windows natively. Yabai only needs to report state that

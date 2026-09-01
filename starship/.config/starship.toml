@@ -1,3 +1,4 @@
+# Shared by Zsh and Yazi.
 # Reference: https://starship.rs/zh-CN/config/
 "$schema" = "https://starship.rs/config-schema.json"
 
