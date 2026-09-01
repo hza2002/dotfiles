@@ -55,6 +55,33 @@ for path in Path(".").rglob("*.py"):
 PY
 }
 
+check_ghostty_config() {
+  local config=ghostty/.config/ghostty/config
+  local clean_home="$CHECK_ROOT/ghostty-home"
+  local clean_config="$clean_home/config"
+  local cursor_config="$PWD/ghostty/.config/ghostty/shaders/local/cursor-effects.conf"
+  local cursor_include='config-file = shaders/local/cursor-effects.conf'
+  local sidebar_include='config-file = ?~/.config/tmux/plugins/tmux-agent-sidebar/integrations/ghostty/ghostty.conf'
+
+  if ! rg -Fq "$sidebar_include" "$config"; then
+    echo "Ghostty must load the sidebar integration through an optional config-file" >&2
+    return 1
+  fi
+  if ! rg -Fq "$cursor_include" "$config"; then
+    echo "Ghostty must load the maintained cursor effects config" >&2
+    return 1
+  fi
+
+  ghostty +validate-config --config-file="$config"
+
+  mkdir -p "$clean_home"
+  sed \
+    -e "s|^${sidebar_include}$|config-file = ?$clean_home/missing-sidebar.conf|" \
+    -e "s|^${cursor_include}$|config-file = $cursor_config|" \
+    "$config" >"$clean_config"
+  ghostty +validate-config --config-file="$clean_config"
+}
+
 check_json() {
   local file
   while IFS= read -r file; do
@@ -135,7 +162,7 @@ if [[ $(uname -s) == Darwin ]]; then
   run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
   run "Automation plist template" plutil -lint \
     automation/.local/share/automation/com.ghot.chrome-custom-icon.plist.template
-  run "Ghostty config" ghostty +validate-config --config-file=ghostty/.config/ghostty/config
+  run "Ghostty config" check_ghostty_config
 
   for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do
     run "SketchyBar $(basename "$test_file")" /bin/bash "$test_file"

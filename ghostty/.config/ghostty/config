@@ -14,8 +14,9 @@ macos-titlebar-style = hidden
 # left/right breathing room
 window-padding-x = 6
 window-padding-y = 0
-# distribute the cell-remainder space evenly between top and bottom instead of piling it at the bottom
-window-padding-balance = true
+# Keep the top edge flush instead of balancing cell remainder across both edges.
+window-padding-balance = false
+window-padding-color = extend
 # no shadow when decoration is off
 macos-window-shadow = false
 # don't show the size popup when resizing the window
@@ -27,9 +28,11 @@ window-save-state = never
 cursor-style = bar
 # A softened midpoint between Gruvbox blue and Manga Slash's bright cursor blue.
 cursor-color = #9cc9eb
-# Smear visible cursor movement, then overlay the static and shape-change effects.
-custom-shader = shaders/local/cursor_smear_gradient.glsl
-custom-shader = shaders/local/cursor_shape_echo.glsl
+# The sidebar integration is optional so a freshly deployed machine can start
+# Ghostty before the maintained fork is cloned. Config fragments load in order:
+# detect sidebar markers first, then apply local cursor effects.
+config-file = ?~/.config/tmux/plugins/tmux-agent-sidebar/integrations/ghostty/ghostty.conf
+config-file = shaders/local/cursor-effects.conf
 custom-shader-animation = true
 
 # treats Option as Alt, required for nvim and zsh Alt-key bindings

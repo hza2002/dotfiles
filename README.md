@@ -245,8 +245,13 @@ Ghostty is the macOS terminal client and starts the `main` tmux session in
 Its deployment contract is Ghostty 1.3 or newer and the Homebrew cask
 `font-jetbrains-maple-mono`. Read [`config`](ghostty/.config/ghostty/config) for
 the current terminal behavior and tmux key translations. The tracked cursor
-shaders are configuration source; the derived smear shader retains its upstream
-source revision and MIT notice in the file header.
+shader is configuration source; the combined shader retains the smear shader's
+upstream revision and MIT notice in its file header. The main Ghostty config
+optionally includes the maintained sidebar fork's Ghostty integration from its
+canonical plugin path. A missing fork is ignored during initial deployment;
+after the tmux deployment contract links and builds the fork, reload Ghostty to
+activate the status shader. The shader itself remains owned and distributed by
+the sidebar repository rather than being copied into dotfiles.
 
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
 The Server extension reads SSH aliases from the private inventory at
