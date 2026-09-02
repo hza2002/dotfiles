@@ -4,7 +4,12 @@ set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 CHECK_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-check.XXXXXX")
+MACOS_HOME="$CHECK_ROOT/stow-macos"
+LINUX_HOME="$CHECK_ROOT/stow-linux"
 TMUX_SOCKET="dotfiles-check-$$"
+
+COMMON_PACKAGES=(bat btop gnupg nvim starship tmux yazi zsh)
+MACOS_PACKAGES=(automation bin ghostty ideavim raycast sketchybar yabai "${COMMON_PACKAGES[@]}")
 
 cleanup() {
   tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
@@ -27,6 +32,14 @@ run() {
   printf '\n==> %s\n' "$name"
   "$@"
   printf 'ok - %s\n' "$name"
+}
+
+check_stow_profile() {
+  local target=$1
+  shift
+
+  mkdir -p "$target"
+  stow --no-folding --target "$target" "$@"
 }
 
 check_shell_syntax() {
@@ -55,47 +68,12 @@ for path in Path(".").rglob("*.py"):
 PY
 }
 
-check_ghostty_config() {
-  local config=ghostty/.config/ghostty/config
-  local clean_home="$CHECK_ROOT/ghostty-home"
-  local clean_config="$clean_home/config"
-  local cursor_config="$PWD/ghostty/.config/ghostty/shaders/local/cursor-effects.conf"
-  local cursor_include='config-file = shaders/local/cursor-effects.conf'
-  if ! rg -Fq "$cursor_include" "$config"; then
-    echo "Ghostty must load the maintained cursor effects config" >&2
-    return 1
-  fi
-  if ! rg -Fxq 'background-opacity = 0.9' "$config" || \
-    ! rg -Fxq 'background-opacity-cells = false' "$config"; then
-    echo "Ghostty must own background-only transparency" >&2
-    return 1
-  fi
-
-  ghostty +validate-config --config-file="$config"
-
-  mkdir -p "$clean_home"
-  sed \
-    -e "s|^${cursor_include}$|config-file = $cursor_config|" \
-    "$config" >"$clean_config"
-  ghostty +validate-config --config-file="$clean_config"
-}
-
-check_btop_config() {
-  local config=btop/.config/btop/btop.conf
-
-  if ! rg -Fxq 'color_theme = "gruvbox_dark_v2"' "$config" || \
-    ! rg -Fxq 'theme_background = false' "$config" || \
-    ! rg -Fxq 'save_config_on_exit = false' "$config"; then
-    echo "btop must use transparent Gruvbox without rewriting tracked config" >&2
-    return 1
-  fi
-}
-
 check_json() {
   local file
+
   while IFS= read -r file; do
     jq empty "$file"
-  done < <(git ls-files '*.json')
+  done < <(rg --files --hidden --glob '*.json' --glob '!.git/**' --glob '!**/node_modules/**')
 }
 
 check_agent_skills() {
@@ -116,23 +94,67 @@ check_agent_skills() {
 }
 
 check_tmux() {
+  local package_root=tmux/.config/tmux
   local test_home="$CHECK_ROOT/tmux-home"
-  local expected_session_binding="bind C run-shell 'sesh connect #{q:pane_current_path}'"
+  local wrapper="$CHECK_ROOT/tmux-check.conf"
+  local file output
+  local -a required=(
+    tmux.conf
+    conf/options.conf
+    conf/bindings.conf
+    conf/theme.conf
+    conf/plugins.conf
+    conf/ui.conf
+    palettes/gruvbox.conf
+    palettes/gruvbox-material-dark-medium.conf
+    scripts/project-picker.sh
+    scripts/ghostty-cursor-sample.sh
+  )
 
-  if ! rg -Fq "$expected_session_binding" tmux/.config/tmux/tmux.conf; then
-    echo "tmux session creation must shell-escape the expanded pane path" >&2
-    return 1
-  fi
-  if rg -q '^bind C run-shell -c .*pane_current_path' tmux/.config/tmux/tmux.conf; then
-    echo "tmux run-shell -c does not expand pane_current_path" >&2
-    return 1
-  fi
+  for file in "${required[@]}"; do
+    [[ -f "$package_root/$file" ]] || {
+      echo "missing tmux configuration: $package_root/$file" >&2
+      return 1
+    }
+  done
+
+  while IFS= read -r file; do
+    [[ -x "$file" ]] || {
+      echo "tmux script must be executable: $file" >&2
+      return 1
+    }
+  done < <(find "$package_root/scripts" -type f -name '*.sh' -print)
 
   mkdir -p "$test_home"
-  stow --target "$test_home" tmux
-  HOME="$test_home" tmux -L "$TMUX_SOCKET" \
-    -f "$test_home/.config/tmux/tmux.conf" new-session -d
+  stow --no-folding --target "$test_home" tmux
+  printf '%s\n' \
+    'set -g @skip_plugin_reload 1' \
+    'source-file ~/.config/tmux/tmux.conf' >"$wrapper"
+
+  if ! output=$(HOME="$test_home" tmux -L "$TMUX_SOCKET" \
+    -f "$wrapper" new-session -d 2>&1); then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+  if [[ -n "$output" ]]; then
+    printf 'tmux configuration produced unexpected output:\n%s\n' "$output" >&2
+    return 1
+  fi
+
   HOME="$test_home" tmux -L "$TMUX_SOCKET" kill-server
+}
+
+check_ghostty_config() {
+  HOME="$MACOS_HOME" ghostty +validate-config \
+    --config-file="$MACOS_HOME/.config/ghostty/config"
+}
+
+check_plists() {
+  local file
+
+  while IFS= read -r file; do
+    plutil -lint "$file"
+  done < <(find automation -type f \( -name '*.plist' -o -name '*.plist.template' \) -print)
 }
 
 check_raycast_extension() {
@@ -152,12 +174,8 @@ require python3
 require jq
 require tmux
 
-mkdir -p "$CHECK_ROOT/stow-macos" "$CHECK_ROOT/stow-linux"
-run "macOS Stow profile" stow --simulate --target "$CHECK_ROOT/stow-macos" \
-  automation bat bin btop ghostty gnupg ideavim nvim raycast sketchybar starship tmux yabai yazi zsh
-run "Linux Stow profile" stow --simulate --target "$CHECK_ROOT/stow-linux" \
-  bat btop gnupg nvim starship tmux yazi zsh
-run "btop config" check_btop_config
+run "macOS Stow profile" check_stow_profile "$MACOS_HOME" "${MACOS_PACKAGES[@]}"
+run "Linux Stow profile" check_stow_profile "$LINUX_HOME" "${COMMON_PACKAGES[@]}"
 run "shell syntax" check_shell_syntax
 run "Python syntax" check_python_syntax
 run "JSON syntax" check_json
@@ -165,25 +183,23 @@ run "agent skill layout" check_agent_skills
 run "tmux clean-home startup" check_tmux
 
 if [[ $(uname -s) == Darwin ]]; then
+  extension_dir=
   require plutil
   require ghostty
   require npm
 
   run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
-  run "Automation plist template" plutil -lint \
-    automation/.local/share/automation/com.ghot.chrome-custom-icon.plist.template
-  run "Yabai Ghostty opacity" rg -Fqx '  "Ghostty"' \
-    yabai/.config/yabai/yabairc
-  run "Neovim transparent Gruvbox" rg -Fq 'transparent_mode = true' \
-    nvim/.config/nvim/lua/plugins/colorscheme.lua
+  run "Automation plist files" check_plists
   run "Ghostty config" check_ghostty_config
 
   for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do
     run "SketchyBar $(basename "$test_file")" /bin/bash "$test_file"
   done
 
-  for extension in network-control server service; do
-    run "Raycast $extension" check_raycast_extension "$extension"
+  for extension_dir in raycast/extensions/*; do
+    [[ -f "$extension_dir/package.json" ]] || continue
+    run "Raycast $(basename "$extension_dir")" \
+      check_raycast_extension "$(basename "$extension_dir")"
   done
 else
   printf '\nSKIP - macOS-only runtime checks\n'

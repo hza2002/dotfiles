@@ -135,24 +135,30 @@ signing key are machine state and must not be stored in this repository.
 ## tmux
 
 The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
-contains the configuration. The scripts directory contains the local behavior
-for the Ghostty-only cursor reveal used when selecting panes whose applications
-hide the cursor. Read that script and `tmux.conf` for the current behavior.
+is an ordered entrypoint; the files in [`conf`](tmux/.config/tmux/conf) own
+options, bindings, theme inputs, plugins, and final UI overrides. Ordinary
+reloads skip plugin initialization, so restart tmux after changing theme inputs
+or plugin declarations. The scripts directory includes a Ghostty-only cursor
+sampling helper: when a selected TUI pane hides its hardware cursor, tmux briefly
+exposes the pane center so Ghostty can animate the cursor trail to its destination.
 
-The sidebar runs directly from the local `hza2002/tmux-agent-sidebar` working
-copy linked at `~/.config/tmux/plugins/tmux-agent-sidebar`. TPM does not manage
-or update it. Local source changes and reviewed upstream merges take effect only
-after `cargo build --release`; the runtime never checks or downloads GitHub
-Releases.
+TPM declares and loads `hza2002/tmux-agent-sidebar`. On development machines,
+`~/.config/tmux/plugins/tmux-agent-sidebar` may instead link to the maintained
+local working copy, so source and release builds are available immediately.
+While that link is active, update the working copy directly rather than asking
+TPM to update the sidebar because TPM follows the link into the checkout. Local
+source changes and reviewed upstream merges take effect only after
+`cargo build --release`; the runtime never checks or downloads GitHub Releases.
 
 Copy mode targets the clipboard of the attached terminal client through OSC 52,
 including through SSH and nested tmux sessions. Unsupported terminal clients
 still retain the selection in tmux's paste buffer.
 
 The deployment contract for this package is to install tmux, TPM, the TPM
-plugins declared in `tmux.conf`, sesh, and fzf; link the maintained sidebar
-working copy at its local plugin path; build its release binary with Cargo; then
-configure sidebar hooks for installed agents. Macism is required only on macOS.
+plugins declared in `conf/plugins.conf`, sesh, and fzf; optionally replace the
+TPM sidebar checkout with the maintained local working-copy link for development;
+build its release binary with Cargo; then configure sidebar hooks for installed
+agents. Macism is required only on macOS.
 Clipboard integration does not require platform-specific packages; terminal
 clients must permit OSC 52 writes.
 
