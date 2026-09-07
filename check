@@ -39,7 +39,7 @@ check_stow_profile() {
   shift
 
   mkdir -p "$target"
-  stow --no-folding --target "$target" "$@"
+  stow --no-folding --ignore='(^|/)\.DS_Store$' --target "$target" "$@"
 }
 
 check_shell_syntax() {
@@ -190,6 +190,7 @@ if [[ $(uname -s) == Darwin ]]; then
 
   run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
   run "Automation plist files" check_plists
+  run "Display Control build and policy tests" /bin/bash raycast/scripts/internal-display/manage.sh check
   run "Ghostty config" check_ghostty_config
 
   for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do
