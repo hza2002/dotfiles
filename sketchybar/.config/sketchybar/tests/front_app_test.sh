@@ -118,6 +118,22 @@ run_plugin "Unknown Agent" $'"CFBundleIdentifier"="com.apple.unknown"\n"LSDispla
 assert_arg "icon.background.image=$GENERIC_ICON"
 assert_arg "label=Unknown Agent"
 
+run_plugin "Fallback" $'"LSDisplayName"="中文 App \\ \"quoted\""\n"LSBundlePath"="/Applications/中文 App.app"\n"CFBundleIdentifier"="example.first"\n"CFBundleIdentifier"="example.second"\n"LSDisplayName"="Ignored"\n"LSBundlePath"="Ignored.bundle"'
+assert_arg 'label=中文 App \ "quoted"'
+assert_arg 'icon.background.image=app.example.first'
+
+run_plugin "Fallback" $'"CFBundleIdentifier"="example.app"\n"LSDisplayName"=""\n"LSDisplayName"="Ignored"\n"LSBundlePath"=""\n"LSBundlePath"="/Applications/Ignored.app"'
+assert_arg 'label=Fallback'
+assert_arg "icon.background.image=$GENERIC_ICON"
+
+run_plugin "Fallback" $'"CFBundleIdentifier"=""\n"CFBundleIdentifier"="example.app"\n"LSDisplayName"="Ignored"\n"LSBundlePath"="/Applications/Ignored.app"'
+assert_arg 'label=Fallback'
+assert_arg "icon.background.image=$GENERIC_ICON"
+
+run_plugin "Fallback" $' "CFBundleIdentifier"="example.app"\n"LSDisplayName"="Ignored"\n"LSBundlePath"="/Applications/Ignored.app"'
+assert_arg 'label=Fallback'
+assert_arg "icon.background.image=$GENERIC_ICON"
+
 run_plugin "" "" "" "1" "1"
 assert_arg "icon.background.image=$GENERIC_ICON"
 assert_arg "label=未知"

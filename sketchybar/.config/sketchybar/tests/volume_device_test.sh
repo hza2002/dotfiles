@@ -61,6 +61,8 @@ bluetooth_audio="$(audio_profile Pods coreaudio_device_type_bluetooth)"
 airpods_bluetooth="$(bluetooth_profile 'AA:BB:CC:DD:EE:FF' Headphones 0x004C true)"
 airpods_profile="$(combined_profile "$bluetooth_audio" "$airpods_bluetooth")"
 assert_class airpods 'AA-BB-CC-DD-EE-FF:output' Pods "$airpods_profile"
+assert_class airpods 'aA-bB-Cc-dD-eE-Ff:output' Pods "$airpods_profile"
+assert_class airpods 'aa:bb:cc:dd:ee:ff:output' Pods "$airpods_profile"
 
 headphones_bluetooth="$(bluetooth_profile '11:22:33:44:55:66' Headphones 0x1234 false)"
 headphones_profile="$(combined_profile "$bluetooth_audio" "$headphones_bluetooth")"
@@ -113,6 +115,33 @@ current_class() {
     SWITCH_UID="$uid" SWITCH_SECOND_UID="$second_uid" SWITCH_NAME="$name" \
     PROFILER_JSON="$profile" "$PLUGIN"
 }
+
+for builtin_uid in BuiltInSpeakerDevice BuiltInHeadphoneOutputDevice; do
+  builtin_home="$TEST_ROOT/$builtin_uid"
+  case "$builtin_uid" in
+    BuiltInSpeakerDevice) expected=speaker ;;
+    BuiltInHeadphoneOutputDevice) expected=headphones ;;
+  esac
+  [ "$(current_class "$builtin_home" "$builtin_uid" BuiltIn '{}')" = "$expected" ] \
+    || fail "built-in device classification failed"
+  [ ! -s "$profiler_calls" ] || fail "built-in device unexpectedly ran profiler"
+  [ "$(cat "$switch_calls")" = 2 ] || fail "built-in device skipped identity recheck"
+  [ -s "$builtin_home/Library/Caches/sketchybar/volume-device" ] \
+    || fail "built-in device was not cached"
+  [ "$(current_class "$builtin_home" "$builtin_uid" BuiltIn '{}')" = "$expected" ] \
+    || fail "built-in cache hit failed"
+  [ "$(cat "$switch_calls")" = 1 ] || fail "built-in cache was not reused"
+  [ ! -s "$profiler_calls" ] || fail "built-in cache hit ran profiler"
+done
+printf 'ok - built-in devices skip profiler and retain cache and identity checks\n'
+
+if current_class "$TEST_ROOT/builtin-race" BuiltInSpeakerDevice BuiltIn '{}' usb-uid >/dev/null; then
+  fail "built-in device change returned stale data"
+fi
+[ ! -s "$profiler_calls" ] || fail "built-in device change ran profiler"
+[ ! -e "$TEST_ROOT/builtin-race/Library/Caches/sketchybar/volume-device" ] \
+  || fail "built-in device change cached stale data"
+printf 'ok - built-in device changes discard stale classification\n'
 
 cache_home="$TEST_ROOT/cache-home"
 cache_dir="$cache_home/Library/Caches/sketchybar"

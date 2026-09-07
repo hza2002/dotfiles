@@ -17,31 +17,24 @@ volume_icon() {
 }
 
 bluetooth_device_class() {
-  local uid="$1" profile_json="$2" address device
+  local uid="$1" profile_json="$2" address class
 
   address="${uid%:output}"
   address="${address//-/:}"
-  address="$(printf '%s' "$address" | tr '[:upper:]' '[:lower:]')"
-  device="$(printf '%s' "$profile_json" | jq -c --arg address "$address" '
-    [.SPBluetoothDataType[]?.device_connected[]? | to_entries[] | .value
-      | select((.device_address // "" | ascii_downcase) == $address)][0] // {}
-  ' 2>/dev/null)"
-
-  if printf '%s' "$device" | jq -e '
-    .device_vendorID == "0x004C" and .device_minorType == "Headphones" and
-    (has("device_batteryLevelCase") or has("device_batteryLevelLeft") or
-     has("device_batteryLevelRight") or has("device_serialNumberLeft") or
-     has("device_serialNumberRight"))
-  ' >/dev/null 2>&1; then
-    printf 'airpods\n'
-    return
+  if ! class="$(jq -r --arg address "$address" '
+    ([.SPBluetoothDataType[]?.device_connected[]? | to_entries[] | .value
+      | select((.device_address // "" | ascii_downcase) == ($address | ascii_downcase))][0] // {})
+    | if .device_vendorID == "0x004C" and .device_minorType == "Headphones" and
+        (has("device_batteryLevelCase") or has("device_batteryLevelLeft") or
+         has("device_batteryLevelRight") or has("device_serialNumberLeft") or
+         has("device_serialNumberRight")) then "airpods"
+      elif .device_minorType == "Headphones" then "bluetooth_headphones"
+      elif .device_minorType == "Speaker" then "bluetooth_speaker"
+      else "unknown" end
+  ' <<< "$profile_json" 2>/dev/null)"; then
+    class=unknown
   fi
-
-  case "$(printf '%s' "$device" | jq -r '.device_minorType // empty' 2>/dev/null)" in
-    Headphones) printf 'bluetooth_headphones\n' ;;
-    Speaker) printf 'bluetooth_speaker\n' ;;
-    *) printf 'unknown\n' ;;
-  esac
+  printf '%s\n' "${class:-unknown}"
 }
 
 device_class() {
@@ -106,7 +99,6 @@ current_device_class() {
 
   current="$(current_output)" || return 1
   uid="$(printf '%s' "$current" | jq -r '.uid // empty' 2>/dev/null)"
-  name="$(printf '%s' "$current" | jq -r '.name // empty' 2>/dev/null)"
   [ -n "$uid" ] || return 1
 
   now="$(date +%s)"
@@ -124,7 +116,10 @@ current_device_class() {
     return
   fi
 
-  if profile_json="$("$SYSTEM_PROFILER_BIN" -timeout 2 SPAudioDataType SPBluetoothDataType -json 2>/dev/null)"; then
+  name="$(printf '%s' "$current" | jq -r '.name // empty' 2>/dev/null)"
+  if [ "$uid" = BuiltInSpeakerDevice ] || [ "$uid" = BuiltInHeadphoneOutputDevice ]; then
+    class="$(device_class "$uid" "$name" '{}')"
+  elif profile_json="$("$SYSTEM_PROFILER_BIN" -timeout 2 SPAudioDataType SPBluetoothDataType -json 2>/dev/null)"; then
     class="$(device_class "$uid" "$name" "$profile_json")"
     valid_device_class "$class" || class=unknown
   else

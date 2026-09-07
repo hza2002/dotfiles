@@ -11,7 +11,7 @@ hide_all_popups() {
   sketchybar "${args[@]}"
 }
 
-refresh_cpu_processes() {
+open_cpu_popup() {
   local ranks=(cpu.process.1 cpu.process.2 cpu.process.3)
   local args=()
   local process
@@ -28,7 +28,7 @@ refresh_cpu_processes() {
     index=$((index + 1))
   done
 
-  sketchybar "${args[@]}"
+  sketchybar "${args[@]}" --set "$NAME" popup.drawing=on
 }
 
 toggle_popup() {
@@ -43,7 +43,8 @@ toggle_popup() {
     second_fan=$(sketchybar --query fan.2 | jq -r '.geometry.drawing')
     [ "$second_fan" = "on" ] || return
   elif [ "$NAME" = "cpu" ]; then
-    refresh_cpu_processes
+    open_cpu_popup
+    return
   fi
 
   sketchybar --set "$NAME" popup.drawing=on

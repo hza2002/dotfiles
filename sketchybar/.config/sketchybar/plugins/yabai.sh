@@ -35,7 +35,7 @@ window_state() {
   elif [[ $STACK_INDEX -gt 0 ]]; then
     LAST_STACK_INDEX="$(yabai -m query --windows --window stack.last 2>/dev/null | jq -r '.["stack-index"] // 0' 2>/dev/null)"
     ICON+=$YABAI_STACK
-    LABEL="$(printf "[%s/%s]" "$STACK_INDEX" "$LAST_STACK_INDEX")"
+    LABEL="[$STACK_INDEX/$LAST_STACK_INDEX]"
     COLOR=$RED
   fi
 

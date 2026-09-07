@@ -96,7 +96,8 @@ update() {
   IP="$(get_wifi_value "IP address" <<<"$WIFI_INFO")"
   [ "$IP" = "none" ] && IP=""
   LABEL="$INFO $IP"
-  ICON="$([ -n "$IP" ] && echo "$WIFI_CONNECTED" || echo "$WIFI_DISCONNECTED")"
+  ICON="$WIFI_DISCONNECTED"
+  [ -z "$IP" ] || ICON="$WIFI_CONNECTED"
   COLOR="$BLUE_SOFT"
 
   sketchybar --set "$NAME" icon="$ICON" icon.color="$COLOR" label="$LABEL"
@@ -107,7 +108,7 @@ update() {
   fi
 }
 
-set_details() {
+open_popup() {
   WIFI_INFO="$(get_wifi_info)"
   IP="$(get_wifi_value "IP address" <<<"$WIFI_INFO")"
   [ "$IP" = "none" ] && IP=""
@@ -115,7 +116,8 @@ set_details() {
     sketchybar --set wifi.ip         drawing=on  label="内网: 未连接" \
                --set wifi.gateway    drawing=off \
                --set wifi.public_ip  drawing=off \
-               --set wifi.country    drawing=off
+               --set wifi.country    drawing=off \
+               --set "$NAME" popup.drawing=on
     return
   fi
 
@@ -140,21 +142,18 @@ set_details() {
   country_label="$country"
   [ -n "$country_code" ] && country_label="$country ($country_code)"
 
-  # All four rows go up in a single sketchybar call — the popup opens (in
-  # click(), after this returns) with the final layout, no growth, no swap.
+  # Update all four rows before opening the popup in the same command.
   sketchybar --set wifi.ip         drawing=on label="内网: $IP" \
              --set wifi.gateway    drawing=on label="网关: $ROUTER" \
              --set wifi.public_ip  drawing=on label="公网: $public_ip" \
-             --set wifi.country    drawing=on label="地区: $country_label"
+             --set wifi.country    drawing=on label="地区: $country_label" \
+             --set "$NAME" popup.drawing=on
 }
 
 click() {
   DRAWING="$(sketchybar --query "$NAME" | jq -r '.popup.drawing')"
   if [ "$DRAWING" = "off" ]; then
-    # Populate the rows *before* showing the popup, so the first visible
-    # frame already has the final 4-row layout.
-    set_details
-    sketchybar --set "$NAME" popup.drawing=on
+    open_popup
   else
     sketchybar --set "$NAME" popup.drawing=off
   fi

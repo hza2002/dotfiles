@@ -3,10 +3,21 @@
 # Battery popup click handler. The mach helper renders the bar item, while this
 # script runs only from click_script, so routine updates never fork a shell.
 
-set_popup_info() {
+open_popup() {
   BATTERY_INFO="$(pmset -g batt)"
-  STATE=$(echo "$BATTERY_INFO" | awk -F'; ' '/InternalBattery/ {print $2}')
-  ESTIMATE=$(echo "$BATTERY_INFO" | awk -F'; ' '/InternalBattery/ {print $3}' | awk '{print $1}')
+  local parsed
+  parsed=$(awk -F'; ' '/InternalBattery/ {
+    states = states $2 "\n"
+    split($3, estimate, " ")
+    estimates = estimates estimate[1] "\n"
+  }
+  END {
+    sub(/\n$/, "", states)
+    sub(/\n$/, "", estimates)
+    printf "%s|%s", states, estimates
+  }' <<< "$BATTERY_INFO")
+  STATE="${parsed%|*}"
+  ESTIMATE="${parsed##*|}"
   HAS_ESTIMATE=false
 
   case "$ESTIMATE" in
@@ -16,7 +27,7 @@ set_popup_info() {
   STATUS="未知"
   ESTIMATE_LABEL="暂无估算"
 
-  if echo "$BATTERY_INFO" | grep -q 'AC Power'; then
+  if [[ "$BATTERY_INFO" == *'AC Power'* ]]; then
     case "$STATE" in
       *charged*) STATUS="已充满" ;;
       *"finishing charge"*) STATUS="充电中" ;;
@@ -37,14 +48,14 @@ set_popup_info() {
     fi
   fi
 
-  sketchybar --set battery.status label="$STATUS: $ESTIMATE_LABEL"
+  sketchybar --set battery.status label="$STATUS: $ESTIMATE_LABEL" \
+             --set battery popup.drawing=on
 }
 
 toggle_popup() {
   DRAWING=$(sketchybar --query battery | jq -r '.popup.drawing')
   if [ "$DRAWING" = "off" ]; then
-    set_popup_info
-    sketchybar --set battery popup.drawing=on
+    open_popup
   else
     sketchybar --set battery popup.drawing=off
   fi

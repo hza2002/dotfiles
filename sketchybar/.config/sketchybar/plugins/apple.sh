@@ -19,9 +19,24 @@ about() {
   [ -z "$FF" ] && exit 0
 
   # Exact match: "Key: value"
-  pick() { printf '%s' "$FF" | sed -n "s/^$1: //p" | head -1; }
+  pick() {
+    local line
+    while IFS= read -r line; do
+      case "$line" in
+        "$1: "*) printf '%s\n' "${line#"$1: "}"; return ;;
+      esac
+    done <<< "$FF"
+  }
   # Prefix match: "Key (anything): value"
-  pick_prefix() { printf '%s' "$FF" | sed -n "s/^$1[^:]*: //p" | head -1; }
+  pick_prefix() {
+    local line pattern="^$1[^:]*: (.*)$"
+    while IFS= read -r line; do
+      if [[ "$line" =~ $pattern ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return
+      fi
+    done <<< "$FF"
+  }
 
   HOST=$(pick "Host")
   OS=$(pick "OS")
@@ -34,7 +49,7 @@ about() {
   GPU=$(pick "GPU")
   MEMORY=$(pick "Memory")
   SWAP=$(pick "Swap")
-  DISK=$(printf '%s' "$FF" | sed -n 's|^Disk (/): ||p' | head -1)
+  DISK=$(pick "Disk (/)")
   BATTERY=$(pick_prefix "Battery")
   POWER=$(pick "Power Adapter")
   LOCAL_IP=$(pick_prefix "Local IP")
