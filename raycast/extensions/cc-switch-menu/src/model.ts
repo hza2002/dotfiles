@@ -23,6 +23,12 @@ export function groupTitle(title: string): string {
   return title.split(" · ")[0];
 }
 
+export function isLightweightMode(title: string): boolean {
+  return ["Lightweight Mode", "軽量モード", "輕量模式", "轻量模式"].includes(
+    title,
+  );
+}
+
 export function entriesFromMenu(nodes: MenuNode[]): Entry[] {
   const entries: Entry[] = [];
   function walk(items: MenuNode[], route: string[], enabled: boolean) {
@@ -46,12 +52,7 @@ export function entriesFromMenu(nodes: MenuNode[]): Entry[] {
           ambiguous: false,
           kind: "selection",
         });
-      } else if (
-        !item.enabled ||
-        ["Lightweight Mode", "軽量モード", "輕量模式", "轻量模式"].includes(
-          item.title,
-        )
-      ) {
+      } else if (!item.enabled || isLightweightMode(item.title)) {
         entries.push({
           key: JSON.stringify([item.title]),
           group: groupTitle(item.title),

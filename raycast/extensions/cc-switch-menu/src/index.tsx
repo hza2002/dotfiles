@@ -13,8 +13,15 @@ import {
 import { useCachedState } from "@raycast/utils";
 import { useEffect, useRef, useState } from "react";
 import { readMenu } from "./backend";
-import { entriesFromMenu, parseSnapshot } from "./model";
+import { entriesFromMenu, isLightweightMode, parseSnapshot } from "./model";
 import type { Entry, Snapshot } from "./model";
+import {
+  officialProviders,
+  readUsage,
+  formatLocalTime,
+  usageMarkdown,
+} from "./usage";
+import type { Usage } from "./usage";
 
 const CACHE_KEY = "menu-snapshot-v1";
 
@@ -25,9 +32,80 @@ export default function Command() {
   const [pending, setPending] = useState<string>();
   const [failure, setFailure] = useState<string>();
   const lock = useRef(false);
+  const [usageByName, setUsageByName] = useState<
+    Record<string, { data?: Usage; error?: string }>
+  >({});
+  const [usageBusy, setUsageBusy] = useState(false);
+  const [now, setNow] = useState(Date.now());
+  const usageRequest = useRef(0);
   const entries = snapshot ? entriesFromMenu(snapshot.nodes) : [];
-  const groups = [...new Set(entries.map((entry) => entry.group))];
+  const globalGroups = entries
+    .filter(
+      (entry) => entry.kind === "status" && isLightweightMode(entry.title),
+    )
+    .map((entry) => entry.group);
+  const groups = [...new Set(entries.map((entry) => entry.group))].filter(
+    (group) => !globalGroups.includes(group),
+  );
   const activeFilter = groups.includes(filter) ? filter : "all";
+  async function updateUsage() {
+    const request = ++usageRequest.current;
+    setUsageBusy(true);
+    setUsageByName({});
+    try {
+      const providers = (await officialProviders()).filter((provider) =>
+        entries.some(
+          (entry) =>
+            entry.group === "Codex" &&
+            entry.route.length === 2 &&
+            entry.title === provider.name &&
+            !entry.ambiguous,
+        ),
+      );
+      const next: typeof usageByName = Object.fromEntries(
+        providers.map((provider) => [provider.name, {}]),
+      );
+      if (request !== usageRequest.current) return;
+      setUsageByName({ ...next });
+      for (const provider of providers) {
+        try {
+          next[provider.name] = { data: await readUsage(provider) };
+        } catch (error) {
+          next[provider.name] = {
+            error: error instanceof Error ? error.message : "额度查询失败",
+          };
+        }
+        if (request !== usageRequest.current) return;
+        setUsageByName({ ...next });
+      }
+    } catch {
+      if (request === usageRequest.current)
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "无法识别官方 provider",
+          message: "请确认 CC Switch 数据库可读取，再刷新额度。",
+        });
+    } finally {
+      if (request === usageRequest.current) setUsageBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (snapshot && entries.some((entry) => entry.group === "Codex")) {
+      void updateUsage();
+    } else {
+      setUsageByName({});
+      setUsageBusy(false);
+    }
+    return () => {
+      usageRequest.current++;
+    };
+  }, [snapshot]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
   async function update(entry?: Entry) {
     if (lock.current) return;
     lock.current = true;
@@ -78,6 +156,14 @@ export default function Command() {
     return (
       <ActionPanel.Section>
         <Action
+          title="刷新 OpenAI 额度"
+          icon={Icon.ArrowClockwise}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
+          onAction={() => {
+            if (!usageBusy) void updateUsage();
+          }}
+        />
+        <Action
           title="刷新菜单"
           icon={Icon.ArrowClockwise}
           shortcut={{ modifiers: ["cmd"], key: "r" }}
@@ -95,7 +181,7 @@ export default function Command() {
 
   return (
     <List
-      isLoading={busy}
+      isLoading={busy || usageBusy}
       isShowingDetail={entries.length > 0}
       navigationTitle="CC Switch"
       searchBarPlaceholder="搜索菜单选项"
@@ -118,52 +204,67 @@ export default function Command() {
         description={failure}
         actions={<ActionPanel>{commonActions()}</ActionPanel>}
       />
-      {groups
-        .filter((group) => activeFilter === "all" || activeFilter === group)
-        .map((group) => (
-          <List.Section
-            key={group}
-            title={group}
-            subtitle={`${entries.filter((entry) => entry.group === group).length}`}
-          >
-            {entries
-              .filter((entry) => entry.group === group)
-              .map((entry) => {
-                const blocked = !entry.enabled || entry.ambiguous;
-                const status =
-                  pending === entry.key
-                    ? "切换中"
-                    : entry.kind === "status" && entry.enabled
-                      ? entry.checked
-                        ? "已开启"
-                        : "已关闭"
-                      : entry.ambiguous
-                        ? "同名冲突"
-                        : !entry.enabled
-                          ? "不可用"
-                          : entry.checked
-                            ? "使用中"
-                            : "";
-                return (
-                  <List.Item
-                    key={entry.key}
-                    id={entry.key}
-                    title={entry.title}
-                    keywords={[entry.group]}
-                    icon={{
-                      source: entry.checked
-                        ? Icon.CheckCircle
-                        : blocked
-                          ? Icon.MinusCircle
-                          : Icon.Circle,
-                      tintColor: entry.checked
-                        ? Color.Green
-                        : Color.SecondaryText,
-                    }}
-                    accessories={status ? [{ text: status }] : []}
-                    detail={
-                      <List.Item.Detail
-                        metadata={
+      {[
+        ...groups.filter(
+          (group) => activeFilter === "all" || activeFilter === group,
+        ),
+        ...new Set(globalGroups),
+      ].map((group) => (
+        <List.Section
+          key={group}
+          title={globalGroups.includes(group) ? "全局" : group}
+          subtitle={`${entries.filter((entry) => entry.group === group).length}`}
+        >
+          {entries
+            .filter((entry) => entry.group === group)
+            .map((entry) => {
+              const quota =
+                entry.group === "Codex" &&
+                entry.route.length === 2 &&
+                !entry.ambiguous
+                  ? usageByName[entry.title]
+                  : undefined;
+              const blocked = !entry.enabled || entry.ambiguous;
+              const status =
+                pending === entry.key
+                  ? "切换中"
+                  : entry.kind === "status" && entry.enabled
+                    ? entry.checked
+                      ? "已开启"
+                      : "已关闭"
+                    : entry.ambiguous
+                      ? "同名冲突"
+                      : !entry.enabled
+                        ? "不可用"
+                        : entry.checked
+                          ? "使用中"
+                          : "";
+              return (
+                <List.Item
+                  key={entry.key}
+                  id={entry.key}
+                  title={entry.title}
+                  keywords={[entry.group]}
+                  icon={{
+                    source: entry.checked
+                      ? Icon.CheckCircle
+                      : blocked
+                        ? Icon.MinusCircle
+                        : Icon.Circle,
+                    tintColor: entry.checked
+                      ? Color.Green
+                      : Color.SecondaryText,
+                  }}
+                  accessories={status ? [{ text: status }] : []}
+                  detail={
+                    <List.Item.Detail
+                      markdown={
+                        quota
+                          ? usageMarkdown(quota.data, quota.error, now)
+                          : undefined
+                      }
+                      metadata={
+                        quota ? undefined : (
                           <List.Item.Detail.Metadata>
                             <List.Item.Detail.Metadata.Label
                               title="菜单分组"
@@ -192,9 +293,7 @@ export default function Command() {
                               title="菜单快照"
                               text={
                                 snapshot
-                                  ? new Date(
-                                      snapshot.capturedAt,
-                                    ).toLocaleString()
+                                  ? formatLocalTime(snapshot.capturedAt)
                                   : ""
                               }
                             />
@@ -205,30 +304,31 @@ export default function Command() {
                               />
                             )}
                           </List.Item.Detail.Metadata>
-                        }
-                      />
-                    }
-                    actions={
-                      <ActionPanel>
-                        {!blocked && entry.kind === "selection" && (
-                          <Action
-                            title={entry.checked ? "刷新当前选择" : "选择此项"}
-                            icon={
-                              entry.checked ? Icon.CheckCircle : Icon.ArrowRight
-                            }
-                            onAction={() =>
-                              update(entry.checked ? undefined : entry)
-                            }
-                          />
-                        )}
-                        {commonActions()}
-                      </ActionPanel>
-                    }
-                  />
-                );
-              })}
-          </List.Section>
-        ))}
+                        )
+                      }
+                    />
+                  }
+                  actions={
+                    <ActionPanel>
+                      {!blocked && entry.kind === "selection" && (
+                        <Action
+                          title={entry.checked ? "刷新当前选择" : "选择此项"}
+                          icon={
+                            entry.checked ? Icon.CheckCircle : Icon.ArrowRight
+                          }
+                          onAction={() =>
+                            update(entry.checked ? undefined : entry)
+                          }
+                        />
+                      )}
+                      {commonActions()}
+                    </ActionPanel>
+                  }
+                />
+              );
+            })}
+        </List.Section>
+      ))}
     </List>
   );
 }

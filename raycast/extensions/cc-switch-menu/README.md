@@ -20,13 +20,40 @@ Transient menu rebuilds are retried; an unconfirmed selection is reported as suc
 and does not replace the cache. This verifies menu state, not provider connectivity.
 Selecting a cached active target refreshes the menu without sending a selection.
 
-All displayed information comes from the native menu. Nested project selections
+Provider selections come from the native menu. Nested project selections
 retain their menu groups. Lightweight mode is shown as a read-only global state.
-No provider database, configuration, or API is accessed.
+It stays in the bottom Global section across application filters and is not an
+application dropdown option. Native text search still filters matching rows.
+
+Official OpenAI providers in the Codex group also show the signed-in GPT account's
+remaining five-hour and weekly quotas, local reset times, countdowns, and fetch
+time. Quotas refresh when opening the command, refreshing the menu, or switching
+providers. Command-Shift-R refreshes quotas independently of the native menu.
+Countdowns update every 30 seconds; reaching a reset time requires a fresh query.
+Quota results remain in memory and are not persisted.
+
+The quota detail separates the five-hour and weekly windows. Dates use the current
+system timezone and `YYYY-MM-DD HH:mm` (24-hour time); the timezone is displayed
+with the account and update time below the quotas.
+
+This optional display reads the default `~/.cc-switch/cc-switch.db` in read-only
+mode to identify uniquely named Codex providers classified as `official` and
+their saved ChatGPT account IDs. It verifies the account against
+`~/.codex/auth.json`, then uses the Homebrew Codex CLI at
+`/opt/homebrew/bin/codex` and its official `account/rateLimits/read` RPC. The
+short-lived process overrides the provider and ChatGPT service URL for its own
+query; it does not switch providers or rewrite tracked configuration. Codex owns
+authentication and any normal credential refresh. No conversation is started.
+
+An official provider can be inactive, but its saved account must match the local
+GPT login. API-key login, unmatched accounts, absent windows, and query failures
+are shown explicitly. Third-party providers do not receive a quota display.
+Menu-based switching remains available when quota discovery or querying fails.
 
 Requires macOS, Raycast, a running CC Switch with a menu bar icon, and Raycast
-permission to use Accessibility and control System Events. Uses the macOS-provided
-`osascript`; no CLI fork or background server is required.
+permission to use Accessibility and control System Events. Menu operations use
+the macOS-provided `osascript`. Quota queries additionally require the Homebrew
+Codex CLI; no persistent background server is required.
 
 ## Development
 
