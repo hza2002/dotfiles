@@ -5,9 +5,59 @@ if [ -z "${CONFIG_DIR:-}" ] || [ "${BAR_NAME:-}" != sketchybar ]; then
   exit 1
 fi
 
-source "$CONFIG_DIR/colors.sh"  # Loads all defined colors
-source "$CONFIG_DIR/icons.sh"   # Loads all defined icons
-source "$CONFIG_DIR/spacing.sh" # Loads spacing variables
+umask 077
+LOG_DIR="$HOME/Library/Logs/sketchybar"
+CONFIG_LOG="$LOG_DIR/config.log"
+CONFIG_LOG_READY=false
+CONFIG_ERROR_COUNT=0
+
+if [ ! -L "$LOG_DIR" ] \
+    && mkdir -p "$LOG_DIR" \
+    && [ -d "$LOG_DIR" ] \
+    && [ ! -L "$LOG_DIR" ] \
+    && chmod 700 "$LOG_DIR" \
+    && [ ! -L "$CONFIG_LOG" ] \
+    && { [ ! -e "$CONFIG_LOG" ] || [ -f "$CONFIG_LOG" ]; } \
+    && : >"$CONFIG_LOG" \
+    && chmod 600 "$CONFIG_LOG"; then
+  CONFIG_LOG_READY=true
+  exec 2> >(/usr/bin/tee -a "$CONFIG_LOG" >&2)
+else
+  CONFIG_ERROR_COUNT=1
+  printf 'sketchybar: unable to prepare config log: %s\n' "$CONFIG_LOG" >&2
+fi
+
+config_error() {
+  local message=$1
+  CONFIG_ERROR_COUNT=$((CONFIG_ERROR_COUNT + 1))
+  printf 'ts=%s level=error component=config %s\n' \
+    "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$message" >&2
+}
+
+# Item files call SketchyBar directly. Record failures but return success so one
+# broken item cannot prevent the rest of the bar from loading.
+sketchybar() {
+  local rc command_line
+  command sketchybar "$@"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    printf -v command_line '%q ' "$@"
+    config_error "event=command_failed rc=$rc command=${command_line% }"
+  fi
+  return 0
+}
+
+load_config() {
+  local file=$1 rc
+  source "$file"
+  rc=$?
+  [ "$rc" -eq 0 ] || config_error "event=source_failed rc=$rc file=$file"
+  return 0
+}
+
+load_config "$CONFIG_DIR/colors.sh"
+load_config "$CONFIG_DIR/icons.sh"
+load_config "$CONFIG_DIR/spacing.sh"
 
 ITEM_DIR="$CONFIG_DIR/items" # Directory where the items are configured
 PLUGIN_DIR="$CONFIG_DIR/plugins" # Directory where all the plugin scripts are stored
@@ -21,11 +71,14 @@ export FONT_MAIN="JetBrains Maple Mono"
 export FONT_CN="XQzhaopaiti0517"
 
 export HELPER=git.felix.helper
-if ! "$CONFIG_DIR/helper/start.sh"; then
-  printf 'sketchybar: helper unavailable; fix the preceding error and restart SketchyBar\n' >&2
-  exit 1
+"$CONFIG_DIR/helper/start.sh"
+helper_rc=$?
+if [ "$helper_rc" -eq 0 ]; then
+  export HELPER_AVAILABLE=true
+else
+  export HELPER_AVAILABLE=false
+  config_error "event=helper_unavailable rc=$helper_rc"
 fi
-export HELPER_AVAILABLE=true
 
 # Unload the macOS on screen indicator overlay for volume change
 launchctl bootout gui/$(id -u) /System/Library/LaunchAgents/com.apple.OSDUIHelper.plist > /dev/null 2>&1 || true
@@ -76,20 +129,20 @@ defaults=(
 sketchybar --default "${defaults[@]}"
 
 # Left
-source "$ITEM_DIR/apple.sh"
-source "$ITEM_DIR/caffeinate.sh"
-source "$ITEM_DIR/spaces.sh"
-source "$ITEM_DIR/yabai.sh"
-source "$ITEM_DIR/front_app.sh"
+load_config "$ITEM_DIR/apple.sh"
+load_config "$ITEM_DIR/caffeinate.sh"
+load_config "$ITEM_DIR/spaces.sh"
+load_config "$ITEM_DIR/yabai.sh"
+load_config "$ITEM_DIR/front_app.sh"
 
 # Right
-source "$ITEM_DIR/calendar.sh"
-source "$ITEM_DIR/wifi.sh"
-source "$ITEM_DIR/network.sh"
-source "$ITEM_DIR/battery.sh"
-source "$ITEM_DIR/volume.sh"
+load_config "$ITEM_DIR/calendar.sh"
+load_config "$ITEM_DIR/wifi.sh"
+load_config "$ITEM_DIR/network.sh"
+load_config "$ITEM_DIR/battery.sh"
+load_config "$ITEM_DIR/volume.sh"
 
-source "$ITEM_DIR/system.sh"
+load_config "$ITEM_DIR/system.sh"
 
 # Config and helper updates are applied explicitly. This avoids rebuilding or
 # restarting the low-frequency helper as a side effect of editing config files.
@@ -98,4 +151,19 @@ sketchybar --hotload off
 # Forcing all item scripts to run (never do this outside of sketchybarrc)
 sketchybar --update
 
-echo "sketchybar configuation loaded.."
+if [ "$CONFIG_ERROR_COUNT" -gt 0 ]; then
+  notice_log="$CONFIG_LOG"
+  $CONFIG_LOG_READY \
+    || notice_log="/opt/homebrew/var/log/sketchybar/sketchybar.err.log"
+  printf 'sketchybar: configuration loaded with %d error(s); see %s\n' \
+    "$CONFIG_ERROR_COUNT" "$notice_log" >&2
+  command osascript - "$CONFIG_ERROR_COUNT" "$notice_log" >/dev/null 2>&1 <<'OSA' || true
+on run argv
+  set errorCount to item 1 of argv
+  set logPath to item 2 of argv
+  display notification (errorCount & " 个组件加载异常；日志：" & logPath) with title "SketchyBar 配置加载异常"
+end run
+OSA
+else
+  printf 'sketchybar: configuration loaded\n'
+fi

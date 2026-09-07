@@ -10,7 +10,7 @@ PROC_DIR="$TEST_ROOT/processes"
 LOG_DIR="$TEST_ROOT/logs"
 NOW_FILE="$TEST_ROOT/now"
 OBS_MODE="$TEST_ROOT/observe-mode"
-DIAG_LOG="$STATE_DIR/caffeinate.log"
+DIAG_LOG="$LOG_DIR/caffeinate.log"
 TEST_COUNT=0
 REAL_PID=""
 
@@ -152,16 +152,16 @@ grep -q 'update_freq=30' "$LOG_DIR/sketchybar" \
   || fail 'idle render disabled the crash-recovery heartbeat'
 pass 'idle UI is white and retains the crash-recovery heartbeat'
 
-rm -f "$STATE_DIR/caffeinate.log.lock"
-mkdir "$STATE_DIR/caffeinate.log.lock"
+rm -f "$LOG_DIR/caffeinate.log.lock"
+mkdir "$LOG_DIR/caffeinate.log.lock"
 plugin render
-rmdir "$STATE_DIR/caffeinate.log.lock"
-ln -s "$TEST_ROOT/missing-log-lock-target" "$STATE_DIR/caffeinate.log.lock"
+rmdir "$LOG_DIR/caffeinate.log.lock"
+ln -s "$TEST_ROOT/missing-log-lock-target" "$LOG_DIR/caffeinate.log.lock"
 plugin display-toggle
 assert_eq "$(state_value DISPLAY)" 1 'unsafe diagnostic lock blocked a mutation'
 plugin stop
 [ ! -e "$TEST_ROOT/missing-log-lock-target" ] || fail 'diagnostic lock followed a symlink'
-rm -f "$STATE_DIR/caffeinate.log.lock"
+rm -f "$LOG_DIR/caffeinate.log.lock"
 assert_eq "$(process_count)" 0 'disabled diagnostics leaked an owner'
 pass 'diagnostic failures never block state handling'
 

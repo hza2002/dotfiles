@@ -8,7 +8,8 @@ BOOTSTRAP=git.felix.helper
 SERVICE=homebrew.mxcl.sketchybar
 USER_UID="$(id -u)"
 CACHE_DIR="$HOME/Library/Caches/sketchybar"
-LOG="$CACHE_DIR/helper.log"
+LOG_DIR="$HOME/Library/Logs/sketchybar"
+LOG="$LOG_DIR/helper.log"
 
 if [ "$#" -ne 0 ]; then
   printf 'usage: %s\n' "$0" >&2
@@ -29,6 +30,13 @@ umask 077
 [ ! -L "$CACHE_DIR" ] || exit 1
 mkdir -p "$CACHE_DIR" || exit 1
 chmod 700 "$CACHE_DIR" || exit 1
+[ ! -L "$LOG_DIR" ] || exit 1
+mkdir -p "$LOG_DIR" || exit 1
+[ -d "$LOG_DIR" ] && [ ! -L "$LOG_DIR" ] || exit 1
+chmod 700 "$LOG_DIR" || exit 1
+[ ! -L "$LOG" ] && { [ ! -e "$LOG" ] || [ -f "$LOG" ]; } || exit 1
+: >>"$LOG" || exit 1
+chmod 600 "$LOG" || exit 1
 
 exec 8>"$CACHE_DIR/helper-start.lock" || exit 1
 /usr/bin/lockf -s -t 5 8 || exit 1

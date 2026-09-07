@@ -10,4 +10,6 @@ clang -std=c99 -Wall -Wextra -Werror \
   "$TEST_DIR/temperature_test.c" \
   -o "$TEST_ROOT/temperature_test"
 
-"$TEST_ROOT/temperature_test"
+mkdir -p "$TEST_ROOT/home/Library/Caches/sketchybar"
+chmod 700 "$TEST_ROOT/home/Library/Caches/sketchybar"
+"$TEST_ROOT/temperature_test" "$TEST_ROOT/home"

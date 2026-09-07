@@ -26,6 +26,7 @@ FOREVER_LABEL="不下班了"
 
 if [ "$TEST_MODE" -eq 1 ]; then
   DATA_DIR="$CAFFEINATE_TEST_ROOT/state"
+  LOG_DIR="$CAFFEINATE_TEST_ROOT/logs"
   LEGACY_DIR="$CAFFEINATE_TEST_ROOT/legacy"
   CAFFEINATE_BIN="${CAFFEINATE_TEST_CAFFEINATE:-/usr/bin/caffeinate}"
   SKETCHYBAR_BIN="${CAFFEINATE_TEST_SKETCHYBAR:-/opt/homebrew/bin/sketchybar}"
@@ -35,6 +36,7 @@ if [ "$TEST_MODE" -eq 1 ]; then
   NOW_BIN="${CAFFEINATE_TEST_NOW:-}"
 else
   DATA_DIR="$HOME/Library/Application Support/sketchybar"
+  LOG_DIR="$HOME/Library/Logs/sketchybar"
   LEGACY_DIR="$HOME/Library/Caches/sketchybar"
   CAFFEINATE_BIN="/usr/bin/caffeinate"
   SKETCHYBAR_BIN="/opt/homebrew/bin/sketchybar"
@@ -49,8 +51,8 @@ PENDING_FILE="$DATA_DIR/caffeinate.pending"
 OWNER_LOCK="$DATA_DIR/caffeinate.lock"
 UI_LOCK="$DATA_DIR/caffeinate.ui.lock"
 RECOVERY_LOCK="$DATA_DIR/caffeinate.recovery.lock"
-DIAG_LOCK="$DATA_DIR/caffeinate.log.lock"
-LOG_FILE="$DATA_DIR/caffeinate.log"
+DIAG_LOCK="$LOG_DIR/caffeinate.log.lock"
+LOG_FILE="$LOG_DIR/caffeinate.log"
 NOTICE_DIR="$DATA_DIR/notices"
 LEGACY_STATE_FILE="$LEGACY_DIR/caffeinate.state"
 LEGACY_LOCK="$LEGACY_DIR/caffeinate.lock"
@@ -80,7 +82,14 @@ DIAG_ENABLED=1
 DIAG_READY=0
 DIAG_BASE_EPOCH=""
 DIAG_BASE_SECONDS=""
-prepare_lock "$DIAG_LOCK" || DIAG_ENABLED=0
+if [ -L "$LOG_DIR" ] \
+    || ! mkdir -p "$LOG_DIR" \
+    || [ ! -d "$LOG_DIR" ] \
+    || [ -L "$LOG_DIR" ] \
+    || ! chmod 700 "$LOG_DIR"; then
+  DIAG_ENABLED=0
+fi
+[ "$DIAG_ENABLED" -eq 0 ] || prepare_lock "$DIAG_LOCK" || DIAG_ENABLED=0
 
 now_epoch() {
   if [ "$TEST_MODE" -eq 1 ] && [ -n "$NOW_BIN" ]; then

@@ -28,7 +28,43 @@ static void check_case(const struct temperature_case *test) {
   }
 }
 
-int main(void) {
+static void check_cache(void) {
+  struct temperature saved = {.tp_keys = {"Tp01", "Tp02"}, .tp_count = 2};
+  struct temperature loaded = {0};
+  temperature_save_cache(&saved);
+  temperature_load_cache(&loaded);
+  if (loaded.tp_count != 2 || strcmp(loaded.tp_keys[1], "Tp02") != 0) failures++;
+  saved.tp_count = 1;
+  temperature_save_cache(&saved);
+  loaded.tp_count = 0;
+  temperature_load_cache(&loaded);
+  struct stat st;
+  if (loaded.tp_count != 1 || stat("smc-tp-keys", &st) != 0
+      || st.st_size != 5 || (st.st_mode & 0777) != 0600) failures++;
+
+  rename("smc-tp-keys", "original");
+  symlink("original", "smc-tp-keys");
+  saved.tp_count = 2;
+  temperature_save_cache(&saved);
+  loaded.tp_count = 0;
+  temperature_load_cache(&loaded);
+  if (loaded.tp_count != 0 || stat("original", &st) != 0 || st.st_size != 5) failures++;
+  unlink("smc-tp-keys");
+  mkfifo("smc-tp-keys", 0600);
+  if (temperature_open_cache(false) || temperature_open_cache(true)) failures++;
+  unlink("smc-tp-keys");
+  if (temperature_open_cache(false)) failures++;
+  chmod(".", 0755);
+  if (temperature_open_cache(true)) failures++;
+  chmod(".", 0700);
+}
+
+int main(int argc, char **argv) {
+  if (argc != 2 || setenv("HOME", argv[1], 1) != 0) return 1;
+  char cache_dir[PATH_MAX];
+  snprintf(cache_dir, sizeof(cache_dir), "%s/Library/Caches/sketchybar", argv[1]);
+  if (chdir(cache_dir) != 0) return 1;
+  check_cache();
   const char *colors[] = {
     "GRAY_HARD", "BLUE_HARD", "AQUA_HARD", "GREEN_HARD",
     "YELLOW_HARD", "ORANGE_HARD", "RED_HARD", "PURPLE_HARD",
@@ -66,6 +102,6 @@ int main(void) {
   }
 
   if (failures != 0) return 1;
-  printf("ok - temperature color and icon boundaries\n");
+  printf("ok - temperature boundaries and private bounded cache\n");
   return 0;
 }

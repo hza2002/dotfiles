@@ -4,23 +4,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#define TP_CACHE_PATH "/tmp/sketchybar-smc-tp-keys"
 #define TP_MAX_KEYS   64
 
 // Reports the average of all readable SMC Tp* sensors. Apple does not publish
 // the meaning of every Tp* key, so this is a machine-specific temperature
 // aggregate, not a package temperature or hottest-core reading. Key names are
-// cached in /tmp so we only enumerate the full SMC key set (~2k entries) once
-// per boot.
+// cached in the user's SketchyBar cache directory to avoid enumerating the
+// full SMC key set (~2k entries) on each helper start.
 struct temperature {
   char tp_keys[TP_MAX_KEYS][5];
   int  tp_count;
   char command[320];
 };
 
+static inline FILE *temperature_open_cache(bool writing) {
+  const char *home = getenv("HOME");
+  char path[PATH_MAX];
+  if (!home || home[0] != '/') return NULL;
+  int length = snprintf(path, sizeof(path), "%s/Library/Caches/sketchybar", home);
+  if (length < 0 || (size_t)length >= sizeof(path)) return NULL;
+
+  // start.sh owns directory creation. Cache failures only skip persistence.
+  int dir = open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+  if (dir < 0) return NULL;
+  struct stat st;
+  if (fstat(dir, &st) != 0 || st.st_uid != getuid() || (st.st_mode & 077) != 0) {
+    close(dir);
+    return NULL;
+  }
+  int flags = writing ? O_WRONLY | O_CREAT : O_RDONLY;
+  int fd = openat(dir, "smc-tp-keys", flags | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC, 0600);
+  close(dir);
+  if (fd < 0) return NULL;
+  if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode) || st.st_uid != getuid()
+      || st.st_nlink != 1
+      || (writing && (fchmod(fd, 0600) != 0 || ftruncate(fd, 0) != 0))) {
+    close(fd);
+    return NULL;
+  }
+  FILE *f = fdopen(fd, writing ? "w" : "r");
+  if (!f) close(fd);
+  return f;
+}
+
 static inline void temperature_load_cache(struct temperature *t) {
-  FILE *f = fopen(TP_CACHE_PATH, "r");
+  FILE *f = temperature_open_cache(false);
   if (!f) return;
   char line[32];
   while (t->tp_count < TP_MAX_KEYS && fgets(line, sizeof(line), f)) {
@@ -38,7 +71,7 @@ static inline void temperature_load_cache(struct temperature *t) {
 }
 
 static inline void temperature_save_cache(const struct temperature *t) {
-  FILE *f = fopen(TP_CACHE_PATH, "w");
+  FILE *f = temperature_open_cache(true);
   if (!f) return;
   for (int i = 0; i < t->tp_count; i++) fprintf(f, "%s\n", t->tp_keys[i]);
   fclose(f);
