@@ -3,17 +3,81 @@
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+usage() {
+  printf '%s\n' \
+    'Usage: ./check [component [test]]' \
+    '' \
+    'No arguments: run all checks.' \
+    '  repo                     Cross-package Stow, syntax, and agent layout' \
+    '  sketchybar [test]        All SketchyBar tests, or one test file stem' \
+    '                           volume runs volume_device + plugin_boundaries' \
+    '  tmux [startup|copy-mode] All tmux checks, or one runtime check' \
+    '  zsh                      Zsh syntax and startup contract' \
+    '  ghostty                  Ghostty configuration' \
+    '  automation [chrome-icon] Automation installer and plist checks' \
+    '  raycast [extension]      All extensions and display-control, or one' \
+    '                           display-control selects the display helper' \
+    '' \
+    'Component checks include scoped syntax, Stow, and whitespace checks.' \
+    'Use ./check sketchybar front_app, for example, for front_app_test.sh.'
+}
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+esac
+if [[ $# -gt 2 ]]; then
+  usage >&2
+  exit 64
+fi
+COMPONENT=${1:-all}
+SELECTOR=${2:-}
+SCOPE=.
+
+case "$COMPONENT:$SELECTOR" in
+  all:|repo:) ;;
+  sketchybar:*)
+    SCOPE=sketchybar
+    if [[ -n "$SELECTOR" && "$SELECTOR" != volume ]]; then
+      if [[ ! "$SELECTOR" =~ ^[a-z][a-z0-9_]*$ ]] \
+        || [[ ! -f "$REPO_ROOT/sketchybar/.config/sketchybar/tests/${SELECTOR}_test.sh" ]]; then
+        printf 'Unknown SketchyBar test: %s\n' "$SELECTOR" >&2
+        exit 64
+      fi
+    fi
+    ;;
+  tmux:|tmux:startup|tmux:copy-mode) SCOPE=tmux ;;
+  zsh:|ghostty:) SCOPE=$COMPONENT ;;
+  automation:|automation:chrome-icon) SCOPE=automation ;;
+  raycast:*)
+    SCOPE=raycast
+    if [[ "$SELECTOR" = display-control ]]; then
+      SCOPE=raycast/scripts/internal-display
+    elif [[ -n "$SELECTOR" ]]; then
+      if [[ ! "$SELECTOR" =~ ^[a-z][a-z0-9-]*$ ]] \
+        || [[ ! -f "$REPO_ROOT/raycast/extensions/$SELECTOR/package.json" ]]; then
+        printf 'Unknown Raycast extension: %s\n' "$SELECTOR" >&2
+        exit 64
+      fi
+      SCOPE="raycast/extensions/$SELECTOR"
+    fi
+    ;;
+  *) printf 'Unknown check selection: %s %s\n' "$COMPONENT" "$SELECTOR" >&2; usage >&2; exit 64 ;;
+esac
+
 CHECK_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-check.XXXXXX")
 MACOS_HOME="$CHECK_ROOT/stow-macos"
 LINUX_HOME="$CHECK_ROOT/stow-linux"
-TMUX_SOCKET="dotfiles-check-$$"
+TMUX_SOCKET=
 
 COMMON_PACKAGES=(bat btop gnupg nvim starship tmux yazi zsh)
 MACOS_PACKAGES=(bin ghostty ideavim raycast sketchybar yabai "${COMMON_PACKAGES[@]}")
 AUTOMATION_PACKAGES=(chrome-icon)
 
 cleanup() {
-  tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
+  if [[ -n "$TMUX_SOCKET" ]]; then
+    tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
+  fi
   rm -rf "$CHECK_ROOT"
 }
 trap cleanup EXIT
@@ -39,6 +103,7 @@ check_stow_profile() {
   local target=$1
   shift
 
+  require stow
   mkdir -p "$target"
   stow --no-folding --target "$target" "$@"
 }
@@ -48,16 +113,21 @@ check_stow_collection() {
   local directory=$2
   shift 2
 
+  require stow
   mkdir -p "$target"
   stow --no-folding --dir "$directory" --target "$target" "$@"
 }
 
 check_shell_syntax() {
-  local file first
+  local scope=${1:-.} file first
 
-  for file in zsh/.zshenv zsh/.zprofile zsh/.zshrc zsh/.config/fzf/fzfrc.sh; do
-    zsh -n "$file"
-  done
+  require rg
+  if [[ "$scope" = . || "$scope" = zsh ]]; then
+    require zsh
+    for file in zsh/.zshenv zsh/.zprofile zsh/.zshrc zsh/.config/fzf/fzfrc.sh; do
+      zsh -n "$file"
+    done
+  fi
 
   while IFS= read -r file; do
     IFS= read -r first < "$file" || true
@@ -65,10 +135,11 @@ check_shell_syntax() {
       *bash*) /bin/bash -n "$file" ;;
       *'/sh') /bin/sh -n "$file" ;;
     esac
-  done < <(rg --hidden -l '^#!.*(ba)?sh$' --glob '!.git/**' --glob '!**/node_modules/**')
+  done < <(rg --hidden -l '^#!.*(ba)?sh$' --glob '!.git/**' --glob '!**/node_modules/**' -- "$scope")
 }
 
 check_zsh_startup() {
+  require zsh
   local test_home="$CHECK_ROOT/zsh-home"
   local state_home="$test_home/.local/state"
   local -a shell_env=(
@@ -132,11 +203,16 @@ EOF
 }
 
 check_python_syntax() {
-  python3 - <<'PY'
+  local scope=${1:-.} files
+  files=$(rg --files --hidden --glob '*.py' --glob '!.git/**' --glob '!**/node_modules/**' -- "$scope") \
+    || { [[ $? -eq 1 ]] && return 0; return 1; }
+  require python3
+  python3 - "$scope" <<'PY'
 import ast
+import sys
 from pathlib import Path
 
-for path in Path(".").rglob("*.py"):
+for path in Path(sys.argv[1]).rglob("*.py"):
     if ".git" in path.parts or "node_modules" in path.parts:
         continue
     ast.parse(path.read_text(), filename=str(path))
@@ -144,11 +220,12 @@ PY
 }
 
 check_json() {
-  local file
+  local scope=${1:-.} file
 
   while IFS= read -r file; do
+    require jq
     jq empty "$file"
-  done < <(rg --files --hidden --glob '*.json' --glob '!.git/**' --glob '!**/node_modules/**')
+  done < <(rg --files --hidden --glob '*.json' --glob '!.git/**' --glob '!**/node_modules/**' -- "$scope")
 }
 
 check_agent_skills() {
@@ -169,6 +246,9 @@ check_agent_skills() {
 }
 
 check_tmux() {
+  require tmux
+  require stow
+  TMUX_SOCKET="dotfiles-check-$$"
   local package_root=tmux/.config/tmux
   local test_home="$CHECK_ROOT/tmux-home"
   local wrapper="$CHECK_ROOT/tmux-check.conf"
@@ -220,12 +300,14 @@ check_tmux() {
 }
 
 check_ghostty_config() {
+  require ghostty
   HOME="$MACOS_HOME" ghostty +validate-config \
     --config-file="$MACOS_HOME/.config/ghostty/config"
 }
 
 check_plists() {
   local file
+  require plutil
 
   while IFS= read -r file; do
     plutil -lint "$file"
@@ -234,6 +316,7 @@ check_plists() {
 
 check_raycast_extension() {
   local extension=$1
+  require npm
   (
     cd "raycast/extensions/$extension"
     npm test
@@ -241,52 +324,104 @@ check_raycast_extension() {
   )
 }
 
-require git
-require stow
-require rg
-require zsh
-require python3
-require jq
-require tmux
+check_syntax() {
+  local scope=$1
+  run "shell syntax ($scope)" check_shell_syntax "$scope"
+  run "Python syntax ($scope)" check_python_syntax "$scope"
+  run "JSON syntax ($scope)" check_json "$scope"
+}
 
-run "macOS Stow profile" check_stow_profile "$MACOS_HOME" "${MACOS_PACKAGES[@]}"
-run "Automation Stow profile" \
-  check_stow_collection "$MACOS_HOME" automation "${AUTOMATION_PACKAGES[@]}"
-run "Linux Stow profile" check_stow_profile "$LINUX_HOME" "${COMMON_PACKAGES[@]}"
-run "shell syntax" check_shell_syntax
-run "Zsh startup contract" check_zsh_startup
-run "Python syntax" check_python_syntax
-run "JSON syntax" check_json
-run "agent skill layout" check_agent_skills
-run "tmux clean-home startup" check_tmux
-run "tmux copy-mode and idle-pane behavior" /bin/bash tmux/tests/copy-mode-test.sh
+check_repository() {
+  run "macOS Stow profile" check_stow_profile "$MACOS_HOME" "${MACOS_PACKAGES[@]}"
+  run "Automation Stow profile" \
+    check_stow_collection "$MACOS_HOME" automation "${AUTOMATION_PACKAGES[@]}"
+  run "Linux Stow profile" check_stow_profile "$LINUX_HOME" "${COMMON_PACKAGES[@]}"
+  check_syntax .
+  run "agent skill layout" check_agent_skills
+}
 
-if [[ $(uname -s) == Darwin ]]; then
-  extension_dir=
-  require plutil
-  require ghostty
-  require npm
-
-  run "Chrome Icon LaunchAgent installer" \
-    /bin/bash automation/chrome-icon/tests/install_test.sh
-  run "Automation plist files" check_plists
-  run "Display Control build and policy tests" /bin/bash raycast/scripts/internal-display/manage.sh check
-  run "Ghostty config" check_ghostty_config
-
-  for test_file in sketchybar/.config/sketchybar/tests/*_test.sh; do
+check_sketchybar() {
+  local selector=$1 test_file
+  local tests=()
+  case "$selector" in
+    '') tests=(sketchybar/.config/sketchybar/tests/*_test.sh) ;;
+    volume)
+      tests=(sketchybar/.config/sketchybar/tests/volume_device_test.sh
+             sketchybar/.config/sketchybar/tests/plugin_boundaries_test.sh)
+      ;;
+    *) tests=("sketchybar/.config/sketchybar/tests/${selector}_test.sh") ;;
+  esac
+  for test_file in "${tests[@]}"; do
     run "SketchyBar $(basename "$test_file")" /bin/bash "$test_file"
   done
+}
 
-  for extension_dir in raycast/extensions/*; do
-    [[ -f "$extension_dir/package.json" ]] || continue
-    run "Raycast $(basename "$extension_dir")" \
-      check_raycast_extension "$(basename "$extension_dir")"
-  done
-else
-  printf '\nSKIP - macOS-only runtime checks\n'
-fi
+check_component() {
+  local component=$1 selector=${2:-} extension_dir
+  case "$component" in
+    zsh) run "Zsh startup contract" check_zsh_startup; return ;;
+    tmux)
+      require tmux
+      if [[ "$selector" != copy-mode ]]; then
+        run "tmux clean-home startup" check_tmux
+      fi
+      if [[ "$selector" != startup ]]; then
+        run "tmux copy-mode and idle-pane behavior" /bin/bash tmux/tests/copy-mode-test.sh
+      fi
+      return
+      ;;
+  esac
 
-run "whitespace errors" git diff --check
-run "staged whitespace errors" git diff --cached --check
+  if [[ $(uname -s) != Darwin ]]; then
+    printf '\nSKIP - %s runtime checks require macOS\n' "$component"
+    return
+  fi
+  case "$component" in
+    sketchybar) check_sketchybar "$selector" ;;
+    ghostty) run "Ghostty config" check_ghostty_config ;;
+    automation)
+      run "Chrome Icon LaunchAgent installer" /bin/bash automation/chrome-icon/tests/install_test.sh
+      run "Automation plist files" check_plists
+      ;;
+    raycast)
+      if [[ -z "$selector" || "$selector" = display-control ]]; then
+        run "Display Control build and policy tests" /bin/bash raycast/scripts/internal-display/manage.sh check
+      fi
+      if [[ -z "$selector" ]]; then
+        for extension_dir in raycast/extensions/*; do
+          [[ -f "$extension_dir/package.json" ]] || continue
+          run "Raycast $(basename "$extension_dir")" check_raycast_extension "$(basename "$extension_dir")"
+        done
+      elif [[ "$selector" != display-control ]]; then
+        run "Raycast $selector" check_raycast_extension "$selector"
+      fi
+      ;;
+  esac
+}
 
-printf '\nAll checks passed.\n'
+require git
+require rg
+case "$COMPONENT" in
+  all|repo)
+    check_repository
+    if [[ "$COMPONENT" = all ]]; then
+      for component in zsh tmux automation ghostty sketchybar raycast; do
+        check_component "$component"
+      done
+    fi
+    ;;
+  *)
+    if [[ "$COMPONENT" = automation ]]; then
+      run "Automation Stow profile" check_stow_collection "$MACOS_HOME" automation "${AUTOMATION_PACKAGES[@]}"
+    else
+      run "$COMPONENT Stow package" check_stow_profile "$MACOS_HOME" "$COMPONENT"
+    fi
+    check_syntax "$SCOPE"
+    check_component "$COMPONENT" "$SELECTOR"
+    ;;
+esac
+
+run "whitespace errors ($SCOPE)" git diff --check -- "$SCOPE"
+run "staged whitespace errors ($SCOPE)" git diff --cached --check -- "$SCOPE"
+
+printf '\nAll selected checks passed (%s%s).\n' "$COMPONENT" "${SELECTOR:+ $SELECTOR}"

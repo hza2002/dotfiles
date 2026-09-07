@@ -13,8 +13,8 @@ does not provide or maintain a standalone bootstrap program.
 
 Tracked dotfiles remain configuration source. Module-owned installers handle
 the few operations that need deterministic local behavior, while `./check`
-provides the repository-wide validation gate. Stow runs from the repository
-root, where `.stowrc` disables tree folding so tools cannot write runtime data
+provides scoped checks and the repository-wide validation gate. Stow runs from
+the repository root, where `.stowrc` disables tree folding so tools cannot write runtime data
 back through a linked directory.
 
 ## Color Policy
@@ -269,6 +269,12 @@ start SketchyBar, and verify the bar and helper processes. The installer fetches
 `sketchybar-app-font` and generates `plugins/icon_map.sh`. The compiled helper
 and generated icon map are runtime files and are not stored in Git.
 
+SketchyBar's Homebrew-managed stdout and stderr remain under
+`/opt/homebrew/var/log/sketchybar`. Logs produced by this configuration are
+kept together under `~/Library/Logs/sketchybar`, with separate files for config
+loading, the helper, and caffeinate. Caches, locks, and persistent state remain
+in their owning runtime directories and are not stored in Git.
+
 ## Ghostty and Raycast
 
 Ghostty is the macOS terminal client and starts the `main` tmux session in
@@ -300,7 +306,35 @@ operation, checks, recovery, and uninstall instructions.
 
 ## Validation
 
-Run `./check` from the repository root after changing the dotfiles. It performs
-read-only Stow, syntax, configuration, and module test gates. Platform-specific
-runtime checks run only on their supported operating system. The command does
-not install dependencies, update plugins, or rewrite tracked configuration.
+Use the narrowest relevant check while changing a component. Run the full
+`./check` for repository-wide handoff or changes to shared checking and linking
+behavior, rather than after every local edit.
+
+| Command | Scope |
+| --- | --- |
+| `./check` | All repository and component checks |
+| `./check repo` | Cross-package Stow, repository syntax, agent layout |
+| `./check sketchybar` | All SketchyBar tests |
+| `./check sketchybar volume` | Volume classification and plugin boundary tests |
+| `./check sketchybar front_app` | Only `front_app_test.sh` |
+| `./check tmux` | Startup and copy-mode behavior |
+| `./check tmux copy-mode` | Only copy-mode behavior |
+| `./check zsh` | Zsh startup contract |
+| `./check ghostty` | Ghostty configuration |
+| `./check automation chrome-icon` | Chrome icon installer and plist files |
+| `./check raycast network-control` | One extension's tests and lint |
+| `./check raycast display-control` | Display helper build and policy tests |
+| `./check raycast` | All extensions and the display helper |
+
+Component selections also check the package's Stow links, scoped syntax and
+whitespace. SketchyBar accepts any existing `*_test.sh` stem, such as
+`caffeinate`, `temperature`, or `helper_supervisor`; `volume` additionally runs
+the shared plugin boundary tests. Use those shared tests when changing input
+handling in Wi-Fi, Yabai, or volume plugins. Test scripts remain directly
+runnable with `/bin/bash path/to/test.sh` for the smallest iteration loop.
+
+Only selected checks require their tools. Platform-specific runtime checks run
+only on supported systems; skipped checks are reported. Raycast lint includes
+an online author lookup, so an extension's lint can fail due to network access.
+No check installs dependencies, updates plugins, or rewrites tracked
+configuration. Run `./check --help` for selectors; unknown selections fail.

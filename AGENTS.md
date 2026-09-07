@@ -9,9 +9,11 @@ generated files, caches, credentials, private inventories, and other machine
 state out of Git.
 
 Review and discuss proposed changes before modifying files. After approval,
-change only the agreed scope and run the relevant package checks. Do not commit
-or push unless the user explicitly asks. Run `./check` before a repository-wide
-handoff.
+change only the agreed scope and run the narrowest relevant checks, such as
+`./check sketchybar volume` or `./check tmux`. Existing test scripts can also run
+directly during iteration. Do not run unrelated component checks after each
+local edit. Run the full `./check` for repository-wide handoff or changes to
+shared checking/linking behavior. Do not commit or push unless explicitly asked.
 
 Installation tooling is a consumer of the dotfiles. It may install external
 dependencies, link selected packages, pause for manual steps, and verify the
