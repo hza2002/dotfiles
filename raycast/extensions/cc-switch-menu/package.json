@@ -1,0 +1,48 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "cc-switch-menu",
+  "type": "module",
+  "title": "CC Switch",
+  "description": "Browse and switch the providers in your CC Switch menu",
+  "icon": "icon.png",
+  "author": "hza2002",
+  "license": "MIT",
+  "platforms": [
+    "macOS"
+  ],
+  "categories": [
+    "Developer Tools"
+  ],
+  "commands": [
+    {
+      "name": "index",
+      "title": "CC Switch Providers",
+      "subtitle": "Providers",
+      "description": "Search providers and switch through the CC Switch menu",
+      "mode": "view",
+      "keywords": [
+        "provider",
+        "codex",
+        "claude",
+        "switch"
+      ]
+    }
+  ],
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "lint": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@raycast/api": "^1.104.24",
+    "@raycast/utils": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.10",
+    "react": "^19.0.0",
+    "typescript": "^5.8.2",
+    "prettier": "^3.5.3"
+  }
+}
