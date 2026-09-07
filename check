@@ -40,7 +40,7 @@ check_stow_profile() {
   shift
 
   mkdir -p "$target"
-  stow --no-folding --ignore='(^|/)\.DS_Store$' --target "$target" "$@"
+  stow --no-folding --target "$target" "$@"
 }
 
 check_stow_collection() {
@@ -259,6 +259,7 @@ run "Python syntax" check_python_syntax
 run "JSON syntax" check_json
 run "agent skill layout" check_agent_skills
 run "tmux clean-home startup" check_tmux
+run "tmux copy-mode and idle-pane behavior" /bin/bash tmux/tests/copy-mode-test.sh
 
 if [[ $(uname -s) == Darwin ]]; then
   extension_dir=

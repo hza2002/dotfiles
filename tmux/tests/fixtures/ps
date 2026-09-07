@@ -1,0 +1,3 @@
+#!/bin/sh
+printf '%s\n' "${TMUX_TEST_PS_ROWS-}"
+exit "${TMUX_TEST_PS_STATUS:-0}"
