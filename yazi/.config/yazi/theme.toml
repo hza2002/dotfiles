@@ -21,7 +21,6 @@ prepend_dirs = [
 	{ name = "bin",          text = "" },
 	{ name = "cpp",          text = "" },
 	{ name = "dotfiles",     text = "" },
-	{ name = "ghot",         text = "" },
 	{ name = "go",           text = "" },
 	{ name = "keyboard",     text = "" },
 	{ name = "kicad",        text = "" },

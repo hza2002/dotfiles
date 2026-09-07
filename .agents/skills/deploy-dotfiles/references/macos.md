@@ -14,8 +14,8 @@ Collect read-only evidence for:
 - installed agents and private machine state required by selected modules;
 - network access to Homebrew, GitHub, npm, and documented release sources.
 
-Do not assume the username is `ghot`. Generated LaunchAgent paths must come from
-the current home directory. Do not import secrets, private inventories, browser
+Generated LaunchAgent paths must come from the current home directory.
+Do not import secrets, private inventories, browser
 profiles, SSH keys, GnuPG keys, or licensed fonts without explicit user action.
 
 ## Confirm Trust and Manual Gates
