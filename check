@@ -9,7 +9,8 @@ LINUX_HOME="$CHECK_ROOT/stow-linux"
 TMUX_SOCKET="dotfiles-check-$$"
 
 COMMON_PACKAGES=(bat btop gnupg nvim starship tmux yazi zsh)
-MACOS_PACKAGES=(automation bin ghostty ideavim raycast sketchybar yabai "${COMMON_PACKAGES[@]}")
+MACOS_PACKAGES=(bin ghostty ideavim raycast sketchybar yabai "${COMMON_PACKAGES[@]}")
+AUTOMATION_PACKAGES=(chrome-icon)
 
 cleanup() {
   tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
@@ -40,6 +41,15 @@ check_stow_profile() {
 
   mkdir -p "$target"
   stow --no-folding --ignore='(^|/)\.DS_Store$' --target "$target" "$@"
+}
+
+check_stow_collection() {
+  local target=$1
+  local directory=$2
+  shift 2
+
+  mkdir -p "$target"
+  stow --no-folding --dir "$directory" --target "$target" "$@"
 }
 
 check_shell_syntax() {
@@ -175,6 +185,8 @@ require jq
 require tmux
 
 run "macOS Stow profile" check_stow_profile "$MACOS_HOME" "${MACOS_PACKAGES[@]}"
+run "Automation Stow profile" \
+  check_stow_collection "$MACOS_HOME" automation "${AUTOMATION_PACKAGES[@]}"
 run "Linux Stow profile" check_stow_profile "$LINUX_HOME" "${COMMON_PACKAGES[@]}"
 run "shell syntax" check_shell_syntax
 run "Python syntax" check_python_syntax
@@ -188,7 +200,8 @@ if [[ $(uname -s) == Darwin ]]; then
   require ghostty
   require npm
 
-  run "Automation LaunchAgent installer" /bin/bash tests/automation_install_test.sh
+  run "Chrome Icon LaunchAgent installer" \
+    /bin/bash automation/chrome-icon/tests/install_test.sh
   run "Automation plist files" check_plists
   run "Display Control build and policy tests" /bin/bash raycast/scripts/internal-display/manage.sh check
   run "Ghostty config" check_ghostty_config

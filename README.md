@@ -193,9 +193,11 @@ the module is reported as installed rather than being deferred to first launch.
 
 ## macOS Personal Utilities
 
-The Automation, Bin, and IdeaVim packages are installed only on a personal
-macOS workstation. Deployment must skip them on Linux, WSL, and headless hosts.
-They require the Homebrew formulas `uv` and `fileicon`; the casks
+Automation projects and the Bin and IdeaVim packages are installed only on a
+personal macOS workstation. Deployment must skip them on Linux, WSL, and
+headless hosts. Automation is a collection of independently linked Stow
+packages under `automation/`; currently it contains the `chrome-icon` project.
+These tools require the Homebrew formulas `uv` and `fileicon`; the casks
 `google-chrome`, `microsoft-edge`, and `jetbrains-toolbox`; and the
 `bing-rewards` uv tool. `gruvifier` resolves `gruvbox-factory@latest` through
 `uvx` when explicitly run.
@@ -206,7 +208,8 @@ select Edge as its browser. The directories `~/Pictures/icons` and
 `~/Pictures/unreviewed` are also user-owned machine state. Deployment must not
 create, populate, or store any of these files in Git.
 
-After linking Automation, run
+From the repository root, link Chrome Icon with
+`stow --dir automation --target "$HOME" chrome-icon`, then run
 `~/.local/libexec/install-chrome-icon-agent` to render the current home directory
 into `~/Library/LaunchAgents/com.ghot.chrome-custom-icon.plist`. Register that
 generated plist in the current GUI domain and verify the LaunchAgent. The

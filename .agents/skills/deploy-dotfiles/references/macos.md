@@ -45,9 +45,11 @@ default.
 For selected modules, preserve this order:
 
 1. Link shared CLI configuration and install its declared plugins/runtime state.
-2. Link Automation, then run
-   `~/.local/libexec/install-chrome-icon-agent`; register and verify its generated
-   LaunchAgent plist.
+2. Link selected Automation projects as separate packages from the `automation`
+   Stow directory. For `chrome-icon`, run
+   `stow --dir automation --target "$HOME" chrome-icon`, then run
+   `~/.local/libexec/install-chrome-icon-agent`; register and verify its
+   generated LaunchAgent plist.
 3. Link Yabai, run `suyabai` only after SIP and permissions are ready, then start
    yabai, skhd, and borders through their documented service commands.
 4. Link SketchyBar after its dependencies and fonts, run its

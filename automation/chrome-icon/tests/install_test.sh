@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-TEST_HOME=$(mktemp -d "${TMPDIR:-/tmp}/automation-install-test.XXXXXX")
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+TEST_HOME=$(mktemp -d "${TMPDIR:-/tmp}/chrome-icon-install-test.XXXXXX")
 trap 'rm -rf "$TEST_HOME"' EXIT
 
 cd "$REPO_ROOT"
-stow --target "$TEST_HOME" automation
+stow --dir automation --target "$TEST_HOME" chrome-icon
 
 HOME="$TEST_HOME" "$TEST_HOME/.local/libexec/install-chrome-icon-agent" >/dev/null
 
@@ -22,4 +22,4 @@ actual=$(/usr/bin/plutil -extract ProgramArguments.0 raw "$destination")
 HOME="$TEST_HOME" "$TEST_HOME/.local/libexec/install-chrome-icon-agent" >/dev/null
 [[ "$(/usr/bin/plutil -extract ProgramArguments.0 raw "$destination")" == "$expected" ]]
 
-echo "automation_install_test: ok"
+echo "chrome_icon_install_test: ok"
