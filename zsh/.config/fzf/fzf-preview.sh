@@ -14,11 +14,16 @@ if [[ $# -ne 1 ]]; then
 fi
 
 file=${1/#\~\//$HOME/}
-type=$(file --dereference --mime -- "$file")
+[[ $file = /* ]] || file="./$file"
+type=$(file --dereference --mime -- "$file") || exit
 
 if [[ ! $type =~ image/ ]]; then
   if [[ $type =~ directory ]]; then
-    tree -C "$file"
+    if command -v tree >/dev/null; then
+      tree -C "$file"
+    else
+      ls -la "$file"
+    fi
     exit
   fi
 

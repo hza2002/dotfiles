@@ -1,7 +1,11 @@
 ########################## 🔽 ENV 🔽 ###########################
 # EDITOR / ZSH_OS / project *_HOME live in .zshenv (visible to all shells).
 # brew shellenv / PATH live in .zprofile (login-time, inherited by tmux).
-export GPG_TTY=$(tty) # interactive-only: tty has no meaning in scripts
+if GPG_TTY=$(tty 2>/dev/null); then
+  export GPG_TTY
+else
+  unset GPG_TTY
+fi
 # Ask pinentry-smart for the terminal (curses) UI over SSH/tmux; gpg forwards
 # PINENTRY_USER_DATA to the pinentry program. GUI is used otherwise.
 if [[ -n "$SSH_TTY" || -n "$SSH_CONNECTION" || -n "$TMUX" ]]; then
@@ -15,6 +19,7 @@ ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$ZSH/cache}"
 export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump-$HOST-$ZSH_VERSION"
 typeset -U fpath
 typeset +x FPATH # Function lookup is shell-local; do not duplicate it in nested shells.
+zstyle ':omz:update' mode reminder # Updates remain an explicit command.
 plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
   # Silent
   colored-man-pages command-not-found shell-proxy
@@ -31,7 +36,7 @@ plugins=( # https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
 )
 fpath+="${ZSH_CUSTOM:-"$ZSH/custom"}/plugins/zsh-completions/src" # https://github.com/zsh-users/zsh-completions/issues/603
 zvm_after_init_commands+=( # zvm resets plugin bindings during deferred initialization.
-  "source $HOME/.config/fzf/fzfrc.sh"
+  'source "$HOME/.config/fzf/fzfrc.sh"'
   'zvm_bindkey viins " " abbr-expand-and-insert'
   'zvm_bindkey viins "^ " magic-space'
 )
@@ -98,7 +103,12 @@ export UV_PYTHON_BIN_DIR="${UV_PYTHON_BIN_DIR:-${XDG_DATA_HOME:-$HOME/.local/sha
 typeset -U path
 # .zprofile initializes fnm for login shells; nested interactive shells need their own chpwd hook.
 if (( $+commands[fnm] && ! $+functions[_fnm_autoload_hook] )); then
-  eval "$(fnm env --use-on-cd --shell zsh)"
+  if fnm_env="$(fnm env --use-on-cd --shell zsh)"; then
+    eval "$fnm_env"
+    path=("$FNM_MULTISHELL_PATH/bin" "${(@)path:#${XDG_STATE_HOME:-$HOME/.local/state}/fnm_multishells/*/bin}")
+    _fnm_autoload_hook
+  fi
+  unset fnm_env
 fi
 lazyload jenv java javac jar javadoc jshell gradle mvn ant -- '_init_jenv' # jenv: Manage the Java toolchain on demand.
 lazyload conda -- 'eval "$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"'

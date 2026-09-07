@@ -27,7 +27,12 @@ if (( $+commands[uv] )); then
 fi
 
 if (( $+commands[fnm] )); then
-  eval "$(fnm env --use-on-cd --shell zsh)" # Node.js, including non-interactive login shells
+  if fnm_env="$(fnm env --use-on-cd --shell zsh)"; then
+    eval "$fnm_env" # Node.js, including non-interactive login shells
+    path=("$FNM_MULTISHELL_PATH/bin" "${(@)path:#${XDG_STATE_HOME:-$HOME/.local/state}/fnm_multishells/*/bin}")
+    _fnm_autoload_hook
+  fi
+  unset fnm_env
 fi
 
 if [[ "$ZSH_OS" == "Linux" ]]; then
@@ -47,5 +52,7 @@ elif [[ "$ZSH_OS" == "Darwin" ]]; then
   [[ -d "$HOME/miniconda3/condabin" ]] && path+=("$HOME/miniconda3/condabin")
   export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts" # JetBrains Toolbox
 fi
+# Shims select the project JDK without interactive jenv initialization.
+[[ -d "${JENV_ROOT:-$HOME/.jenv}/shims" ]] && path=("${JENV_ROOT:-$HOME/.jenv}/shims" $path)
 typeset -U path
 ########################## 🔼 PATH 🔼 ##########################

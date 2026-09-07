@@ -55,7 +55,9 @@ check_stow_collection() {
 check_shell_syntax() {
   local file first
 
-  zsh -n zsh/.zshenv zsh/.zprofile zsh/.zshrc zsh/.config/fzf/fzfrc.sh
+  for file in zsh/.zshenv zsh/.zprofile zsh/.zshrc zsh/.config/fzf/fzfrc.sh; do
+    zsh -n "$file"
+  done
 
   while IFS= read -r file; do
     IFS= read -r first < "$file" || true
@@ -64,6 +66,69 @@ check_shell_syntax() {
       *'/sh') /bin/sh -n "$file" ;;
     esac
   done < <(rg --hidden -l '^#!.*(ba)?sh$' --glob '!.git/**' --glob '!**/node_modules/**')
+}
+
+check_zsh_startup() {
+  local test_home="$CHECK_ROOT/zsh-home"
+  local state_home="$test_home/.local/state"
+  local -a shell_env=(
+    env -i
+    HOME="$test_home"
+    USER="${USER:-dotfiles-check}"
+    LOGNAME="${LOGNAME:-dotfiles-check}"
+    SHELL=/bin/zsh
+    TERM=dumb
+    ZDOTDIR="$REPO_ROOT/zsh"
+    XDG_STATE_HOME="$state_home"
+  )
+  local mode arch output
+
+  mkdir -p "$test_home/.local/bin" "$test_home/.oh-my-zsh" "$test_home/.jenv/shims"
+  cat >"$test_home/.local/bin/fnm" <<'EOF'
+#!/bin/sh
+if [ "${1:-}" = env ]; then
+  [ "${FNM_ARCH:-}" = invalid ] && exit 1
+  printf '%s\n' \
+    "export FNM_MULTISHELL_PATH='$XDG_STATE_HOME/fnm_multishells/current'" \
+    'export PATH="$FNM_MULTISHELL_PATH/bin:$PATH"' \
+    '_fnm_autoload_hook() { export FNM_HOOK_RAN=1; }'
+fi
+EOF
+  chmod +x "$test_home/.local/bin/fnm"
+  cat >"$test_home/.oh-my-zsh/oh-my-zsh.sh" <<'EOF'
+function abbr() { :; }
+function bindkey() { :; }
+function lazyload() { :; }
+EOF
+
+  for mode in -lc -ic; do
+    for arch in valid invalid; do
+      output=$("${shell_env[@]}" EDITOR=caller-editor ZSH_OS=Unexpected \
+        GPG_TTY=stale FNM_ARCH="$arch" \
+        FNM_MULTISHELL_PATH="$state_home/fnm_multishells/old" \
+        PATH="$test_home/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$state_home/fnm_multishells/old/bin" \
+        /bin/zsh "$mode" '
+          set -e
+          [[ "$EDITOR" == caller-editor && "$ZSH_OS" != Unexpected ]]
+          fnm_paths=("${(@M)path:#$XDG_STATE_HOME/fnm_multishells/*/bin}")
+          (( ${#fnm_paths} == 1 ))
+          [[ "$fnm_paths[1]" == "$FNM_MULTISHELL_PATH/bin" ]]
+          if [[ "$FNM_ARCH" == valid ]]; then
+            [[ "$FNM_HOOK_RAN" == 1 ]]
+          else
+            [[ "$FNM_MULTISHELL_PATH" == "$XDG_STATE_HOME/fnm_multishells/old" ]]
+          fi
+          if [[ -o interactive ]]; then
+            (( ! ${+GPG_TTY} ))
+          else
+            (( ! ${+aliases[rm]} && ! ${+functions[y]} ))
+            (( ${path[(Ie)$HOME/.jenv/shims]} > 0 ))
+          fi
+          print -r -- ok
+        ' </dev/null)
+      [[ "$output" == ok ]]
+    done
+  done
 }
 
 check_python_syntax() {
@@ -189,6 +254,7 @@ run "Automation Stow profile" \
   check_stow_collection "$MACOS_HOME" automation "${AUTOMATION_PACKAGES[@]}"
 run "Linux Stow profile" check_stow_profile "$LINUX_HOME" "${COMMON_PACKAGES[@]}"
 run "shell syntax" check_shell_syntax
+run "Zsh startup contract" check_zsh_startup
 run "Python syntax" check_python_syntax
 run "JSON syntax" check_json
 run "agent skill layout" check_agent_skills

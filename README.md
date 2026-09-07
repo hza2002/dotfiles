@@ -62,6 +62,11 @@ system `/bin/zsh`; installing a second Homebrew Zsh is unnecessary.
 The shell initializes Starship when it is installed. Starship configuration is
 owned by its separate package because Yazi consumes it too.
 
+Login shells expose the installed jenv shims to scripts and agents. Fnm selects
+the current project's Node version at startup and on directory changes; required
+versions must already be installed. Plugin updates only display reminders and
+run when explicitly requested.
+
 Read these files for the current behavior. Plugin names, aliases, key bindings,
 and optional tool paths are intentionally not duplicated here.
 
