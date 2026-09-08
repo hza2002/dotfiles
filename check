@@ -16,8 +16,7 @@ usage() {
     '  zsh                      Zsh syntax and startup contract' \
     '  ghostty                  Ghostty configuration' \
     '  automation [chrome-icon] Automation installer and plist checks' \
-    '  raycast [extension]      All extensions and display-control, or one' \
-    '                           display-control selects the display helper' \
+    '  raycast [extension]      All extensions, or one extension' \
     '' \
     'Component checks include scoped syntax, Stow, and whitespace checks.' \
     'Use ./check sketchybar front_app, for example, for front_app_test.sh.'
@@ -51,9 +50,7 @@ case "$COMPONENT:$SELECTOR" in
   automation:|automation:chrome-icon) SCOPE=automation ;;
   raycast:*)
     SCOPE=raycast
-    if [[ "$SELECTOR" = display-control ]]; then
-      SCOPE=raycast/scripts/internal-display
-    elif [[ -n "$SELECTOR" ]]; then
+    if [[ -n "$SELECTOR" ]]; then
       if [[ ! "$SELECTOR" =~ ^[a-z][a-z0-9-]*$ ]] \
         || [[ ! -f "$REPO_ROOT/raycast/extensions/$SELECTOR/package.json" ]]; then
         printf 'Unknown Raycast extension: %s\n' "$SELECTOR" >&2
@@ -384,15 +381,12 @@ check_component() {
       run "Automation plist files" check_plists
       ;;
     raycast)
-      if [[ -z "$selector" || "$selector" = display-control ]]; then
-        run "Display Control build and policy tests" /bin/bash raycast/scripts/internal-display/manage.sh check
-      fi
       if [[ -z "$selector" ]]; then
         for extension_dir in raycast/extensions/*; do
           [[ -f "$extension_dir/package.json" ]] || continue
           run "Raycast $(basename "$extension_dir")" check_raycast_extension "$(basename "$extension_dir")"
         done
-      elif [[ "$selector" != display-control ]]; then
+      else
         run "Raycast $selector" check_raycast_extension "$selector"
       fi
       ;;

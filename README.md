@@ -291,19 +291,6 @@ The Server extension reads SSH aliases from the private inventory at
 session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are
 not owned by this repository.
 
-### Internal Display Script Command (macOS)
-
-The command, Swift background controller, installer, tests, and documentation
-are maintained together under
-[`raycast/scripts/internal-display`](raycast/scripts/internal-display).
-Like `raycast/extensions`, this source directory is excluded from Stow.
-Run `./raycast/scripts/internal-display/manage.sh install` from the
-repository root to build the controller, install its user LaunchAgent, and link
-the command and icon into `~/.config/raycast/scripts`. Add that directory to
-Raycast Script Commands and use **Toggle Internal Display**.
-See the [project README](raycast/scripts/internal-display/README.md) for
-operation, checks, recovery, and uninstall instructions.
-
 ## Validation
 
 Use the narrowest relevant check while changing a component. Run the full
@@ -323,8 +310,7 @@ behavior, rather than after every local edit.
 | `./check ghostty` | Ghostty configuration |
 | `./check automation chrome-icon` | Chrome icon installer and plist files |
 | `./check raycast network-control` | One extension's tests and lint |
-| `./check raycast display-control` | Display helper build and policy tests |
-| `./check raycast` | All extensions and the display helper |
+| `./check raycast` | All extensions |
 
 Component selections also check the package's Stow links, scoped syntax and
 whitespace. SketchyBar accepts any existing `*_test.sh` stem, such as
