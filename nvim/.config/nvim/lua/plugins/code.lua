@@ -1,28 +1,5 @@
 -- Code / LSP-adjacent plugins not covered by LazyVim defaults.
 
--- nvim-ufo's closeFoldsWith takes an absolute fold level. These wrappers
--- track the current level in a window-local var so zr/zm behave relatively
--- (like Vim's native fold commands) with v:count1 support.
-local default_fold_level = 99
-
-local function close_more_folds()
-  local level = vim.w.ufo_fold_level or default_fold_level
-  level = math.max(level - vim.v.count1, 0)
-  vim.w.ufo_fold_level = level
-  require("ufo").closeFoldsWith(level)
-end
-
-local function open_more_folds()
-  local level = vim.w.ufo_fold_level or default_fold_level
-  level = math.min(level + vim.v.count1, default_fold_level)
-  vim.w.ufo_fold_level = level
-  if level >= default_fold_level then
-    require("ufo").openAllFolds()
-  else
-    require("ufo").closeFoldsWith(level)
-  end
-end
-
 return {
   -- Better folds with a custom fold-text handler
   {
@@ -32,10 +9,10 @@ return {
     -- stylua: ignore start
     keys = {
       { "zp", function() require("ufo").peekFoldedLinesUnderCursor() end, desc = "Preview folded lines" },
-      { "zR", function() vim.w.ufo_fold_level = default_fold_level; require("ufo").openAllFolds() end, desc = "Open all folds" },
-      { "zM", function() vim.w.ufo_fold_level = 0; require("ufo").closeAllFolds() end, desc = "Close all folds" },
-      { "zr", open_more_folds, desc = "Open more folds" },
-      { "zm", close_more_folds, desc = "Close more folds" },
+      { "zR", function() require("ufo").openAllFolds() end, desc = "Open all folds" },
+      { "zM", function() require("ufo").closeAllFolds() end, desc = "Close all folds" },
+      { "zr", function() require("ufo").openFoldsExceptKinds() end, desc = "Open folds except configured kinds" },
+      { "zm", function() require("ufo").closeFoldsWith() end, desc = "Fold to level (count, default 0)" },
     },
     -- stylua: ignore end
     opts = {
@@ -91,12 +68,17 @@ return {
       debug = false,
       opacity = nil,
       resizing_mappings = false,
-      post_open_hook = function(bufnr, winnr)
-        vim.keymap.set("n", "q", function()
-          vim.api.nvim_win_close(winnr, true)
-        end, { buffer = bufnr, nowait = true, silent = true, desc = "Close preview" })
-      end,
     },
+    config = function(_, opts)
+      require("goto-preview").setup(opts)
+      -- Preview windows share real buffers; keep q window-aware without buffer-local maps.
+      vim.keymap.set("n", "q", function()
+        if vim.w["is-goto-preview-window"] == 1 and vim.fn.reg_recording() == "" then
+          return "<cmd>close<cr>"
+        end
+        return "q"
+      end, { expr = true, desc = "Close preview or record macro" })
+    end,
     -- stylua: ignore start
     keys = {
       { "gpd", function() require("goto-preview").goto_preview_definition() end, desc = "Preview definition" },
