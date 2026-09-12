@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { entriesFromMenu, parseSnapshot } from "../src/model.ts";
+import {
+  entriesFromMenu,
+  parseSnapshot,
+  providerDisplayTitle,
+} from "../src/model.ts";
 import type { MenuNode } from "../src/model.ts";
 
 const node = (
@@ -81,4 +85,10 @@ test("corrupt or outdated snapshots are discarded", () => {
       JSON.stringify({ version: 1, capturedAt: 1, nodes: [node("A")] }),
     ),
   );
+});
+
+test("provider display titles omit only a trailing Official suffix", () => {
+  assert.equal(providerDisplayTitle("OpenAI Official"), "OpenAI");
+  assert.equal(providerDisplayTitle("Claude official"), "Claude");
+  assert.equal(providerDisplayTitle("Official OpenAI"), "Official OpenAI");
 });

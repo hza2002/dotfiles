@@ -23,6 +23,12 @@ export function groupTitle(title: string): string {
   return title.split(" · ")[0];
 }
 
+/** Keep provider matching based on the native title while shortening its UI label. */
+export function providerDisplayTitle(title: string): string {
+  const display = title.replace(/\s+official\s*$/i, "").trim();
+  return display || title;
+}
+
 export function isLightweightMode(title: string): boolean {
   return ["Lightweight Mode", "軽量モード", "輕量模式", "轻量模式"].includes(
     title,

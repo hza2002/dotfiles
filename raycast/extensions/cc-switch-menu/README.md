@@ -26,15 +26,18 @@ It stays in the bottom Global section across application filters and is not an
 application dropdown option. Native text search still filters matching rows.
 
 Official OpenAI providers in the Codex group also show the signed-in GPT account's
-remaining five-hour and weekly quotas, local reset times, countdowns, and fetch
-time. Quotas refresh when opening the command, refreshing the menu, or switching
-providers. Command-Shift-R refreshes quotas independently of the native menu.
+remaining five-hour and weekly quotas, available reset credits, reset-credit details
+and expiry times, local reset times, countdowns, plan type, and fetch time. Quotas refresh when opening the command, refreshing the
+menu, or switching providers. Command-Shift-R refreshes quotas independently of
+the native menu.
 Countdowns update every 30 seconds; reaching a reset time requires a fresh query.
 Quota results remain in memory and are not persisted.
 
-The quota detail separates the five-hour and weekly windows. Dates use the current
-system timezone and `YYYY-MM-DD HH:mm` (24-hour time); the timezone is displayed
-with the account and update time below the quotas.
+The quota detail separates the five-hour and weekly windows and lists every reset
+credit returned by Codex, including status and expiry. Dates use the current system
+timezone and `YYYY-MM-DD HH:mm` (24-hour time); the timezone is displayed with the
+account and update time below the quotas. When available, the provider row includes
+compact 5h, 7d, and Reset accessories; low remaining quota is colored orange or red.
 
 This optional display reads the default `~/.cc-switch/cc-switch.db` in read-only
 mode to identify uniquely named Codex providers classified as `official` and

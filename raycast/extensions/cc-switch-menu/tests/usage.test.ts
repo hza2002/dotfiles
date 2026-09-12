@@ -9,6 +9,7 @@ import {
   parseUsage,
   queryCodex,
   resetText,
+  usageMarkdown,
 } from "../src/usage.ts";
 
 test("local dates use year-month-day, 24-hour time and timezone DST rules", () => {
@@ -48,13 +49,58 @@ test("selects Codex windows by duration, not position or other model buckets", (
         codex: { primary: weekly, secondary: fiveHour },
         other: { primary: { ...fiveHour, usedPercent: 99 } },
       },
+      rateLimitResetCredits: { availableCount: 3 },
     },
     "test@example.com",
     "account",
   );
   assert.equal(usage.fiveHour?.usedPercent, 18);
   assert.equal(usage.weekly?.usedPercent, 22);
+  assert.equal(usage.resetCredits, 3);
   assert.equal(usage.email, "test@example.com");
+});
+
+test("parses and sorts reset credit details and diagnostics", () => {
+  const usage = parseUsage(
+    {
+      rateLimitResetCredits: {
+        availableCount: 4,
+        credits: [
+          { title: "Weekly reset", status: "redeemed", expiresAt: 1900000000 },
+          {
+            name: "Full reset (Weekly + 5 hr)",
+            status: "available",
+            expiresAt: 1900500000,
+          },
+          { type: "Full reset", status: "available", expiresAt: null },
+        ],
+      },
+      ordinaryUsageAllowed: false,
+      rateLimits: {
+        rateLimitReachedType: "weekly",
+      },
+    },
+    "test@example.com",
+    "account",
+    "pro",
+  );
+  assert.equal(usage.planType, "pro");
+  assert.deepEqual(
+    usage.resetCreditDetails?.map((credit) => credit.status),
+    ["available", "available", "redeemed"],
+  );
+  assert.equal(usage.resetCreditDetails?.[0].expiresAt, 1900500000);
+  assert.equal(usage.resetCreditDetails?.[1].expiresAt, null);
+  assert.equal(usage.ordinaryUsageAllowed, false);
+  assert.equal(usage.rateLimitReachedType, "weekly");
+  const markdown = usageMarkdown(usage, undefined, 1800000000 * 1000);
+  assert.match(markdown, /Pro/);
+  assert.match(markdown, /已显示 3\/4 张/);
+  assert.match(markdown, /永不过期/);
+  assert.match(markdown, /Full reset/);
+  assert.doesNotMatch(markdown, /Weekly \+ 5 hr/);
+  assert.match(markdown, /普通额度当前不可用/);
+  assert.doesNotMatch(markdown, /\n  /);
 });
 
 test("supports legacy snapshots and preserves absent or invalid windows", () => {
@@ -65,6 +111,7 @@ test("supports legacy snapshots and preserves absent or invalid windows", () => 
   );
   assert.equal(usage.fiveHour?.usedPercent, 18);
   assert.equal(usage.weekly, undefined);
+  assert.equal(usage.resetCredits, undefined);
   for (const primary of [
     null,
     { ...fiveHour, usedPercent: -1 },
@@ -90,10 +137,53 @@ test("supports legacy snapshots and preserves absent or invalid windows", () => 
       .fiveHour,
     undefined,
   );
+  for (const availableCount of [null, -1, 1.5, "3", Infinity]) {
+    assert.equal(
+      parseUsage({ rateLimitResetCredits: { availableCount } }, "", "a")
+        .resetCredits,
+      undefined,
+    );
+  }
   assert.throws(
     () => parseUsage({ accountId: "other" }, "", "account"),
     /其他账号/,
   );
+});
+
+test("quota markdown displays available reset credits", () => {
+  const markdown = usageMarkdown(
+    {
+      email: "test@example.com",
+      resetCredits: 3,
+      capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+    },
+    undefined,
+    Date.parse("2026-09-07T16:25:52Z"),
+  );
+  assert.match(markdown, /重置券.*可用 3 次/);
+  assert.match(
+    usageMarkdown(
+      {
+        email: "test@example.com",
+        capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+      },
+      undefined,
+      Date.parse("2026-09-07T16:25:52Z"),
+    ),
+    /重置券.*可用 未提供 次/,
+  );
+});
+
+test("quota markdown displays the account email only once", () => {
+  const markdown = usageMarkdown(
+    {
+      email: "test@example.com",
+      capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+    },
+    undefined,
+    Date.parse("2026-09-07T16:25:52Z"),
+  );
+  assert.equal(markdown.match(/test@example\.com/g)?.length, 1);
 });
 
 test("missing reset times are unknown and elapsed resets require a refresh", () => {
@@ -163,7 +253,13 @@ test("initializes, verifies ChatGPT login, reads limits and closes the process",
       : id === 2
         ? {
             id,
-            result: { account: { type: "chatgpt", email: "test@example.com" } },
+            result: {
+              account: {
+                type: "chatgpt",
+                email: "test@example.com",
+                planType: "pro",
+              },
+            },
           }
         : id === 3
           ? {
@@ -177,6 +273,7 @@ test("initializes, verifies ChatGPT login, reads limits and closes the process",
   );
   const usage = await queryCodex("a", server.launch);
   assert.equal(usage.weekly?.usedPercent, 22);
+  assert.equal(usage.planType, "pro");
   assert.deepEqual(
     server.requests.map((r) => r.method),
     ["initialize", "initialized", "account/read", "account/rateLimits/read"],

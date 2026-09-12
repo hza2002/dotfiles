@@ -7,10 +7,21 @@ import { promisify } from "node:util";
 const exec = promisify(execFile);
 export type OfficialProvider = { name: string; accountId: string | null };
 export type UsageWindow = { usedPercent: number; resetsAt: number | null };
+export type ResetCredit = {
+  title: string;
+  status: string;
+  grantedAt: number | null;
+  expiresAt: number | null;
+};
 export type Usage = {
   email: string;
+  planType?: string;
   fiveHour?: UsageWindow;
   weekly?: UsageWindow;
+  resetCredits?: number;
+  resetCreditDetails?: ResetCredit[];
+  ordinaryUsageAllowed?: boolean;
+  rateLimitReachedType?: string;
   capturedAt: number;
 };
 
@@ -45,13 +56,66 @@ export function parseUsage(
   result: any,
   email: string,
   expectedAccountId: string,
+  planType?: string,
 ): Usage {
   if (result.accountId && result.accountId !== expectedAccountId)
     throw new Error("返回的额度属于其他账号，请重新登录后刷新。");
   const limits = result.rateLimitsByLimitId
     ? result.rateLimitsByLimitId.codex
     : result.rateLimits;
-  const usage: Usage = { email, capturedAt: Date.now() };
+  const usage: Usage = {
+    email,
+    ...(typeof planType === "string" && planType ? { planType } : {}),
+    capturedAt: Date.now(),
+  };
+  const availableResetCredits = result.rateLimitResetCredits?.availableCount;
+  if (
+    typeof availableResetCredits === "number" &&
+    Number.isInteger(availableResetCredits) &&
+    availableResetCredits >= 0
+  )
+    usage.resetCredits = availableResetCredits;
+  const credits = result.rateLimitResetCredits?.credits;
+  if (Array.isArray(credits)) {
+    usage.resetCreditDetails = credits
+      .filter((credit: any) => credit && typeof credit === "object")
+      .map((credit: any) => ({
+        title:
+          typeof credit.title === "string" && credit.title.trim()
+            ? credit.title.trim()
+            : typeof credit.name === "string" && credit.name.trim()
+              ? credit.name.trim()
+              : typeof credit.type === "string" && credit.type.trim()
+                ? credit.type.trim()
+                : typeof credit.creditType === "string" &&
+                    credit.creditType.trim()
+                  ? credit.creditType.trim()
+                  : "重置额度",
+        status:
+          typeof credit.status === "string" && credit.status.trim()
+            ? credit.status.trim()
+            : "未知状态",
+        grantedAt: epochSeconds(credit.grantedAt),
+        expiresAt: epochSeconds(credit.expiresAt),
+      }))
+      .sort((a, b) => {
+        const statusRank = (status: string) =>
+          ({ available: 0, redeeming: 1, redeemed: 2, expired: 3, unknown: 4 })[
+            status.toLowerCase()
+          ] ?? 5;
+        const statusOrder = statusRank(a.status) - statusRank(b.status);
+        if (statusOrder) return statusOrder;
+        if (a.expiresAt === null) return 1;
+        if (b.expiresAt === null) return -1;
+        return a.expiresAt - b.expiresAt;
+      });
+  }
+  if (typeof result.ordinaryUsageAllowed === "boolean")
+    usage.ordinaryUsageAllowed = result.ordinaryUsageAllowed;
+  const reachedType =
+    limits?.rateLimitReachedType ?? result.rateLimitReachedType;
+  if (typeof reachedType === "string" && reachedType.trim())
+    usage.rateLimitReachedType = reachedType.trim();
   if (!limits || (limits.limitId && limits.limitId !== "codex")) return usage;
   for (const window of [limits.primary, limits.secondary]) {
     if (
@@ -114,6 +178,7 @@ export function queryCodex(
     let settled = false;
     let buffer = "";
     let email = "";
+    let accountPlanType: string | undefined;
     let stage = 1;
     const finish = (error?: Error, usage?: Usage) => {
       if (settled) return;
@@ -179,12 +244,21 @@ export function queryCodex(
               typeof account.email === "string"
                 ? account.email
                 : "GPT 登录账号";
+            accountPlanType =
+              typeof account.planType === "string"
+                ? account.planType
+                : undefined;
             stage = 3;
             send(3, "account/rateLimits/read");
           } else {
             finish(
               undefined,
-              parseUsage(message.result, email, expectedAccountId),
+              parseUsage(
+                message.result,
+                email,
+                expectedAccountId,
+                accountPlanType,
+              ),
             );
           }
         } catch {
@@ -242,16 +316,80 @@ export function usageMarkdown(
   if (error) return `### OpenAI 额度\n\n${error}`;
   if (!usage) return "### OpenAI 额度\n\n正在查询…";
   const section = (title: string, window: UsageWindow | undefined) =>
-    `### ${title} · ${window ? `剩余 ${100 - window.usedPercent}%` : "未提供此窗口"}\n\n` +
+    `**${title}** · ${window ? `剩余 ${100 - window.usedPercent}%` : "未提供此窗口"}` +
     (window
-      ? `重置于 ${resetText(window)}  \n${countdownText(window, now)}${window.resetsAt && window.resetsAt * 1000 > now ? "后重置" : ""}`
+      ? ` · ${resetText(window)} · ${countdownText(window, now)}${window.resetsAt && window.resetsAt * 1000 > now ? "后重置" : ""}`
       : "");
   const email = usage.email.replace(/[\\`*_{}\[\]()<>#|]/g, "\\$&");
+  const resetDetails = usage.resetCreditDetails?.length
+    ? [
+        `**重置券 · ${usage.resetCredits ?? usage.resetCreditDetails.length} 次**${usage.resetCredits !== undefined && usage.resetCredits !== usage.resetCreditDetails.length ? `（已显示 ${usage.resetCreditDetails.length}/${usage.resetCredits} 张）` : ""}`,
+        usage.resetCreditDetails
+          .map((credit) => {
+            const status = resetStatusText(credit.status);
+            const expiry = credit.expiresAt
+              ? formatLocalTime(credit.expiresAt * 1000)
+              : "永不过期";
+            return `- **${escapeMarkdown(resetCreditDisplayTitle(credit.title))}** · ${escapeMarkdown(status)} · ${expiry}`;
+          })
+          .join("\n"),
+      ].join("\n\n")
+    : `**重置券** · 可用 ${usage.resetCredits ?? "未提供"} 次`;
+  const diagnostics = [
+    usage.ordinaryUsageAllowed === false ? "普通额度当前不可用" : "",
+    usage.rateLimitReachedType
+      ? `限制原因：${escapeMarkdown(usage.rateLimitReachedType)}`
+      : "",
+  ].filter(Boolean);
   return [
+    `## ${escapeMarkdown(planText(usage.planType))} · ${email}`,
     section("5 小时", usage.fiveHour),
     section("每周", usage.weekly),
-    `---\n\n${email}  \n${Intl.DateTimeFormat().resolvedOptions().timeZone}  \n更新于 ${formatLocalTime(usage.capturedAt)}`,
+    resetDetails,
+    ...(diagnostics.length ? [`**状态** · ${diagnostics.join(" · ")}`] : []),
+    `---\n${Intl.DateTimeFormat().resolvedOptions().timeZone} · 更新于 ${formatLocalTime(usage.capturedAt)}`,
   ].join("\n\n");
+}
+
+function escapeMarkdown(value: string): string {
+  return value.replace(/[\\`*_{}\[\]()<>#|]/g, "\\$&");
+}
+
+function resetStatusText(status: string): string {
+  return (
+    {
+      available: "可用",
+      redeeming: "使用中",
+      redeemed: "已使用",
+      expired: "已过期",
+      unknown: "未知状态",
+    }[status.toLowerCase()] ?? status
+  );
+}
+
+function planText(planType: string | undefined): string {
+  if (!planType) return "OpenAI";
+  return planType.length
+    ? planType[0].toUpperCase() + planType.slice(1)
+    : planType;
+}
+
+function resetCreditDisplayTitle(title: string): string {
+  // The API appends the covered windows, which are already shown above.
+  return title.replace(/\s*[([【][^\])】]*[\])】]\s*$/u, "").trim() || title;
+}
+
+function epochSeconds(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0)
+    return value > 100_000_000_000 ? value / 1000 : value;
+  if (typeof value === "string") {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0)
+      return numeric > 100_000_000_000 ? numeric / 1000 : numeric;
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed / 1000;
+  }
+  return null;
 }
 
 export function countdownText(

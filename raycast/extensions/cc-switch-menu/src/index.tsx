@@ -13,7 +13,12 @@ import {
 import { useCachedState } from "@raycast/utils";
 import { useEffect, useRef, useState } from "react";
 import { readMenu } from "./backend";
-import { entriesFromMenu, isLightweightMode, parseSnapshot } from "./model";
+import {
+  entriesFromMenu,
+  isLightweightMode,
+  parseSnapshot,
+  providerDisplayTitle,
+} from "./model";
 import type { Entry, Snapshot } from "./model";
 import {
   officialProviders,
@@ -24,6 +29,12 @@ import {
 import type { Usage } from "./usage";
 
 const CACHE_KEY = "menu-snapshot-v1";
+
+function quotaColor(remaining: number): Color {
+  if (remaining <= 10) return Color.Red;
+  if (remaining <= 30) return Color.Orange;
+  return Color.Green;
+}
 
 export default function Command() {
   const [snapshot, setSnapshot] = useState<Snapshot>();
@@ -115,14 +126,18 @@ export default function Command() {
     try {
       toast = await showToast({
         style: Toast.Style.Animated,
-        title: entry ? `正在切换 ${entry.title}` : "正在读取 CC Switch 菜单",
+        title: entry
+          ? `正在切换 ${providerDisplayTitle(entry.title)}`
+          : "正在读取 CC Switch 菜单",
       });
       const next = await readMenu(environment.assetsPath, entry);
       setSnapshot(next);
       setFailure(undefined);
       await LocalStorage.setItem(CACHE_KEY, JSON.stringify(next));
       toast.style = Toast.Style.Success;
-      toast.title = entry ? `已确认选中 ${entry.title}` : "菜单已刷新";
+      toast.title = entry
+        ? `已确认选中 ${providerDisplayTitle(entry.title)}`
+        : "菜单已刷新";
     } catch (error) {
       const message = error instanceof Error ? error.message : "操作失败";
       setFailure(message);
@@ -218,6 +233,7 @@ export default function Command() {
           {entries
             .filter((entry) => entry.group === group)
             .map((entry) => {
+              const displayTitle = providerDisplayTitle(entry.title);
               const quota =
                 entry.group === "Codex" &&
                 entry.route.length === 2 &&
@@ -239,12 +255,48 @@ export default function Command() {
                         : entry.checked
                           ? "使用中"
                           : "";
+              const quotaAccessories = quota?.data
+                ? [
+                    ...(quota.data.fiveHour
+                      ? [
+                          {
+                            text: {
+                              value: `5h ${100 - quota.data.fiveHour.usedPercent}%`,
+                              color: quotaColor(
+                                100 - quota.data.fiveHour.usedPercent,
+                              ),
+                            },
+                          },
+                        ]
+                      : []),
+                    ...(quota.data.weekly
+                      ? [
+                          {
+                            text: {
+                              value: `7d ${100 - quota.data.weekly.usedPercent}%`,
+                              color: quotaColor(
+                                100 - quota.data.weekly.usedPercent,
+                              ),
+                            },
+                          },
+                        ]
+                      : []),
+                    ...(quota.data.resetCredits !== undefined
+                      ? [
+                          {
+                            text: `R${quota.data.resetCredits}`,
+                            tooltip: `可用重置次数：${quota.data.resetCredits}`,
+                          },
+                        ]
+                      : []),
+                  ]
+                : [];
               return (
                 <List.Item
                   key={entry.key}
                   id={entry.key}
-                  title={entry.title}
-                  keywords={[entry.group]}
+                  title={displayTitle}
+                  keywords={[entry.group, entry.title]}
                   icon={{
                     source: entry.checked
                       ? Icon.CheckCircle
@@ -255,7 +307,10 @@ export default function Command() {
                       ? Color.Green
                       : Color.SecondaryText,
                   }}
-                  accessories={status ? [{ text: status }] : []}
+                  accessories={[
+                    ...quotaAccessories,
+                    ...(quota?.data || !status ? [] : [{ text: status }]),
+                  ]}
                   detail={
                     <List.Item.Detail
                       markdown={
@@ -272,7 +327,7 @@ export default function Command() {
                             />
                             <List.Item.Detail.Metadata.Label
                               title="选项"
-                              text={entry.title}
+                              text={displayTitle}
                             />
                             <List.Item.Detail.Metadata.Label
                               title="菜单状态"
