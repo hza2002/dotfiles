@@ -286,6 +286,8 @@ shader is configuration source; the combined shader retains the smear shader's
 upstream revision and MIT notice in its file header.
 
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
+Each extension is bundled with `npm run build` before its tests and lint checks;
+the generated bundle is local runtime output and is not tracked.
 The Server extension reads SSH aliases from the private inventory at
 `~/.config/server/config.json` and attaches each selected host to its `main` tmux
 session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are

@@ -315,7 +315,27 @@ check_raycast_extension() {
   local extension=$1
   require npm
   (
+    generated_file="$REPO_ROOT/raycast/extensions/$extension/raycast-env.d.ts"
+    generated_backup=
+    original_exists=0
+    if [[ -f "$generated_file" ]]; then
+      original_exists=1
+      generated_backup=$(mktemp "$CHECK_ROOT/raycast-env.XXXXXX")
+      cp "$generated_file" "$generated_backup"
+    fi
+    restore_generated() {
+      local status=$?
+      trap - EXIT
+      if (( original_exists )); then
+        cp "$generated_backup" "$generated_file" || status=$?
+      else
+        rm -f "$generated_file" || status=$?
+      fi
+      exit "$status"
+    }
+    trap restore_generated EXIT
     cd "raycast/extensions/$extension"
+    npm run build
     npm test
     npm run lint
   )
