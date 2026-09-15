@@ -42,6 +42,27 @@ test("Kimi keeps dynamic windows and weekly quota, including exhausted quota", (
   );
 });
 
+test("Kimi uses remaining when the API omits used", () => {
+  for (const remaining of ["200", "150", "0"]) {
+    const detail = { limit: "200", remaining };
+    const view = kimiView(parseKimiUsage({
+      usage: detail,
+      limits: [{ window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" }, detail }],
+    }));
+    assert.deepEqual(view.rows.map((row) => row.remaining), [
+      Number(remaining) / 2,
+      Number(remaining) / 2,
+    ]);
+  }
+  for (const remaining of [undefined, null, "", "oops", -1, true, 201]) {
+    const view = kimiView(parseKimiUsage({ usage: { limit: 200, remaining } }));
+    assert.equal(view.rows[0].remaining, null);
+  }
+  assert.equal(kimiView(parseKimiUsage({
+    usage: { used: "50", limit: "200", remaining: "200" },
+  })).rows[0].remaining, 75);
+});
+
 test("missing and invalid quotas never become a fabricated full balance", () => {
   assert.throws(() => parseKimiUsage(null), /响应无效/);
   assert.deepEqual(kimiView(parseKimiUsage({ limits: [] })).rows, []);

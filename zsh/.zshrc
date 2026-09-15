@@ -136,11 +136,16 @@ if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   abbr -S --quieter update='sudo apt update && sudo apt upgrade -y'
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   abbr -S --quieter update='brew update && brew upgrade && brew cleanup'
+  # AI agent CLIs run yolo by default; *codex start a cc-switch provider for this process only.
+  abbr -S -f --quieter claude='claude --dangerously-skip-permissions'
+  abbr -S -f --quieter codex='codex --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter kcodex='cc-switch start codex "Kimi For Coding" -- --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter dcodex='cc-switch start codex "DeepSeek" -- --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter rcodex='cc-switch start codex "Rutaceae" -- --dangerously-bypass-approvals-and-sandbox'
 fi
 ########################## 🔼 ABBREVIATION 🔼 ###################
 
 ########################## 🔽 ALIAS 🔽 ##########################
-alias kcodex='cc-switch start codex "Kimi For Coding" --'
 alias c='printf "\e[H\e[2J"' # Sends control characters Esc-C to the console which resets the terminal
 if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   alias rm='trash-put' # Don't ask. Asking is a lesson learned in blood and tears.
@@ -150,12 +155,6 @@ fi
 ########################## 🔼 ALIAS 🔼 ##########################
 
 ########################## 🔽 FUNCTION 🔽 #######################
-function agent() {
-  printf '%s\n' \
-    'kcodex [参数…]  使用 Kimi For Coding 启动 Codex，仅影响本次进程' \
-    'agent           显示快捷命令帮助'
-}
-
 function y() {
   local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
   yazi "$@" --cwd-file="$tmp"
@@ -164,5 +163,4 @@ function y() {
   fi
   /bin/rm -f -- "$tmp"
 }
-
 ########################## 🔼 FUNCTION 🔼 #######################

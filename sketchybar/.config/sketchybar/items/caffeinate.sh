@@ -36,6 +36,14 @@ caffeinate_suffix=(
   padding_right=$PAD_ITEM
 )
 
+caffeinate_30m=(
+  icon="$CAFFEINATE_30M"
+  label="30分钟"
+  padding_left=$PAD_WIDE
+  padding_right=$PAD_WIDE
+  click_script="$PLUGIN_DIR/caffeinate.sh minutes 30; $POPUP_OFF"
+)
+
 caffeinate_1h=(
   icon="$CAFFEINATE_1H"
   label="1小时"
@@ -90,6 +98,9 @@ sketchybar --add item caffeinate left \
   \
   --add item caffeinate.suffix left \
   --set caffeinate.suffix "${caffeinate_suffix[@]}" \
+  \
+  --add item caffeinate.popup.30m popup.caffeinate \
+  --set caffeinate.popup.30m "${caffeinate_30m[@]}" \
   \
   --add item caffeinate.popup.1h popup.caffeinate \
   --set caffeinate.popup.1h "${caffeinate_1h[@]}" \

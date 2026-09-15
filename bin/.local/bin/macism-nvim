@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# macism wrapper for im-select.nvim: reads pass through unchanged, switches get
+# macism's trailing delay arg so CJKV input methods are not bounced back to ABC.
+set -euo pipefail
+
+case "$#" in
+0)
+  exec macism
+  ;;
+*)
+  exec macism "$1" 0
+  ;;
+esac

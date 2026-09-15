@@ -46,7 +46,7 @@ auto-update = off
 # open Ghostty → attach the main tmux session, create it in the scratch workspace if absent.
 # new-session -A is the canonical attach-or-create form and lets
 # tmux-continuum's auto-restore run on a fresh server.
-command = /bin/zsh --login -c "tmux new-session -A -s main -c ~/repo/scratch"
+command = /bin/zsh --login -c "tmux new-session -A -s scratch -c ~/repo/scratch"
 # ssh-terminfo pushes terminfo to remote hosts, fixing garbled output over SSH
 shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 

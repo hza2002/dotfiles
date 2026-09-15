@@ -295,9 +295,10 @@ not owned by this repository.
 
 ## Validation
 
-Use the narrowest relevant check while changing a component. Run the full
-`./check` for repository-wide handoff or changes to shared checking and linking
-behavior, rather than after every local edit.
+Use the narrowest relevant check for each touched component, including when
+committing several components at once. Run the full `./check` only for changes
+to shared checking and linking behavior (the `check` script, `.stowrc`), or
+when repository-wide validation is explicitly requested.
 
 | Command | Scope |
 | --- | --- |

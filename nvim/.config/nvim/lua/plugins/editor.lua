@@ -1,6 +1,8 @@
 -- Editor plugins not covered by LazyVim defaults.
 return {
-  -- Auto-switch macOS input method back to ABC on leaving insert mode
+  -- Auto-switch macOS input method back to ABC on leaving insert mode.
+  -- macism-nvim (~/.local/bin, from the bin package) wraps macism with its
+  -- delay arg so CJKV input methods are not bounced back to ABC on restore.
   {
     "keaising/im-select.nvim",
     enabled = vim.fn.has("macunix") == 1,
@@ -8,7 +10,7 @@ return {
     event = "InsertEnter",
     opts = {
       default_im_select = "com.apple.keylayout.ABC",
-      default_command = "macism",
+      default_command = "macism-nvim",
     },
   },
 

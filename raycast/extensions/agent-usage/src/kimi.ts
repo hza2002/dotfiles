@@ -27,8 +27,17 @@ function number(value: unknown): number | null {
 function row(raw: unknown, title: string): Row | undefined {
   const detail = record(raw);
   if (!Object.keys(detail).length) return;
-  const used = number(detail.used);
+  let used = number(detail.used);
   const limit = number(detail.limit);
+  const remaining = number(detail.remaining);
+  // The API can omit used when the full quota remains.
+  if (
+    detail.used === undefined &&
+    limit !== null &&
+    remaining !== null &&
+    remaining <= limit
+  )
+    used = limit - remaining;
   const reset =
     typeof detail.resetTime === "string" ? Date.parse(detail.resetTime) : NaN;
   return {
