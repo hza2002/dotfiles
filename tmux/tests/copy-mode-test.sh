@@ -121,3 +121,5 @@ for rows in '' 'malformed' '100 1 pts/2' \
 done
 if snapshot '100 1 pts/1' 1; then exit 1; fi
 echo 'ok - detached child, shared TTY, malformed/empty snapshot and ps failure'
+
+python3 "$REPO_ROOT/tmux/tests/shift-enter-test.py"
