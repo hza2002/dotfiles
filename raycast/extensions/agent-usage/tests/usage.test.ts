@@ -4,12 +4,15 @@ import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 import type { spawn } from "node:child_process";
 import {
+  codexView,
   countdownText,
   formatLocalTime,
   parseUsage,
   queryCodex,
-  resetText,
-  usageMarkdown,
+  remainingText,
+  resetDetail,
+  rowText,
+  shortResetTime,
 } from "../src/usage.ts";
 
 test("local dates use year-month-day, 24-hour time and timezone DST rules", () => {
@@ -93,14 +96,10 @@ test("parses and sorts reset credit details and diagnostics", () => {
   assert.equal(usage.resetCreditDetails?.[1].expiresAt, null);
   assert.equal(usage.ordinaryUsageAllowed, false);
   assert.equal(usage.rateLimitReachedType, "weekly");
-  const markdown = usageMarkdown(usage, undefined, 1800000000 * 1000);
-  assert.match(markdown, /Pro/);
-  assert.match(markdown, /已显示 3\/4 张/);
-  assert.match(markdown, /永不过期/);
-  assert.match(markdown, /Full reset/);
-  assert.doesNotMatch(markdown, /Weekly \+ 5 hr/);
-  assert.match(markdown, /普通额度当前不可用/);
-  assert.doesNotMatch(markdown, /\n  /);
+  const view = codexView(usage);
+  assert.equal(view.title, "Codex · Pro");
+  assert.equal(view.note, "重置券 ×4");
+  assert.match(view.noteDetail!, /^Full reset · \d{2}-\d{2} \d{2}:\d{2} 过期$/);
 });
 
 test("supports legacy snapshots and preserves absent or invalid windows", () => {
@@ -150,48 +149,70 @@ test("supports legacy snapshots and preserves absent or invalid windows", () => 
   );
 });
 
-test("quota markdown displays available reset credits", () => {
-  const markdown = usageMarkdown(
-    {
-      email: "test@example.com",
-      resetCredits: 3,
-      capturedAt: Date.parse("2026-09-07T16:25:52Z"),
-    },
-    undefined,
-    Date.parse("2026-09-07T16:25:52Z"),
-  );
-  assert.match(markdown, /重置券.*可用 3 次/);
-  assert.match(
-    usageMarkdown(
+test("codex view shows the nearest reset credit on one row", () => {
+  const view = codexView({
+    email: "test@example.com",
+    resetCredits: 3,
+    resetCreditDetails: [
       {
-        email: "test@example.com",
-        capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+        title: "Full reset (Weekly + 5 hr)",
+        status: "available",
+        grantedAt: null,
+        expiresAt: 1900000000,
       },
-      undefined,
-      Date.parse("2026-09-07T16:25:52Z"),
-    ),
-    /重置券.*可用 未提供 次/,
+    ],
+    capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+  });
+  assert.equal(view.note, "重置券 ×3");
+  assert.match(
+    view.noteDetail!,
+    /^Full reset · \d{2}-\d{2} \d{2}:\d{2} 过期$/,
+  );
+  const bare = codexView({
+    email: "test@example.com",
+    resetCredits: 3,
+    capturedAt: 0,
+  });
+  assert.equal(bare.note, "重置券 ×3");
+  assert.equal(bare.noteDetail, undefined);
+  assert.equal(
+    codexView({ email: "test@example.com", capturedAt: 0 }).note,
+    undefined,
   );
 });
 
-test("quota markdown displays the account email only once", () => {
-  const markdown = usageMarkdown(
-    {
-      email: "test@example.com",
-      capturedAt: Date.parse("2026-09-07T16:25:52Z"),
-    },
-    undefined,
-    Date.parse("2026-09-07T16:25:52Z"),
-  );
-  assert.equal(markdown.match(/test@example\.com/g)?.length, 1);
+test("codex view puts the account email on the title line", () => {
+  const view = codexView({
+    email: "test@example.com",
+    capturedAt: Date.parse("2026-09-07T16:25:52Z"),
+  });
+  assert.equal(view.subtitle, "test@example.com");
 });
 
 test("missing reset times are unknown and elapsed resets require a refresh", () => {
   const window = { usedPercent: 25, resetsAt: 1800000000 };
-  assert.equal(resetText(undefined), "未提供重置时间");
+  assert.equal(
+    rowText({ title: "5 小时", remaining: 75, resetsAt: null }, 0),
+    "剩余 75% · 重置时间未提供",
+  );
+  assert.equal(
+    remainingText({ title: "5 小时", remaining: 0, resetsAt: null }),
+    "剩余 \u20070%",
+  );
+  assert.equal(
+    remainingText({ title: "5 小时", remaining: 100, resetsAt: null }),
+    "剩余 100%",
+  );
   assert.equal(
     countdownText(window, 1800000000 * 1000),
     "已到重置时间，请刷新",
+  );
+  assert.equal(
+    rowText(
+      { title: "每周", remaining: 75, resetsAt: 1800000000 },
+      1800000000 * 1000,
+    ),
+    "剩余 75% · 已到重置时间，请刷新",
   );
   assert.equal(
     countdownText(window, (1800000000 - 90061) * 1000),
@@ -203,6 +224,31 @@ test("missing reset times are unknown and elapsed resets require a refresh", () 
     "a",
   );
   assert.equal(usage.fiveHour?.resetsAt, null);
+});
+
+test("compact rows drop the year, zero units and the status line", () => {
+  const now = Date.parse("2026-09-15T08:00:00Z"); // 16:00 Asia/Taipei
+  const sameDay = Date.parse("2026-09-15T11:38:00Z") / 1000;
+  const later = Date.parse("2026-09-19T08:56:00Z") / 1000;
+  assert.equal(shortResetTime(sameDay, now), "19:38");
+  assert.equal(shortResetTime(later, now), "09-19 16:56");
+  assert.equal(shortResetTime(null, now), "未提供");
+  assert.equal(
+    countdownText({ usedPercent: 0, resetsAt: later }, now),
+    "4 天 56 分",
+  );
+  assert.equal(
+    rowText({ title: "每周", remaining: 36, resetsAt: later }, now),
+    "剩余 36% · 4 天 56 分后 · 重置 09-19 16:56",
+  );
+  assert.equal(
+    rowText({ title: "5 小时", remaining: 0, resetsAt: sameDay }, now),
+    "剩余 \u20070% · 3 小时 38 分后 · 重置 09-15 19:38",
+  );
+  assert.equal(
+    resetDetail({ title: "每周", remaining: 36, resetsAt: null }, now),
+    "重置时间未提供",
+  );
 });
 
 function fakeServer(respond: (request: any) => object | undefined) {

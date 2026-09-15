@@ -1,9 +1,9 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "cc-switch-menu",
+  "name": "agent-usage",
   "type": "module",
-  "title": "CC Switch",
-  "description": "Browse and switch the providers in your CC Switch menu",
+  "title": "Agent Usage",
+  "description": "Check your coding plan quotas in one view",
   "icon": "icon.png",
   "author": "hza2002",
   "license": "MIT",
@@ -16,15 +16,16 @@
   "commands": [
     {
       "name": "index",
-      "title": "CC Switch Providers",
-      "subtitle": "Providers",
-      "description": "Search providers and switch through the CC Switch menu",
+      "title": "Agent Usage",
+      "subtitle": "Coding Plan Usage",
+      "description": "Check all connected coding plan quotas",
       "mode": "view",
       "keywords": [
-        "provider",
-        "codex",
-        "claude",
-        "switch"
+        "usage",
+        "quota",
+        "coding",
+        "plan",
+        "codex"
       ]
     }
   ],
@@ -35,8 +36,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
-    "@raycast/api": "^1.104.24",
-    "@raycast/utils": "^2.3.0"
+    "@raycast/api": "^1.104.24"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

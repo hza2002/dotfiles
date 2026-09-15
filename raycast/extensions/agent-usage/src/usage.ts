@@ -1,11 +1,8 @@
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
-const exec = promisify(execFile);
-export type OfficialProvider = { name: string; accountId: string | null };
 export type UsageWindow = { usedPercent: number; resetsAt: number | null };
 export type ResetCredit = {
   title: string;
@@ -24,33 +21,6 @@ export type Usage = {
   rateLimitReachedType?: string;
   capturedAt: number;
 };
-
-export async function officialProviders(): Promise<OfficialProvider[]> {
-  // Read only the identity needed to associate menu entries with official accounts.
-  const { stdout } = await exec(
-    "/usr/bin/sqlite3",
-    [
-      "-readonly",
-      "-json",
-      join(homedir(), ".cc-switch/cc-switch.db"),
-      `SELECT name, category,
-      CASE WHEN category = 'official'
-        AND json_extract(settings_config, '$.auth.auth_mode') = 'chatgpt'
-        AND json_extract(settings_config, '$.auth.OPENAI_API_KEY') IS NULL THEN
-        json_extract(settings_config, '$.auth.tokens.account_id') END AS accountId
-      FROM providers WHERE app_type = 'codex'`,
-    ],
-    { timeout: 5000, maxBuffer: 1024 * 1024 },
-  );
-  const rows = JSON.parse(stdout || "[]") as Array<
-    OfficialProvider & { category: string | null }
-  >;
-  return rows.filter(
-    (row) =>
-      row.category === "official" &&
-      rows.filter((other) => other.name === row.name).length === 1,
-  );
-}
 
 export function parseUsage(
   result: any,
@@ -267,27 +237,18 @@ export function queryCodex(
       }
     });
     send(1, "initialize", {
-      clientInfo: { name: "cc_switch_usage", version: "1.0.0" },
+      clientInfo: { name: "agent_usage", version: "1.0.0" },
     });
   });
 }
 
-export async function readUsage(provider: OfficialProvider): Promise<Usage> {
+export async function readUsage(): Promise<Usage> {
   const before = await localAccountId();
   if (!before) throw new Error("请先在 Codex 中登录 GPT 账号。");
-  if (!provider.accountId || before !== provider.accountId)
-    throw new Error(
-      "本机 GPT 登录账号与此官方 provider 不匹配，请同步登录后刷新。",
-    );
   const usage = await queryCodex(before);
   if ((await localAccountId()) !== before)
     throw new Error("查询期间登录账号已变化，请重新刷新。");
   return usage;
-}
-
-export function resetText(window: UsageWindow | undefined): string {
-  if (!window?.resetsAt) return "未提供重置时间";
-  return formatLocalTime(window.resetsAt * 1000);
 }
 
 export function formatLocalTime(
@@ -308,63 +269,106 @@ export function formatLocalTime(
   return `${value("year")}-${value("month")}-${value("day")} ${value("hour")}:${value("minute")}`;
 }
 
-export function usageMarkdown(
-  usage: Usage | undefined,
-  error: string | undefined,
-  now: number,
-): string {
-  if (error) return `### OpenAI 额度\n\n${error}`;
-  if (!usage) return "### OpenAI 额度\n\n正在查询…";
-  const section = (title: string, window: UsageWindow | undefined) =>
-    `**${title}** · ${window ? `剩余 ${100 - window.usedPercent}%` : "未提供此窗口"}` +
-    (window
-      ? ` · ${resetText(window)} · ${countdownText(window, now)}${window.resetsAt && window.resetsAt * 1000 > now ? "后重置" : ""}`
-      : "");
-  const email = usage.email.replace(/[\\`*_{}\[\]()<>#|]/g, "\\$&");
-  const resetDetails = usage.resetCreditDetails?.length
-    ? [
-        `**重置券 · ${usage.resetCredits ?? usage.resetCreditDetails.length} 次**${usage.resetCredits !== undefined && usage.resetCredits !== usage.resetCreditDetails.length ? `（已显示 ${usage.resetCreditDetails.length}/${usage.resetCredits} 张）` : ""}`,
-        usage.resetCreditDetails
-          .map((credit) => {
-            const status = resetStatusText(credit.status);
-            const expiry = credit.expiresAt
-              ? formatLocalTime(credit.expiresAt * 1000)
-              : "永不过期";
-            return `- **${escapeMarkdown(resetCreditDisplayTitle(credit.title))}** · ${escapeMarkdown(status)} · ${expiry}`;
-          })
-          .join("\n"),
-      ].join("\n\n")
-    : `**重置券** · 可用 ${usage.resetCredits ?? "未提供"} 次`;
-  const diagnostics = [
-    usage.ordinaryUsageAllowed === false ? "普通额度当前不可用" : "",
-    usage.rateLimitReachedType
-      ? `限制原因：${escapeMarkdown(usage.rateLimitReachedType)}`
-      : "",
-  ].filter(Boolean);
-  return [
-    `## ${escapeMarkdown(planText(usage.planType))} · ${email}`,
-    section("5 小时", usage.fiveHour),
-    section("每周", usage.weekly),
-    resetDetails,
-    ...(diagnostics.length ? [`**状态** · ${diagnostics.join(" · ")}`] : []),
-    `---\n${Intl.DateTimeFormat().resolvedOptions().timeZone} · 更新于 ${formatLocalTime(usage.capturedAt)}`,
-  ].join("\n\n");
-}
+export type QuotaRow = {
+  title: string;
+  remaining: number | null;
+  resetsAt: number | null;
+};
+export type PlanView = {
+  title: string;
+  subtitle?: string;
+  rows: QuotaRow[];
+  note?: string;
+  noteDetail?: string;
+};
 
-function escapeMarkdown(value: string): string {
-  return value.replace(/[\\`*_{}\[\]()<>#|]/g, "\\$&");
-}
-
-function resetStatusText(status: string): string {
-  return (
-    {
-      available: "可用",
-      redeeming: "使用中",
-      redeemed: "已使用",
-      expired: "已过期",
-      unknown: "未知状态",
-    }[status.toLowerCase()] ?? status
+export function codexView(usage: Usage): PlanView {
+  const row = (title: string, window: UsageWindow | undefined): QuotaRow => ({
+    title,
+    remaining: window ? Math.max(0, 100 - window.usedPercent) : null,
+    resetsAt: window?.resetsAt ?? null,
+  });
+  const available = (usage.resetCreditDetails ?? []).filter(
+    (credit) => credit.status.toLowerCase() === "available",
   );
+  const count = usage.resetCredits ?? (available.length || undefined);
+  const nearest = available
+    .filter((credit) => credit.expiresAt !== null)
+    .sort((a, b) => a.expiresAt! - b.expiresAt!)[0];
+  const note = count === undefined ? undefined : `重置券 ×${count}`;
+  const noteDetail = nearest
+    ? `${creditTitle(nearest.title)} · ${shortResetTime(nearest.expiresAt, Date.now(), true)} 过期`
+    : undefined;
+  return {
+    title: `Codex · ${planText(usage.planType)}`,
+    subtitle: usage.email,
+    rows: [row("5 小时", usage.fiveHour), row("每周", usage.weekly)],
+    ...(note ? { note } : {}),
+    ...(note && noteDetail ? { noteDetail } : {}),
+  };
+}
+
+// The API appends the covered windows, which the quota rows already show.
+function creditTitle(title: string): string {
+  return title.replace(/\s*[(【][^)】]*[)】]\s*$/u, "").trim() || title;
+}
+
+function localParts(timestamp: number) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(timestamp);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)!.value;
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    short: `${value("month")}-${value("day")}`,
+    time: `${value("hour")}:${value("minute")}`,
+  };
+}
+
+// Same-day resets show only HH:mm; later days show MM-DD HH:mm. No year.
+export function shortResetTime(
+  resetsAt: number | null,
+  now: number,
+  alwaysDate = false,
+): string {
+  if (!resetsAt) return "未提供";
+  const target = localParts(resetsAt * 1000);
+  return !alwaysDate && target.date === localParts(now).date
+    ? target.time
+    : `${target.short} ${target.time}`;
+}
+
+// Figure-space padding keeps the percentage column aligned in proportional fonts.
+export function remainingText(row: QuotaRow): string {
+  return row.remaining === null
+    ? "未提供"
+    : `剩余 ${String(Math.round(row.remaining)).padStart(2, "\u2007")}%`;
+}
+
+export function resetDetail(row: QuotaRow, now: number): string {
+  if (!row.resetsAt) return "重置时间未提供";
+  const countdown = countdownText(
+    { usedPercent: 0, resetsAt: row.resetsAt },
+    now,
+  );
+  if (countdown === "已到重置时间，请刷新") return countdown;
+  // Countdown leads so the fixed-width reset datetime lines up across rows.
+  return `${countdown}后 · 重置 ${shortResetTime(row.resetsAt, now, true)}`;
+}
+
+export function rowText(row: QuotaRow, now: number): string {
+  return `${remainingText(row)} · ${resetDetail(row, now)}`;
+}
+
+export function escapeMarkdown(value: string): string {
+  return value.replace(/[\\`*_{}\[\]()<>#|]/g, "\\$&");
 }
 
 function planText(planType: string | undefined): string {
@@ -372,11 +376,6 @@ function planText(planType: string | undefined): string {
   return planType.length
     ? planType[0].toUpperCase() + planType.slice(1)
     : planType;
-}
-
-function resetCreditDisplayTitle(title: string): string {
-  // The API appends the covered windows, which are already shown above.
-  return title.replace(/\s*[([【][^\])】]*[\])】]\s*$/u, "").trim() || title;
 }
 
 function epochSeconds(value: unknown): number | null {
@@ -401,5 +400,10 @@ export function countdownText(
   if (minutes <= 0) return "已到重置时间，请刷新";
   const days = Math.floor(minutes / 1440);
   const hours = Math.floor((minutes % 1440) / 60);
-  return `${days ? `${days} 天 ` : ""}${hours} 小时 ${minutes % 60} 分`;
+  const rest = minutes % 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days} 天`);
+  if (hours) parts.push(`${hours} 小时`);
+  if (rest || parts.length === 0) parts.push(`${rest} 分`);
+  return parts.join(" ");
 }
