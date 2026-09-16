@@ -140,3 +140,145 @@ test("network, HTTP and malformed responses do not expose raw server messages", 
     );
   }
 });
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+const expiredCredentials = async () =>
+  JSON.stringify({
+    access_token: "old-access",
+    refresh_token: "old-refresh",
+    expires_at: nowSeconds() - 10,
+    expires_in: 900,
+    scope: "kimi-code",
+    token_type: "Bearer",
+  });
+const TOKEN_URL = "https://auth.kimi.com/api/oauth/token";
+
+test("an expired token is refreshed and saved before querying", async () => {
+  const saved: {
+    access_token: string;
+    refresh_token?: string;
+    expires_at?: number;
+  }[] = [];
+  const calls: string[] = [];
+  const usage = await readKimiUsage(
+    expiredCredentials,
+    (async (url, options) => {
+      calls.push(String(url));
+      if (url === TOKEN_URL) {
+        const body = new URLSearchParams(String(options?.body));
+        assert.equal(body.get("client_id"), "17e5f671-d194-4dfb-9706-5516cb48c098");
+        assert.equal(body.get("grant_type"), "refresh_token");
+        assert.equal(body.get("refresh_token"), "old-refresh");
+        return Response.json({
+          access_token: "new-access",
+          refresh_token: "new-refresh",
+          expires_in: 900,
+        });
+      }
+      assert.equal(url, "https://api.kimi.com/coding/v1/usages");
+      assert.equal(
+        new Headers(options?.headers).get("Authorization"),
+        "Bearer new-access",
+      );
+      return Response.json(payload);
+    }) as typeof fetch,
+    async (cred) => {
+      saved.push(cred);
+    },
+  );
+  assert.equal(usage.rows.length, 2);
+  assert.deepEqual(calls, [TOKEN_URL, "https://api.kimi.com/coding/v1/usages"]);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].access_token, "new-access");
+  assert.equal(saved[0].refresh_token, "new-refresh");
+  assert.ok(saved[0].expires_at! > nowSeconds());
+});
+
+test("a 401 reuses a newer token written by another client before refreshing", async () => {
+  let reads = 0;
+  const read = async () => {
+    reads += 1;
+    return reads === 1
+      ? JSON.stringify({
+          access_token: "stale-access",
+          refresh_token: "r1",
+          expires_at: nowSeconds() + 600,
+        })
+      : JSON.stringify({
+          access_token: "fresh-access",
+          refresh_token: "r2",
+          expires_at: nowSeconds() + 600,
+        });
+  };
+  const authorizations: (string | null)[] = [];
+  const usage = await readKimiUsage(
+    read,
+    (async (url, options) => {
+      assert.equal(url, "https://api.kimi.com/coding/v1/usages");
+      authorizations.push(
+        new Headers(options?.headers).get("Authorization"),
+      );
+      return authorizations.length === 1
+        ? new Response("secret", { status: 401 })
+        : Response.json(payload);
+    }) as typeof fetch,
+    async () => assert.fail("must not save"),
+  );
+  assert.equal(usage.rows.length, 2);
+  assert.deepEqual(authorizations, [
+    "Bearer stale-access",
+    "Bearer fresh-access",
+  ]);
+});
+
+test("a 401 with no newer token on disk refreshes once and retries", async () => {
+  const saved: { access_token: string; refresh_token?: string }[] = [];
+  const stored = JSON.stringify({
+    access_token: "stale-access",
+    refresh_token: "refresh-1",
+    expires_at: nowSeconds() + 600,
+  });
+  const authorizations: (string | null)[] = [];
+  const usage = await readKimiUsage(
+    async () => stored,
+    (async (url, options) => {
+      if (url === TOKEN_URL) {
+        const body = new URLSearchParams(String(options?.body));
+        assert.equal(body.get("refresh_token"), "refresh-1");
+        return Response.json({ access_token: "renewed-access", expires_in: 900 });
+      }
+      authorizations.push(
+        new Headers(options?.headers).get("Authorization"),
+      );
+      return authorizations.length === 1
+        ? new Response("secret", { status: 403 })
+        : Response.json(payload);
+    }) as typeof fetch,
+    async (cred) => {
+      saved.push(cred);
+    },
+  );
+  assert.equal(usage.rows.length, 2);
+  assert.deepEqual(authorizations, [
+    "Bearer stale-access",
+    "Bearer renewed-access",
+  ]);
+  assert.equal(saved.length, 1);
+  // The refresh response omitted a new refresh token, so the old one stays.
+  assert.equal(saved[0].refresh_token, "refresh-1");
+});
+
+test("a failing refresh asks for login again without exposing details", async () => {
+  await assert.rejects(
+    readKimiUsage(
+      expiredCredentials,
+      (async (url) => {
+        assert.equal(url, TOKEN_URL);
+        return new Response("test-secret", { status: 400 });
+      }) as typeof fetch,
+      async () => assert.fail("must not save"),
+    ),
+    (error: Error) =>
+      /\/login/.test(error.message) && !error.message.includes("test-secret"),
+  );
+});

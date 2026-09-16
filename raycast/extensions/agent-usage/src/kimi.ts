@@ -1,11 +1,19 @@
-import { readFile } from "node:fs/promises";
+import { chmod, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { PlanView } from "./usage.ts";
 
 const USAGE_URL = "https://api.kimi.com/coding/v1/usages";
+const TOKEN_URL = "https://auth.kimi.com/api/oauth/token";
+const CLIENT_ID = "17e5f671-d194-4dfb-9706-5516cb48c098";
+const CREDENTIALS_PATH = join(
+  homedir(),
+  ".kimi-code/credentials/kimi-code.json",
+);
 const LOGIN_MESSAGE =
   "请在 Kimi Code 中执行 /usage 刷新登录状态，再重试；未登录时请先执行 /login。";
+// Treat the token as expired this early to avoid racing the server clock.
+const EXPIRY_SKEW_SECONDS = 60;
 type Row = {
   title: string;
   usedPercent: number | null;
@@ -81,35 +89,142 @@ export function parseKimiUsage(payload: unknown): KimiUsage {
   return { rows, capturedAt: Date.now() };
 }
 
-export async function readKimiUsage(
-  read: (path: string) => Promise<string> = (path) => readFile(path, "utf8"),
-  request: typeof fetch = fetch,
-): Promise<KimiUsage> {
-  let token: string;
-  try {
-    const auth = record(
-      JSON.parse(
-        await read(join(homedir(), ".kimi-code/credentials/kimi-code.json")),
-      ),
-    );
-    if (typeof auth.access_token !== "string" || !auth.access_token.trim())
-      throw new Error();
-    token = auth.access_token;
-  } catch {
-    throw new Error(LOGIN_MESSAGE);
-  }
+type Credentials = {
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: number;
+  expires_in?: number;
+  scope?: string;
+  token_type?: string;
+};
+
+function parseCredentials(raw: string): Credentials {
+  const auth = record(JSON.parse(raw));
+  if (typeof auth.access_token !== "string" || !auth.access_token.trim())
+    throw new Error();
+  const cred: Credentials = { access_token: auth.access_token };
+  if (typeof auth.refresh_token === "string" && auth.refresh_token.trim())
+    cred.refresh_token = auth.refresh_token;
+  for (const key of ["expires_at", "expires_in"] as const)
+    if (typeof auth[key] === "number" && Number.isFinite(auth[key]))
+      cred[key] = auth[key];
+  if (typeof auth.scope === "string") cred.scope = auth.scope;
+  if (typeof auth.token_type === "string") cred.token_type = auth.token_type;
+  return cred;
+}
+
+function expiringSoon(cred: Credentials): boolean {
+  return (
+    cred.expires_at !== undefined &&
+    cred.expires_at - Date.now() / 1000 < EXPIRY_SKEW_SECONDS
+  );
+}
+
+async function writeCredentials(cred: Credentials): Promise<void> {
+  const tmp = `${CREDENTIALS_PATH}.tmp`;
+  await writeFile(tmp, JSON.stringify(cred));
+  await chmod(tmp, 0o600);
+  await rename(tmp, CREDENTIALS_PATH);
+}
+
+async function refreshToken(
+  cred: Credentials,
+  request: typeof fetch,
+): Promise<Credentials> {
+  if (!cred.refresh_token) throw new Error(LOGIN_MESSAGE);
   let response: Response;
   try {
-    response = await request(USAGE_URL, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    response = await request(TOKEN_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        grant_type: "refresh_token",
+        refresh_token: cred.refresh_token,
+      }),
+      redirect: "error",
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    throw new Error("Kimi 登录状态刷新失败，请检查网络后重试。");
+  }
+  if (!response.ok) throw new Error(LOGIN_MESSAGE);
+  const body = record(await response.json().catch(() => null));
+  if (typeof body.access_token !== "string" || !body.access_token.trim())
+    throw new Error(LOGIN_MESSAGE);
+  const expiresIn = number(body.expires_in) ?? 900;
+  return {
+    access_token: body.access_token,
+    refresh_token:
+      typeof body.refresh_token === "string" && body.refresh_token.trim()
+        ? body.refresh_token
+        : cred.refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+    expires_in: expiresIn,
+    scope:
+      typeof body.scope === "string" ? body.scope : (cred.scope ?? "kimi-code"),
+    token_type:
+      typeof body.token_type === "string" ? body.token_type : "Bearer",
+  };
+}
+
+async function requestUsages(
+  cred: Credentials,
+  request: typeof fetch,
+): Promise<Response> {
+  try {
+    return await request(USAGE_URL, {
+      headers: {
+        Authorization: `Bearer ${cred.access_token}`,
+        Accept: "application/json",
+      },
       redirect: "error",
       signal: AbortSignal.timeout(8000),
     });
   } catch {
     throw new Error("Kimi 额度查询失败或超时，请检查网络后刷新。");
   }
-  if (response.status === 401 || response.status === 403)
+}
+
+export async function readKimiUsage(
+  read: (path: string) => Promise<string> = (path) => readFile(path, "utf8"),
+  request: typeof fetch = fetch,
+  save: (cred: Credentials) => Promise<void> = writeCredentials,
+): Promise<KimiUsage> {
+  let cred: Credentials;
+  try {
+    cred = parseCredentials(await read(CREDENTIALS_PATH));
+  } catch {
     throw new Error(LOGIN_MESSAGE);
+  }
+  if (expiringSoon(cred) && cred.refresh_token) {
+    cred = await refreshToken(cred, request);
+    await save(cred);
+  }
+  let response = await requestUsages(cred, request);
+  if (response.status === 401 || response.status === 403) {
+    // The CLI or another client may have just refreshed; re-read the file
+    // before spending our own refresh token.
+    const latest = await read(CREDENTIALS_PATH)
+      .then(parseCredentials)
+      .catch(() => null);
+    if (
+      latest &&
+      latest.access_token !== cred.access_token &&
+      !expiringSoon(latest)
+    ) {
+      cred = latest;
+    } else {
+      cred = await refreshToken(latest ?? cred, request);
+      await save(cred);
+    }
+    response = await requestUsages(cred, request);
+    if (response.status === 401 || response.status === 403)
+      throw new Error(LOGIN_MESSAGE);
+  }
   if (!response.ok)
     throw new Error(
       `Kimi 额度查询失败（HTTP ${response.status}），请稍后刷新。`,
