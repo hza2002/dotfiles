@@ -136,12 +136,17 @@ if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   abbr -S --quieter update='sudo apt update && sudo apt upgrade -y'
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   abbr -S --quieter update='brew update && brew upgrade && brew cleanup'
-  # AI agent CLIs run yolo by default; *codex start a cc-switch provider for this process only.
+  # AI agent CLIs run yolo by default. Codex prefixes switch the global provider
+  # before launch: plain `codex` selects Official, each prefix its own provider.
   abbr -S -f --quieter claude='claude --dangerously-skip-permissions'
-  abbr -S -f --quieter codex='codex --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter kcodex='cc-switch start codex "Kimi For Coding" -- --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter dcodex='cc-switch start codex "DeepSeek" -- --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter rcodex='cc-switch start codex "Rutaceae" -- --dangerously-bypass-approvals-and-sandbox'
+  # Claude has no equivalent global switch need: `cc-switch start` passes a
+  # per-session --settings file, leaves ~/.claude alone, and does not change the
+  # global current provider. Running Claude sessions stay untouched.
+  abbr -S --quieter dclaude='cc-switch start claude DeepSeek -- --dangerously-skip-permissions'
+  abbr -S -f --quieter codex='cc-switch --app codex provider switch "OpenAI Official" && codex --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter kcodex='cc-switch --app codex provider switch "Kimi For Coding" && codex --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter dcodex='cc-switch --app codex provider switch "DeepSeek" && codex --dangerously-bypass-approvals-and-sandbox'
+  abbr -S --quieter rcodex='cc-switch --app codex provider switch "Rutaceae" && codex --dangerously-bypass-approvals-and-sandbox'
 fi
 ########################## 🔼 ABBREVIATION 🔼 ###################
 
