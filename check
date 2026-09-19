@@ -158,6 +158,9 @@ check_zsh_startup() {
     TERM=dumb
     ZDOTDIR="$REPO_ROOT/zsh"
     XDG_STATE_HOME="$state_home"
+    # /etc/zsh/zshrc compinit would dump into $ZDOTDIR, i.e. the repo: compinit
+    # takes its dump path from -d, not the environment. oh-my-zsh owns that here.
+    skip_global_compinit=1
   )
   local mode arch output
 
