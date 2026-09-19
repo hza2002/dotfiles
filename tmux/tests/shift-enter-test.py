@@ -24,7 +24,24 @@ def capture(path):
             output.write(os.read(0, 256))
 
 
+def terminfo_available(term):
+    """The check attaches a real tmux client using the terminal's TERM value."""
+    try:
+        result = subprocess.run(
+            ["infocmp", "-1", term], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
 def main():
+    if not terminfo_available("xterm-ghostty"):
+        # Without the entry tmux refuses the client ("missing or unsuitable
+        # terminal") and the keys under test never reach the pane.
+        print("SKIP - xterm-ghostty terminfo is not installed (install Ghostty to run this)")
+        return
+
     root = Path(__file__).resolve().parents[2]
     prefix = "keybind = shift+enter="
     action = next(
