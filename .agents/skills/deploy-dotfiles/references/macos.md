@@ -45,6 +45,10 @@ default.
 For selected modules, preserve this order:
 
 1. Link shared CLI configuration and install its declared plugins/runtime state.
+   Restore Neovim's pinned revisions with `nvim --headless "+Lazy! restore" +qa`
+   before any other Neovim launch, then let the plugin builds, Mason packages, and
+   tree-sitter parsers it triggers finish; a launch that installs the newest
+   revisions instead rewrites `lazy-lock.json` through its Stow link.
 2. Link selected Automation projects as separate packages from the `automation`
    Stow directory. For `chrome-icon`, run
    `stow --dir automation --target "$HOME" chrome-icon`, then run
@@ -67,9 +71,15 @@ GnuPG keys, or SSH inventories on the user's behalf.
 Open a fresh terminal and verify:
 
 - `/bin/zsh` is the login shell and starts without cache/version errors;
+- the shell command inventory, derived from the tracked configuration rather than
+  assumed: every `abbr`, `alias`, `lazyload`, and Oh My Zsh plugin in
+  `zsh/.zshrc` names a command the host must provide, and each one must resolve
+  in a fresh login shell;
 - Homebrew PATH ordering, linked packages, Bat cache/theme, btop transparency,
   Starship, GnuPG pinentry, tmux, Neovim, Yazi, Ghostty, and selected personal
   utilities;
+- Neovim pins: `git status --porcelain -- nvim/.config/nvim/lazy-lock.json` is
+  clean and every installed plugin directory sits on its locked commit;
 - the generated Chrome-icon LaunchAgent contains the current home path and is
   registered in the current GUI domain;
 - Yabai, skhd, borders, scripting addition, permissions, rules, signals, and

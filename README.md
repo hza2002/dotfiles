@@ -14,8 +14,10 @@ does not provide or maintain a standalone bootstrap program.
 Tracked dotfiles remain configuration source. Module-owned installers handle
 the few operations that need deterministic local behavior, while `./check`
 provides scoped checks and the repository-wide validation gate. Stow runs from
-the repository root, where `.stowrc` disables tree folding so tools cannot write runtime data
-back through a linked directory.
+the repository root, where `.stowrc` disables tree folding: a tool that creates a
+new file writes beside the link instead of into the repository, but a tool that
+rewrites a tracked file writes through its link. Treat such a rewrite as a
+reviewed dotfiles change, never as silent machine state.
 
 ## Color Policy
 
@@ -132,6 +134,10 @@ macOS prompt in a regular local shell and the terminal prompt in tmux, over SSH,
 and on Linux or WSL. Install GnuPG plus `pinentry-mac` on macOS, or GnuPG plus
 `pinentry-curses` on Ubuntu or Debian.
 
+A host that never signs commits, such as a headless server, does not need this
+package: link it only where a signing key exists. The Zsh configuration tolerates
+its absence because `GPG_TTY` is exported only when the shell has a terminal.
+
 Before linking the package, create `~/.gnupg` with mode `0700`. After linking,
 restart the agent with `gpgconf --kill gpg-agent` and verify a signed commit or
 equivalent signing operation. Private keys, trust data, and the selected Git
@@ -139,7 +145,11 @@ signing key are machine state and must not be stored in this repository.
 
 ## tmux
 
-The tmux package targets tmux 3.4 or newer. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
+The tmux package targets tmux 3.4 or newer. Runtime gates keep one configuration
+working across that range: 3.5 adds `extended-keys-format csi-u`, and 3.7
+switches to `message-format` with styled prompt labels and hints. Older versions
+fall back to the plain prompts instead of failing the load, and the copy-mode
+tests branch on the formats the running tmux reports. [`tmux.conf`](tmux/.config/tmux/tmux.conf)
 is an ordered entrypoint; the files in [`conf`](tmux/.config/tmux/conf) own
 options, bindings, theme inputs, plugins, and final UI overrides. Ordinary
 reloads skip plugin initialization, so restart tmux after changing theme inputs
@@ -190,11 +200,17 @@ not use the Ubuntu or Debian package. [`lazyvim.json`](nvim/.config/nvim/lazyvim
 and the files under [`lua/plugins`](nvim/.config/nvim/lua/plugins) are the source
 of truth for enabled language support and external toolchains.
 
-The deployment contract is to install the base command-line
-dependencies, link the package, synchronize the revisions pinned in
-[`lazy-lock.json`](nvim/.config/nvim/lazy-lock.json), and wait for all Mason
-packages to finish installing. Plugin and tool installation must complete before
-the module is reported as installed rather than being deferred to first launch.
+The deployment contract is to install the base command-line dependencies, link
+the package, and synchronize the revisions pinned in
+[`lazy-lock.json`](nvim/.config/nvim/lazy-lock.json) with
+`nvim --headless "+Lazy! restore" +qa` before any other Neovim launch: a first
+launch that installs the newest revisions instead rewrites the lockfile through
+its Stow link. Then let the deferred plugin builds, Mason packages, and
+tree-sitter parsers finish. Plugin and tool installation must complete before the
+module is reported as installed rather than being deferred to first launch, and
+deployment verifies the pins by requiring a clean
+`git status --porcelain -- nvim/.config/nvim/lazy-lock.json` plus a locked commit
+in every installed plugin directory.
 
 ## macOS Personal Utilities
 
@@ -329,7 +345,9 @@ handling in Wi-Fi, Yabai, or volume plugins. Test scripts remain directly
 runnable with `/bin/bash path/to/test.sh` for the smallest iteration loop.
 
 Only selected checks require their tools. Platform-specific runtime checks run
-only on supported systems; skipped checks are reported. Raycast lint includes
-an online author lookup, so an extension's lint can fail due to network access.
-No check installs dependencies, updates plugins, or rewrites tracked
-configuration. Run `./check --help` for selectors; unknown selections fail.
+only on supported systems; skipped checks are reported. A failing check does not
+stop the run: failures are listed together at its end and it exits non-zero.
+Raycast lint includes an online author lookup, so an extension's lint can fail
+due to network access. No check installs dependencies, updates plugins, or
+rewrites tracked configuration. Run `./check --help` for selectors; unknown
+selections fail.

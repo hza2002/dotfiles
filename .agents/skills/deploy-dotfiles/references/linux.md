@@ -38,9 +38,10 @@ Do not default to unrestricted passwordless sudo on a shared server.
 ## Install the Linux Profile
 
 Read the current README contracts before selecting providers. The normal
-headless profile is `bat btop gnupg nvim starship tmux yazi zsh`; do not deploy
-macOS-only, GUI-only, Automation, Bin, IdeaVim, Raycast, Yabai, SketchyBar, or
-Ghostty packages to a server.
+headless profile is `bat btop gnupg nvim starship tmux yazi zsh`; omit `gnupg` on
+a host that does not sign commits, and do not deploy macOS-only, GUI-only,
+Automation, Bin, IdeaVim, Raycast, Yabai, SketchyBar, or Ghostty packages to a
+server.
 
 - Use `apt` for approved stable system dependencies.
 - Use the official signed Yazi APT repository described by the current upstream.
@@ -49,6 +50,10 @@ Ghostty packages to a server.
 - Use pinned upstream release artifacts under `~/.local` when the repository
   contract rejects or cannot obtain a distribution package.
 - Keep shell plugins, editor plugins, caches, and application state user-local.
+- Restore Neovim's pinned revisions with `nvim --headless "+Lazy! restore" +qa`
+  before any other Neovim launch, then let the plugin builds, Mason packages, and
+  tree-sitter parsers it triggers finish. A launch that installs the newest
+  revisions instead rewrites `lazy-lock.json` through its Stow link.
 - Install SDKs, runtimes, databases, containers, agents, and GPU tooling only
   when explicitly included.
 
@@ -74,7 +79,14 @@ Use a fresh SSH login or WSL session and verify:
 - identity, home ownership, shell, SSH, and approved sudo behavior;
 - login and interactive Zsh startup without errors;
 - PATH ordering and actual command resolution;
+- the shell command inventory, derived from the tracked configuration rather than
+  assumed: every `abbr`, `alias`, `lazyload`, and Oh My Zsh plugin in `zsh/.zshrc`
+  names a command the host must provide, and each one must resolve in a fresh
+  login shell. `alias rm='trash-put'` is only a safety net while trash-cli is
+  installed;
 - Stow targets and any server-local diff;
+- Neovim pins: `git status --porcelain -- nvim/.config/nvim/lazy-lock.json` is
+  clean and every installed plugin directory sits on its locked commit;
 - GnuPG terminal pinentry, tmux start/detach/reattach, Neovim plugin/tool
   completion, Yazi plugins, Bat theme/cache, Starship, btop transparency, and
   trash behavior;
