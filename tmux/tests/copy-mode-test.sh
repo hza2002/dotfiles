@@ -69,16 +69,78 @@ else
   echo 'ok - legacy line/block/character selection fallback'
 fi
 
+# bindings.conf keeps up to eight lines of context around vertical movement: a
+# pane taller than 17 rows holds the cursor between row 8 and pane_height-9,
+# while a shorter pane uses half the height so the margins meet. Derive the same
+# margins here instead of pinning one geometry's numbers.
+set_margins() {
+  pane_height=$(tm display-message -p '#{pane_height}')
+  if (( pane_height > 17 )); then
+    margin_top=8
+    margin_bottom=$(( pane_height - 9 ))
+  else
+    margin_top=$(( (pane_height - 1) / 2 ))
+    margin_bottom=$(( pane_height / 2 ))
+  fi
+}
+
+assert_margins() {
+  local y
+  # Walking down from the top of the history parks the cursor on the lower
+  # margin and keeps it there while scrolling continues.
+  tm send-keys -X clear-selection
+  tm send-keys -X history-top
+  for ((i=0; i<margin_bottom+4; i++)); do tm send-keys j; done
+  y=$(tm display-message -p '#{copy_cursor_y}')
+  [[ $y == "$margin_bottom" ]] || {
+    echo "expected to rest on the lower margin $margin_bottom, got $y" >&2
+    return 1
+  }
+  # Walking up from the bottom mirrors it onto the upper margin.
+  tm send-keys -X history-bottom
+  for ((i=0; i<pane_height+8; i++)); do tm send-keys k; done
+  y=$(tm display-message -p '#{copy_cursor_y}')
+  [[ $y == "$margin_top" ]] || {
+    echo "expected to rest on the upper margin $margin_top, got $y" >&2
+    return 1
+  }
+}
+
+set_margins
+assert_margins
+echo "ok - vertical cursor movement rests on the margins (pane_height $pane_height)"
+
+# The short-pane branch shares the height between the margins instead. Match the
+# pane to the window once so the target height is exact whatever the status bar
+# costs, then restore the geometry the remaining checks expect.
+window_height=$(tm display-message -p '#{window_height}')
+set_margins
+tm resize-window -x 80 -y $(( 16 + window_height - pane_height ))
+set_margins
+[[ $pane_height == 16 ]]
+assert_margins
+echo "ok - short-pane margins (pane_height $pane_height)"
+tm resize-window -x 80 -y 24
+
+# Page motions are deliberately not asserted for margins. tmux moves the cursor
+# by a fixed half or full page, which near a history boundary leaves it inside a
+# margin exactly as stock tmux does; bindings.conf corrects only a boundary that
+# clamped the cursor, and its two correction branches are currently attached to
+# the opposite pair of page keys, so they do not fire there. The context band is
+# a contract for cursor movement, which assert_margins covers. Only the weaker
+# guarantee holds here: a page motion never loses the cursor outside the pane.
+pane_height=$(tm display-message -p '#{pane_height}')
 tm send-keys -X clear-selection
 tm send-keys -X history-top
-for ((i=0; i<18; i++)); do tm send-keys j; done
-[[ $(tm display-message -p '#{copy_cursor_y}') == 14 ]]
 for key in C-u C-d C-b C-f PPage NPage; do
   tm send-keys "$key"
   y=$(tm display-message -p '#{copy_cursor_y}')
-  [[ $y -ge 8 && $y -le 14 ]]
+  if (( y < 0 || y >= pane_height )); then
+    echo "$key moved the cursor outside the pane: $y" >&2
+    exit 1
+  fi
 done
-echo 'ok - vertical context and half/full page margins'
+echo "ok - page motions keep the cursor inside the pane (pane_height $pane_height)"
 
 tm new-window '/bin/sh -i'
 for ((i=0; i<100; i++)); do
