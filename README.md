@@ -288,10 +288,16 @@ upstream revision and MIT notice in its file header.
 Raycast extensions are maintained as source under [`raycast/extensions`](raycast/extensions).
 Each extension is bundled with `npm run build` before its tests and lint checks;
 the generated bundle is local runtime output and is not tracked.
-The Server extension reads SSH aliases from the private inventory at
-`~/.config/server/config.json` and attaches each selected host to its `main` tmux
-session. Host addresses, users, ports, and keys remain in `~/.ssh/config` and are
-not owned by this repository.
+The Server extension discovers hosts from `~/.ssh/config`, orders them by most
+recent use, and opens the selected host in Ghostty, attaching to a tmux session
+where the remote has one. Comments above a `Host` line annotate the row.
+Recent use comes from `~/.zsh_history` and the extension's own Raycast storage.
+Public addresses and country flags come from Cloudflare DNS-over-HTTPS and
+ipwho.is, looked up when a host is selected and cached in Raycast storage for
+an hour.
+The optional overlay at `~/.config/server/config.json` only excludes or renames
+hosts and selects their tmux session. Host addresses, users, ports, and keys
+remain in `~/.ssh/config` and are not owned by this repository.
 
 ## Validation
 

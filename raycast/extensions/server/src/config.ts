@@ -1,71 +1,106 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { ServerConfig } from "./types";
+import type { Overlay, OverlayHost } from "./types.ts";
 
-export const CONFIG_PATH = join(homedir(), ".config/server/config.json");
+export const OVERLAY_PATH = join(homedir(), ".config/server/config.json");
 
-export class ConfigError extends Error {
+export class OverlayError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "ConfigError";
+    this.name = "OverlayError";
   }
+}
+
+export interface OverlayResult {
+  overlay: Overlay;
+  error?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function requiredString(
+function stringList(value: unknown, context: string): string[] {
+  if (value === undefined) return [];
+  if (
+    !Array.isArray(value) ||
+    value.some((entry) => typeof entry !== "string")
+  ) {
+    throw new OverlayError(`${context} must be an array of aliases.`);
+  }
+  return value.map((entry) => entry.trim()).filter((entry) => entry !== "");
+}
+
+function optionalString(
   value: Record<string, unknown>,
   key: string,
   context: string,
-): string {
+): string | undefined {
+  if (value[key] === undefined) return undefined;
   if (typeof value[key] !== "string" || value[key].trim() === "") {
-    throw new ConfigError(`${context}.${key} must be a non-empty string.`);
+    throw new OverlayError(`${context}.${key} must be a non-empty string.`);
   }
   return value[key].trim();
 }
 
-function parseServer(value: unknown, index: number): ServerConfig {
-  const context = `servers[${index}]`;
-  if (!isRecord(value)) throw new ConfigError(`${context} must be an object.`);
+function parseHostOverride(value: unknown, context: string): OverlayHost {
+  if (!isRecord(value)) throw new OverlayError(`${context} must be an object.`);
+
+  const override: OverlayHost = {};
+  const title = optionalString(value, "title", context);
+  const tmuxSession = optionalString(value, "tmuxSession", context);
+  if (title !== undefined) override.title = title;
+  if (tmuxSession !== undefined) override.tmuxSession = tmuxSession;
+  return override;
+}
+
+export function emptyOverlay(): Overlay {
+  return { include: [], exclude: [], hosts: {} };
+}
+
+export function parseOverlay(value: unknown): Overlay {
+  if (!isRecord(value)) {
+    throw new OverlayError("The overlay must be a JSON object.");
+  }
+
+  const hosts: Record<string, OverlayHost> = {};
+  if (value.hosts !== undefined) {
+    if (!isRecord(value.hosts)) {
+      throw new OverlayError("hosts must be an object.");
+    }
+    for (const [alias, override] of Object.entries(value.hosts)) {
+      hosts[alias] = parseHostOverride(override, `hosts.${alias}`);
+    }
+  }
 
   return {
-    title: requiredString(value, "title", context),
-    host: requiredString(value, "host", context),
+    include: stringList(value.include, "include"),
+    exclude: stringList(value.exclude, "exclude"),
+    hosts,
   };
 }
 
-export function parseConfig(value: unknown): ServerConfig[] {
-  if (!isRecord(value) || !Array.isArray(value.servers)) {
-    throw new ConfigError("Configuration must contain a servers array.");
-  }
-
-  const servers = value.servers.map(parseServer);
-  const hosts = new Set<string>();
-  for (const server of servers) {
-    if (hosts.has(server.host)) {
-      throw new ConfigError(`Duplicate server host: ${server.host}.`);
-    }
-    hosts.add(server.host);
-  }
-  return servers;
-}
-
-export async function loadConfig(): Promise<ServerConfig[]> {
+/** The overlay is optional: a missing or empty file configures nothing. */
+export async function loadOverlay(
+  path: string = OVERLAY_PATH,
+): Promise<OverlayResult> {
   let raw: string;
   try {
-    raw = await readFile(CONFIG_PATH, "utf8");
+    raw = await readFile(path, "utf8");
   } catch {
-    throw new ConfigError(`Configuration not found at ${CONFIG_PATH}.`);
+    return { overlay: emptyOverlay() };
   }
 
-  let value: unknown;
+  if (raw.trim() === "") return { overlay: emptyOverlay() };
+
   try {
-    value = JSON.parse(raw);
-  } catch {
-    throw new ConfigError(`Configuration at ${CONFIG_PATH} is not valid JSON.`);
+    return { overlay: parseOverlay(JSON.parse(raw)) };
+  } catch (error) {
+    return {
+      overlay: emptyOverlay(),
+      error:
+        error instanceof Error ? error.message : "The overlay is not valid.",
+    };
   }
-  return parseConfig(value);
 }

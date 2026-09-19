@@ -3,7 +3,7 @@
   "name": "server",
   "type": "module",
   "title": "Server",
-  "description": "Open SSH servers in Ghostty and attach to tmux",
+  "description": "Open hosts from ~/.ssh/config in Ghostty, most recent first",
   "icon": "server.png",
   "author": "hza2002",
   "categories": [
@@ -19,13 +19,14 @@
       "name": "index",
       "title": "Server",
       "subtitle": "SSH and tmux",
-      "description": "Open an SSH server in Ghostty and attach to tmux",
+      "description": "Open an SSH host in Ghostty, ordered by recent use",
       "keywords": [
         "ssh",
         "server",
         "remote",
         "ghostty",
-        "tmux"
+        "tmux",
+        "host"
       ],
       "mode": "view"
     }

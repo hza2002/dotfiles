@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "Optional overlay for the Raycast Server extension.",
+    "Hosts themselves come from ~/.ssh/config; create",
+    "~/.config/server/config.json with this structure to exclude hosts,",
+    "bring hidden ones back, rename them, or pick a tmux session.",
+    "A missing file, an empty file, or a broken one is ignored."
+  ],
+  "exclude": ["137.131.23.121"],
+  "include": ["github"],
+  "hosts": {
+    "oracle": {
+      "title": "Oracle Cloud",
+      "tmuxSession": "main"
+    }
+  }
+}

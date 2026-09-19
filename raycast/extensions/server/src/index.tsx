@@ -2,262 +2,377 @@ import {
   Action,
   ActionPanel,
   closeMainWindow,
+  Detail,
   Icon,
   List,
   showToast,
   Toast,
 } from "@raycast/api";
-import { useCachedPromise } from "@raycast/utils";
-import { useRef, useState } from "react";
-import { CONFIG_PATH, loadConfig } from "./config";
-import { openServer } from "./ghostty";
+import { usePromise } from "@raycast/utils";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { OVERLAY_PATH } from "./config.ts";
+import { describeLocation, formatAddress } from "./geo.ts";
+import { openHost } from "./ghostty.ts";
+import { loadHosts } from "./hosts.ts";
+import { readCachedInfo, refreshInfo } from "./info.ts";
 import {
   checkSshConnection,
   formatSshTarget,
-  isLiteralAddress,
-  resolvePublicAddresses,
-  resolveSshTarget,
-  type SshTarget,
-} from "./probe";
-import type { ServerConfig } from "./types";
+  identityFiles,
+  nonDefaultOptions,
+  readHostKey,
+  sshBaseline,
+} from "./probe.ts";
+import { describeLastConnected, type LastConnectedText } from "./recency.ts";
+import { SSH_CONFIG_PATH } from "./sshconfig.ts";
+import { readStoredConnected, recordConnected } from "./store.ts";
+import type { Host, HostInfo } from "./types.ts";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
-    : "The server could not be opened.";
+    : "The host could not be reached.";
 }
 
-interface PublicAddressResult {
-  target: string;
-  values: string[];
+/** Your own note replaces the target; the detail pane still shows the target. */
+function hostSubtitle(host: Host): string {
+  if (host.note !== undefined) return host.note;
+
+  const target = formatSshTarget(host.target);
+  return host.title === host.alias ? target : `${host.alias} · ${target}`;
 }
 
-interface ServerProbe {
-  target?: SshTarget;
-  latency?: number;
-  publicAddresses?: PublicAddressResult;
+interface DetailInput {
+  host: Host;
+  info: HostInfo | undefined;
+  latency: number | undefined;
+  lastConnected: LastConnectedText;
+  baseline: Map<string, string[]> | undefined;
+  hostKey: string | null | undefined;
+}
+
+/** The detail pane is the only place Raycast renders an aligned table. */
+function hostDetail({
+  host,
+  info,
+  latency,
+  lastConnected,
+  baseline,
+  hostKey,
+}: DetailInput) {
+  const address = info === undefined ? undefined : formatAddress(info);
+  const identities = identityFiles(host.sshOptions);
+  const options =
+    baseline === undefined ? [] : nonDefaultOptions(host.sshOptions, baseline);
+  const hostKeyText =
+    hostKey === undefined
+      ? "Checking…"
+      : (hostKey ?? "Not recorded in known_hosts");
+
+  return (
+    <List.Item.Detail
+      metadata={
+        <Detail.Metadata>
+          {host.title === host.alias ? null : (
+            <Detail.Metadata.Label title="Alias" text={host.alias} />
+          )}
+          {host.note === undefined ? null : (
+            <Detail.Metadata.Label title="Note" text={host.note} />
+          )}
+          <Detail.Metadata.Label
+            title="Target"
+            text={formatSshTarget(host.target)}
+          />
+          <Detail.Metadata.Label
+            title="Address"
+            text={address ?? "Resolving…"}
+          />
+          <Detail.Metadata.Label
+            title="Location"
+            text={info === undefined ? "Resolving…" : describeLocation(info)}
+          />
+          {identities.length === 0 ? null : (
+            <Detail.Metadata.Label
+              title="Identity File"
+              text={
+                identities.length === 1
+                  ? identities[0]
+                  : `${identities[0]} +${identities.length - 1}`
+              }
+            />
+          )}
+          <Detail.Metadata.Label title="Host Key" text={hostKeyText} />
+          {options.length === 0 ? (
+            <Detail.Metadata.Label
+              title="SSH Options"
+              text={
+                baseline === undefined ? "Checking…" : "Target settings only"
+              }
+            />
+          ) : (
+            options.map((option) => (
+              <Detail.Metadata.Label
+                key={option.key}
+                title={option.key}
+                text={option.value}
+              />
+            ))
+          )}
+          <Detail.Metadata.Label
+            title="Last Connected"
+            text={lastConnected.description}
+          />
+          {latency === undefined ? null : (
+            <Detail.Metadata.Label title="Latency" text={`${latency} ms`} />
+          )}
+          <Detail.Metadata.Label title="Tmux Session" text={host.tmuxSession} />
+        </Detail.Metadata>
+      }
+    />
+  );
 }
 
 export default function Server() {
-  const { data, isLoading, error } = useCachedPromise(loadConfig);
-  const [probes, setProbes] = useState<Map<string, ServerProbe>>(
+  const { data, isLoading, error } = usePromise(() =>
+    readStoredConnected().then((stored) => loadHosts(stored)),
+  );
+  const [infos, setInfos] = useState<Map<string, HostInfo>>(() => new Map());
+  const [latencies, setLatencies] = useState<Map<string, number>>(
     () => new Map(),
   );
+  const [hostKeys, setHostKeys] = useState<Map<string, string | null>>(
+    () => new Map(),
+  );
+  const [baseline, setBaseline] = useState<Map<string, string[]>>();
   const probeInProgress = useRef(false);
+  const requested = useRef(new Set<string>());
+  const loadedHosts = data?.hosts;
+  const overlayError = data?.overlayError;
 
-  function updateProbe(
-    host: string,
-    update: (current: ServerProbe) => ServerProbe,
-  ): void {
-    setProbes((current) => {
+  useEffect(() => {
+    if (overlayError === undefined) return;
+    showToast({
+      style: Toast.Style.Failure,
+      title: "Overlay config ignored",
+      message: overlayError,
+    });
+  }, [overlayError]);
+
+  useEffect(() => {
+    let cancelled = false;
+    sshBaseline().then((value) => {
+      if (!cancelled) setBaseline(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function patchInfo(alias: string, info: HostInfo): void {
+    setInfos((current) => new Map(current).set(alias, info));
+  }
+
+  function patchHostKey(alias: string, key: string | undefined): void {
+    setHostKeys((current) => new Map(current).set(alias, key ?? null));
+  }
+
+  /**
+   * Addresses, locations, and host keys are looked up for the selected host
+   * only, so opening the command costs nothing until a row is highlighted.
+   */
+  const ensureInfo = useCallback(
+    (alias: string | undefined): void => {
+      if (alias === undefined || requested.current.has(alias)) return;
+
+      const host = loadedHosts?.find((candidate) => candidate.alias === alias);
+      if (host === undefined) return;
+
+      requested.current.add(alias);
+      readHostKey(host.target.hostname, host.target.port)
+        .then((key) => patchHostKey(alias, key))
+        .catch((keyError: unknown) =>
+          console.error(
+            `Server: host key lookup failed for ${alias}`,
+            keyError,
+          ),
+        );
+      refreshInfo([host])
+        .then((fresh) => {
+          const info = fresh.get(alias);
+          if (info !== undefined) patchInfo(alias, info);
+        })
+        .catch((lookupError: unknown) =>
+          console.error(`Server: lookup failed for ${alias}`, lookupError),
+        );
+    },
+    [loadedHosts],
+  );
+
+  useEffect(() => {
+    if (loadedHosts === undefined || loadedHosts.length === 0) return;
+
+    let cancelled = false;
+    readCachedInfo(loadedHosts)
+      .then((cached) => {
+        if (!cancelled) setInfos(cached);
+      })
+      .catch((lookupError: unknown) =>
+        console.error("Server: cached lookup failed", lookupError),
+      );
+
+    // Raycast highlights the first row on open, so its detail needs data too.
+    ensureInfo(loadedHosts[0].alias);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadedHosts, ensureInfo]);
+
+  function setLatency(alias: string, latency: number | undefined): void {
+    setLatencies((current) => {
       const next = new Map(current);
-      next.set(host, update(next.get(host) ?? {}));
+      if (latency === undefined) next.delete(alias);
+      else next.set(alias, latency);
       return next;
     });
   }
 
-  async function resolveTarget(server: ServerConfig): Promise<void> {
-    if (probeInProgress.current) return;
-    probeInProgress.current = true;
-    updateProbe(server.host, () => ({}));
-    const toast = await showToast({
-      style: Toast.Style.Animated,
-      title: `Resolving ${server.title}`,
-    });
-    try {
-      const target = await resolveSshTarget(server.host);
-      updateProbe(server.host, () => ({ target }));
-      toast.style = Toast.Style.Success;
-      toast.title = `${server.title} target resolved`;
-      toast.message = formatSshTarget(target);
-    } catch (resolveError) {
-      toast.style = Toast.Style.Failure;
-      toast.title = `Could not resolve ${server.title}`;
-      toast.message = errorMessage(resolveError);
-    } finally {
-      probeInProgress.current = false;
-    }
-  }
-
-  async function resolvePublicIp(
-    server: ServerConfig,
-    target: SshTarget,
+  async function runProbe(
+    host: Host,
+    work: () => Promise<string>,
   ): Promise<void> {
     if (probeInProgress.current) return;
     probeInProgress.current = true;
-    const targetIdentity = formatSshTarget(target);
-    updateProbe(server.host, (current) => ({
-      ...current,
-      publicAddresses: undefined,
-    }));
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: `Resolving ${server.title}`,
+      title: `Checking ${host.title}`,
     });
     try {
-      const addresses = await resolvePublicAddresses(target.hostname);
-      updateProbe(server.host, (current) =>
-        current.target && formatSshTarget(current.target) === targetIdentity
-          ? {
-              ...current,
-              publicAddresses: { target: targetIdentity, values: addresses },
-            }
-          : current,
-      );
+      const summary = await work();
       toast.style = Toast.Style.Success;
-      toast.title = `${server.title} public DNS updated`;
-      toast.message = addresses.join(", ");
-    } catch (resolveError) {
+      toast.title = `${host.title}: ${summary}`;
+    } catch (probeError) {
       toast.style = Toast.Style.Failure;
-      toast.title = `Could not resolve ${server.title}`;
-      toast.message = errorMessage(resolveError);
+      toast.title = `Could not reach ${host.title}`;
+      toast.message = errorMessage(probeError);
     } finally {
       probeInProgress.current = false;
     }
   }
 
-  async function checkConnection(server: ServerConfig): Promise<void> {
-    if (probeInProgress.current) return;
-    probeInProgress.current = true;
-    updateProbe(server.host, (current) => ({
-      ...current,
-      latency: undefined,
-    }));
-    const toast = await showToast({
-      style: Toast.Style.Animated,
-      title: `Checking ${server.title}`,
+  function checkConnection(host: Host): Promise<void> {
+    return runProbe(host, async () => {
+      setLatency(host.alias, undefined);
+      const latency = await checkSshConnection(host.alias);
+      setLatency(host.alias, latency);
+      return `ready in ${latency} ms`;
     });
-    try {
-      const latency = await checkSshConnection(server.host);
-      updateProbe(server.host, (current) => ({ ...current, latency }));
-      toast.style = Toast.Style.Success;
-      toast.title = `${server.title} ready in ${latency} ms`;
-    } catch (testError) {
-      toast.style = Toast.Style.Failure;
-      toast.title = `Could not connect to ${server.title}`;
-      toast.message = errorMessage(testError);
-    } finally {
-      probeInProgress.current = false;
-    }
   }
 
-  async function connect(server: ServerConfig): Promise<void> {
+  function refreshLocation(host: Host): Promise<void> {
+    return runProbe(host, async () => {
+      const info = (await refreshInfo([host], true)).get(host.alias);
+      if (info === undefined) return "no address resolved";
+
+      patchInfo(host.alias, info);
+      return formatAddress(info) ?? "no address resolved";
+    });
+  }
+
+  async function connect(host: Host): Promise<void> {
     try {
-      await openServer(server);
+      await openHost(host);
+      await recordConnected(host.alias);
       await closeMainWindow();
     } catch (connectError) {
       await showToast({
         style: Toast.Style.Failure,
-        title: `Could not open ${server.title}`,
+        title: `Could not open ${host.title}`,
         message: errorMessage(connectError),
       });
     }
   }
 
-  if (error && !data) {
-    return (
-      <List>
+  return (
+    <List
+      isShowingDetail
+      isLoading={isLoading}
+      searchBarPlaceholder="Filter SSH hosts"
+      onSelectionChange={ensureInfo}
+    >
+      {loadedHosts?.length === 0 && !isLoading ? (
         <List.EmptyView
-          icon={Icon.Warning}
-          title="Server configuration unavailable"
-          description={errorMessage(error)}
+          icon={error ? Icon.Warning : Icon.Terminal}
+          title={error ? "SSH hosts unavailable" : "No SSH hosts found"}
+          description={
+            error
+              ? errorMessage(error)
+              : `Add a Host block to ${SSH_CONFIG_PATH} and it appears here.`
+          }
           actions={
             <ActionPanel>
-              <Action.Open title="Open Configuration" target={CONFIG_PATH} />
+              <Action.Open title="Open SSH Config" target={SSH_CONFIG_PATH} />
             </ActionPanel>
           }
         />
-      </List>
-    );
-  }
-
-  return (
-    <List isLoading={isLoading && !data} searchBarPlaceholder="Filter servers">
-      {data?.map((server) => {
-        const probe = probes.get(server.host);
-        const target = probe?.target;
-        const latency = probe?.latency;
-        const literalAddress =
-          target && isLiteralAddress(target.hostname)
-            ? [target.hostname]
-            : undefined;
-        const targetIdentity = target && formatSshTarget(target);
-        const publicAddresses = probe?.publicAddresses;
-        const addresses =
-          publicAddresses && publicAddresses.target === targetIdentity
-            ? publicAddresses.values
-            : literalAddress;
+      ) : null}
+      {loadedHosts?.map((host) => {
+        const info = infos.get(host.alias);
+        const latency = latencies.get(host.alias);
+        const lastConnected = describeLastConnected(host.lastConnectedAt);
         return (
           <List.Item
-            key={server.host}
-            title={server.title}
-            subtitle={
-              target
-                ? `${server.host} · ${formatSshTarget(target)}`
-                : server.host
-            }
+            key={host.alias}
+            id={host.alias}
+            title={host.title}
+            detail={hostDetail({
+              host,
+              info,
+              latency,
+              lastConnected,
+              baseline,
+              hostKey: hostKeys.has(host.alias)
+                ? hostKeys.get(host.alias)
+                : undefined,
+            })}
+            subtitle={{
+              value: hostSubtitle(host),
+              ...(host.note === undefined ? {} : { tooltip: host.note }),
+            }}
             icon={Icon.Terminal}
-            accessories={[
-              ...(addresses?.length
-                ? [
-                    {
-                      text: `${literalAddress ? "IP" : "DNS"}: ${addresses[0]}`,
-                      tooltip: addresses.join("\n"),
-                    },
-                  ]
-                : []),
-              ...(latency ? [{ text: `${latency} ms` }] : []),
-              { text: "tmux main" },
-            ]}
             actions={
               <ActionPanel>
                 <Action
-                  title={`Open ${server.title}`}
+                  title={`Open ${host.title}`}
                   icon={Icon.Terminal}
-                  onAction={() => connect(server)}
+                  onAction={() => connect(host)}
                 />
                 <Action
                   title="Check SSH Connection"
                   icon={Icon.Gauge}
-                  onAction={() => checkConnection(server)}
+                  onAction={() => checkConnection(host)}
                 />
                 <Action
-                  title={target ? "Refresh SSH Target" : "Resolve SSH Target"}
-                  icon={target ? Icon.ArrowClockwise : Icon.Network}
-                  onAction={() => resolveTarget(server)}
+                  title="Refresh IP and Location"
+                  icon={Icon.Globe}
+                  onAction={() => refreshLocation(host)}
                 />
-                {target && !literalAddress ? (
-                  <Action
-                    title={
-                      addresses ? "Refresh Public IP" : "Resolve Public IP"
-                    }
-                    icon={addresses ? Icon.ArrowClockwise : Icon.Globe}
-                    onAction={() => resolvePublicIp(server, target)}
-                  />
-                ) : null}
                 <Action.CopyToClipboard
-                  title="Copy SSH Host"
-                  content={server.host}
+                  title="Copy SSH Target"
+                  content={formatSshTarget(host.target)}
                 />
-                {target ? (
-                  <Action.CopyToClipboard
-                    title="Copy SSH Target"
-                    content={formatSshTarget(target)}
-                  />
-                ) : null}
-                {addresses ? (
-                  <Action.CopyToClipboard
-                    title={
-                      addresses.length === 1
-                        ? "Copy Public IP"
-                        : "Copy Public IPs"
-                    }
-                    content={addresses.join("\n")}
-                  />
-                ) : null}
+                <Action.CopyToClipboard
+                  title="Copy SSH Command"
+                  content={`ssh ${host.alias}`}
+                />
                 <Action.Open
-                  title="Open Server Configuration"
-                  target={CONFIG_PATH}
+                  title="Open SSH Config"
+                  target={SSH_CONFIG_PATH}
+                  icon={Icon.Gear}
+                />
+                <Action.Open
+                  title="Open Overlay Config"
+                  target={OVERLAY_PATH}
                   icon={Icon.Gear}
                 />
               </ActionPanel>
