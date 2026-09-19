@@ -65,16 +65,16 @@ esac
 CHECK_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-check.XXXXXX")
 MACOS_HOME="$CHECK_ROOT/stow-macos"
 LINUX_HOME="$CHECK_ROOT/stow-linux"
-TMUX_SOCKET=
+# `$$` survives the subshells `run` uses, so cleanup can always find the server.
+TMUX_SOCKET="dotfiles-check-$$"
+FAILED=()
 
 COMMON_PACKAGES=(bat btop gnupg nvim starship tmux yazi zsh)
 MACOS_PACKAGES=(bin ghostty ideavim raycast sketchybar yabai "${COMMON_PACKAGES[@]}")
 AUTOMATION_PACKAGES=(chrome-icon)
 
 cleanup() {
-  if [[ -n "$TMUX_SOCKET" ]]; then
-    tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
-  fi
+  tmux -L "$TMUX_SOCKET" kill-server >/dev/null 2>&1 || true
   rm -rf "$CHECK_ROOT"
 }
 trap cleanup EXIT
@@ -89,10 +89,20 @@ require() {
 }
 
 run() {
-  local name=$1
+  local name=$1 status=0
   shift
   printf '\n==> %s\n' "$name"
-  "$@"
+  # The check keeps its own fail-fast behavior inside a subshell: a failure is
+  # recorded here instead of ending the run, so later checks still report.
+  set +e
+  ( set -e; "$@" )
+  status=$?
+  set -e
+  if (( status != 0 )); then
+    printf 'FAIL - %s\n' "$name"
+    FAILED+=("$name")
+    return 0
+  fi
   printf 'ok - %s\n' "$name"
 }
 
@@ -245,7 +255,6 @@ check_agent_skills() {
 check_tmux() {
   require tmux
   require stow
-  TMUX_SOCKET="dotfiles-check-$$"
   local package_root=tmux/.config/tmux
   local test_home="$CHECK_ROOT/tmux-home"
   local wrapper="$CHECK_ROOT/tmux-check.conf"
@@ -437,5 +446,11 @@ esac
 
 run "whitespace errors ($SCOPE)" git diff --check -- "$SCOPE"
 run "staged whitespace errors ($SCOPE)" git diff --cached --check -- "$SCOPE"
+
+if (( ${#FAILED[@]} > 0 )); then
+  printf '\nFailed checks:\n' >&2
+  printf ' - %s\n' "${FAILED[@]}" >&2
+  exit 1
+fi
 
 printf '\nAll selected checks passed (%s%s).\n' "$COMPONENT" "${SELECTOR:+ $SELECTOR}"
