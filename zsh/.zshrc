@@ -136,19 +136,23 @@ if [[ "$ZSH_OS" == "Linux" ]]; then # Ubuntu/Linux settings
   abbr -S --quieter update='sudo apt update && sudo apt upgrade -y'
 elif [[ "$ZSH_OS" == "Darwin" ]]; then # macOS settings
   abbr -S --quieter update='brew update && brew upgrade && brew cleanup'
-  # AI agent CLIs run yolo by default. Codex prefixes switch the global provider
-  # before launch: plain `codex` selects Official, each prefix its own provider.
-  abbr -S -f --quieter claude='claude --dangerously-skip-permissions'
-  # Claude has no equivalent global switch need: `cc-switch start` passes a
-  # per-session --settings file, leaves ~/.claude alone, and does not change the
-  # global current provider. Running Claude sessions stay untouched.
-  abbr -S --quieter dclaude='cc-switch start claude DeepSeek -- --dangerously-skip-permissions'
-  abbr -S -f --quieter codex='cc-switch --app codex provider switch "OpenAI Official" && codex --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter kcodex='cc-switch --app codex provider switch "Kimi For Coding" && codex --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter dcodex='cc-switch --app codex provider switch "DeepSeek" && codex --dangerously-bypass-approvals-and-sandbox'
-  abbr -S --quieter rcodex='cc-switch --app codex provider switch "Rutaceae" && codex --dangerously-bypass-approvals-and-sandbox'
 fi
 ########################## 🔼 ABBREVIATION 🔼 ###################
+
+########################## 🔽 AI AGENT CLI 🔽 ###################
+# The CLIs run yolo by default. Codex prefixes switch the global provider before
+# launch, so plain `codex` resets it to Official — hence the second definition.
+# `dclaude` instead passes a per-session --settings file, leaving ~/.claude and
+# running Claude sessions untouched. Both need cc-switch: guarded by the tool.
+abbr -S -f --quieter claude='claude --dangerously-skip-permissions'
+abbr -S -f --quieter codex='codex --dangerously-bypass-approvals-and-sandbox'
+if command -v cc-switch >/dev/null 2>&1; then
+  abbr -S --quieter dclaude='cc-switch start claude DeepSeek -- --dangerously-skip-permissions'
+  for p in 'codex:OpenAI Official' 'kcodex:Kimi For Coding' 'dcodex:DeepSeek' 'rcodex:Rutaceae'; do
+    abbr -S -f --quieter "${p%%:*}=cc-switch --app codex provider switch \"${p#*:}\" && codex --dangerously-bypass-approvals-and-sandbox"
+  done
+fi
+########################## 🔼 AI AGENT CLI 🔼 ###################
 
 ########################## 🔽 ALIAS 🔽 ##########################
 alias c='printf "\e[H\e[2J"' # Sends control characters Esc-C to the console which resets the terminal

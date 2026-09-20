@@ -59,7 +59,6 @@ no_transparent_apps=(
   "PDF Expert"
   "Raycast"
   "Safari浏览器"
-  "VirtualBox VM"
   "Visual Studio Code"
   "地图"
 )

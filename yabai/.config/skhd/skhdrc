@@ -62,26 +62,12 @@ cmd - escape : display_count=$(yabai -m query --displays | jq 'length') && \
                else \
                    yabai -m space --focus recent ; \
                fi
-fn - f14 : display_query="$(yabai -m query --spaces --display)" && \
-           current_display_maxindex="$(echo "$display_query" | jq 'map(.index)[-1]')" && \
-           current_display_minindex="$(echo "$display_query" | jq 'map(.index)[0]')" && \
-           current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
-           if [ "$current_space_index" -eq "$current_display_maxindex" ] ; \
-           then \
-               yabai -m space --focus "$current_display_minindex" ; \
-           else \
-               yabai -m space --focus next ; \
-           fi
-fn - f13 : display_query="$(yabai -m query --spaces --display)" && \
-           current_display_maxindex="$(echo "$display_query" | jq 'map(.index)[-1]')" && \
-           current_display_minindex="$(echo "$display_query" | jq 'map(.index)[0]')" && \
-           current_space_index=$(yabai -m query --spaces --space | jq '.index') && \
-           if [ "$current_space_index" -eq "$current_display_minindex" ] ; \
-           then \
-               yabai -m space --focus "$current_display_maxindex" ; \
-           else \
-               yabai -m space --focus prev; \
-           fi
+# Cycle spaces in global order, wrapping at both ends. A failed focus returns
+# non-zero, and that failure is what triggers the wrap. Global order means a
+# multi-display setup can cross displays; the previous per-display version
+# wrapped within the focused display instead.
+fn - f14 : yabai -m space --focus next || yabai -m space --focus first
+fn - f13 : yabai -m space --focus prev || yabai -m space --focus last
 # Create desktop, move window and follow focus - uses jq for parsing json (brew install jq)
 cmd + ctrl + alt - n : yabai -m space --create && \
                   index="$(yabai -m query --spaces --display | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
