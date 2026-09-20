@@ -85,5 +85,8 @@ npm run build
 ```
 
 The TypeScript source lives here. `npm run dev` registers or refreshes the local
-extension under `~/.config/raycast/extensions/server`; `npm run build` verifies
-the production bundle. Stow does not manage that generated runtime copy.
+extension under `~/.config/raycast/extensions/server` and keeps watching;
+`npm run build` writes the same bundle once. Both deploy it, because that
+directory is where Raycast loads a development extension from — `./check raycast
+server` builds into a temporary directory instead, so checking never deploys.
+Stow does not manage that generated runtime copy.
