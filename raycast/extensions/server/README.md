@@ -26,6 +26,22 @@ never reaches the shell history. Hosts that were never used keep their
 `~/.ssh/config` order. Opening a host attaches to its tmux session when the
 remote has tmux, and falls back to a login shell when it does not.
 
+Opening also gives the window a space of its own: yabai creates a space directly
+right of the focused one, focuses it, and the window opens there, so a server
+session never displaces what is already on screen. `Open in Current Space` opens
+where the command was invoked instead. Without yabai, or with the scripting
+addition unloaded, the open degrades to the current space and says so, because a
+window in the wrong place beats a host that cannot be reached. Nothing here ever
+destroys a space, so an empty one stays until you remove it yourself.
+
+The created space is identified by comparing the space list before and after the
+create, because every create and destroy renumbers the spaces that follow. macOS
+places a window on the space that is active when it appears — normally the one
+just focused, but a space switch still animating can lose that race — so the
+window list is read once after opening and the window is moved back if it landed
+next door. That check runs after Raycast closes, so it costs the open nothing
+visible.
+
 The list stays minimal: an alias and its note. Everything else lives in the
 detail pane — the note, target, address, location, identity file, host key, the
 options this host actually changes, last connection, the last measured latency,

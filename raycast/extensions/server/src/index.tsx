@@ -25,6 +25,11 @@ import {
 } from "./probe.ts";
 import { describeLastConnected, type LastConnectedText } from "./recency.ts";
 import { SSH_CONFIG_PATH } from "./sshconfig.ts";
+import {
+  createServerSpace,
+  ensureWindowLanded,
+  type ServerSpace,
+} from "./space.ts";
 import { readStoredConnected, recordConnected } from "./store.ts";
 import type { Host, HostInfo } from "./types.ts";
 
@@ -279,7 +284,20 @@ export default function Server() {
     });
   }
 
-  async function connect(host: Host): Promise<void> {
+  async function connect(host: Host, newSpace: boolean): Promise<void> {
+    let arrival: ServerSpace | undefined;
+    if (newSpace) {
+      try {
+        arrival = await createServerSpace();
+      } catch (spaceError) {
+        await showToast({
+          style: Toast.Style.Failure,
+          title: `Opening ${host.title} in the current space`,
+          message: errorMessage(spaceError),
+        });
+      }
+    }
+
     try {
       await openHost(host);
       await recordConnected(host.alias);
@@ -290,6 +308,15 @@ export default function Server() {
         title: `Could not open ${host.title}`,
         message: errorMessage(connectError),
       });
+      return;
+    }
+
+    if (arrival !== undefined) {
+      // Raycast is out of the way by now, so a placement miss is worth a log
+      // rather than a toast the user cannot act on.
+      await ensureWindowLanded(arrival).catch((placeError: unknown) =>
+        console.error("Server: could not place the window", placeError),
+      );
     }
   }
 
@@ -345,7 +372,12 @@ export default function Server() {
                 <Action
                   title={`Open ${host.title}`}
                   icon={Icon.Terminal}
-                  onAction={() => connect(host)}
+                  onAction={() => connect(host, true)}
+                />
+                <Action
+                  title="Open in Current Space"
+                  icon={Icon.Desktop}
+                  onAction={() => connect(host, false)}
                 />
                 <Action
                   title="Check SSH Connection"
