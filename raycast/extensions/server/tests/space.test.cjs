@@ -31,3 +31,42 @@ test("an ambiguous diff is refused", async () => {
   const { newSpaceIndex } = await import("../src/space.ts");
   assert.equal(newSpaceIndex([1, 2], [1, 2, 3, 4]), undefined);
 });
+
+test("an empty focused space is reused instead of creating another", async () => {
+  const { reusableSpace } = await import("../src/space.ts");
+  assert.equal(
+    reusableSpace(
+      [
+        { index: 1, hasFocus: false, windows: [11] },
+        { index: 2, hasFocus: true, windows: [] },
+      ],
+      new Set(),
+    ),
+    2,
+  );
+});
+
+test("a focused space with windows gets a space of its own", async () => {
+  const { reusableSpace } = await import("../src/space.ts");
+  assert.equal(
+    reusableSpace(
+      [
+        { index: 1, hasFocus: false, windows: [] },
+        { index: 2, hasFocus: true, windows: [11] },
+      ],
+      new Set(),
+    ),
+    undefined,
+  );
+});
+
+test("the command's own panel does not make a space look occupied", async () => {
+  const { reusableSpace } = await import("../src/space.ts");
+  assert.equal(
+    reusableSpace(
+      [{ index: 4, hasFocus: true, windows: [21] }],
+      new Set([21]), // Raycast's panel, which is open while the command runs
+    ),
+    4,
+  );
+});

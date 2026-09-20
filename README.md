@@ -307,8 +307,8 @@ the generated bundle and typings are local runtime output and are not tracked.
 The Server extension discovers hosts from `~/.ssh/config`, orders them by most
 recent use, and opens the selected host in Ghostty, attaching to a tmux session
 where the remote has one. Opening gives the window a space of its own through
-yabai, directly right of the focused one. Comments above a `Host` line annotate
-the row.
+yabai — the focused one when it is still empty, otherwise a new one directly
+right of it. Comments above a `Host` line annotate the row.
 Recent use comes from `~/.zsh_history` and the extension's own Raycast storage.
 Public addresses and country flags come from Cloudflare DNS-over-HTTPS and
 ipwho.is, looked up when a host is selected and cached in Raycast storage for

@@ -26,9 +26,12 @@ never reaches the shell history. Hosts that were never used keep their
 `~/.ssh/config` order. Opening a host attaches to its tmux session when the
 remote has tmux, and falls back to a login shell when it does not.
 
-Opening also gives the window a space of its own: yabai creates a space directly
-right of the focused one, focuses it, and the window opens there, so a server
-session never displaces what is already on screen. `Open in Current Space` opens
+Opening also gives the window a space of its own: the focused space when nothing
+occupies it yet — normally the one the previous session left behind — and
+otherwise a space yabai creates directly right of the focused one, which is then
+focused. Raycast's own panel does not count as an occupant: it is open on the
+space being considered and leaves with the command. Either way a server session
+never displaces what is already on screen. `Open in Current Space` opens
 where the command was invoked instead. Without yabai, or with the scripting
 addition unloaded, the open degrades to the current space and says so, because a
 window in the wrong place beats a host that cannot be reached. Nothing here ever

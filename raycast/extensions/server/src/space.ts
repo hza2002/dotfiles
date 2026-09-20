@@ -9,6 +9,7 @@ const execFileAsync = promisify(execFile);
 /** Apple Silicon Homebrew first, then Intel, as the repository's launcher does. */
 const YABAI_CANDIDATES = ["/opt/homebrew/bin/yabai", "/usr/local/bin/yabai"];
 const GHOSTTY_APP = "Ghostty";
+const RAYCAST_APP = "Raycast";
 const YABAI_TIMEOUT_MS = 3_000;
 /** yabai reports a space change about 50 ms after the command returns. */
 const FOCUS_TIMEOUT_MS = 1_000;
@@ -18,6 +19,7 @@ const POLL_INTERVAL_MS = 50;
 interface SpaceState {
   index: number;
   hasFocus: boolean;
+  windows: number[];
 }
 
 interface ManagedWindow {
@@ -81,10 +83,12 @@ function parseSpaces(output: string): SpaceState[] {
   const spaces = JSON.parse(output) as {
     index: number;
     "has-focus": boolean;
+    windows: number[];
   }[];
   return spaces.map((space) => ({
     index: space.index,
     hasFocus: space["has-focus"],
+    windows: space.windows,
   }));
 }
 
@@ -114,12 +118,27 @@ export function newSpaceIndex(
   return added.length === 1 ? added[0] : undefined;
 }
 
-async function ghosttyWindowIds(): Promise<Set<number>> {
-  const windows = parseWindows(await yabai("query", "--windows"));
+/**
+ * An empty space usually belongs to a session that has ended, and the window
+ * this command opens is exactly what it is waiting for — reusing it costs
+ * nothing and keeps the empty space from piling up. `ignore` holds the windows
+ * that do not count as occupants, which is the command's own panel: it sits on
+ * the space being considered and vanishes as soon as the user looks away.
+ */
+export function reusableSpace(
+  spaces: SpaceState[],
+  ignore: Set<number>,
+): number | undefined {
+  const current = spaces.find((space) => space.hasFocus);
+  if (current === undefined) return undefined;
+
+  const occupied = current.windows.filter((id) => !ignore.has(id));
+  return occupied.length === 0 ? current.index : undefined;
+}
+
+function appWindowIds(windows: ManagedWindow[], app: string): Set<number> {
   return new Set(
-    windows
-      .filter((window) => window.app === GHOSTTY_APP)
-      .map((window) => window.id),
+    windows.filter((window) => window.app === app).map((window) => window.id),
   );
 }
 
@@ -156,13 +175,19 @@ async function openedGhosttyWindow(
 }
 
 /**
- * Creates a space next to the focused one and focuses it, so the window opened
- * afterwards belongs to a space of its own. Throws when yabai cannot be used;
- * the caller degrades to opening in the current space.
+ * Gives the next window a space of its own: the focused space when nothing
+ * occupies it, otherwise a new one created next to it and focused. Throws when
+ * yabai cannot be used; the caller degrades to opening in the current space.
  */
 export async function createServerSpace(): Promise<ServerSpace> {
-  const ghosttyWindows = await ghosttyWindowIds();
+  const windows = parseWindows(await yabai("query", "--windows"));
+  const ghosttyWindows = appWindowIds(windows, GHOSTTY_APP);
   const before = parseSpaces(await yabai("query", "--spaces"));
+
+  const reuse = reusableSpace(before, appWindowIds(windows, RAYCAST_APP));
+  if (reuse !== undefined) {
+    return { index: reuse, ghosttyWindows };
+  }
 
   await yabai("space", "--create");
   const created = newSpaceIndex(
